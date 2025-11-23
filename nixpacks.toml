@@ -2,8 +2,12 @@
 aptPkgs = ["build-essential", "libpq-dev"]
 
 [phases.install]
-cmds = ["pip install --no-cache-dir --no-deps -r requirements.txt"]
+cmds = [
+  "python -m venv --copies /opt/venv",
+  ". /opt/venv/bin/activate && pip install --upgrade pip",
+  ". /opt/venv/bin/activate && pip install --no-cache-dir -r requirements.txt"
+]
 
 [start]
-cmd = "python src/main.py"
+cmd = "/opt/venv/bin/python src/main.py"
 

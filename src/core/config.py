@@ -78,7 +78,7 @@ class Settings(BaseSettings):
     # ==========================================
     # DATABASE
     # ==========================================
-    DATABASE_URL: str = Field(default="sqlite:///./cryptobot.db")  # Use SQLite by default for Railway
+    DATABASE_URL: str = Field(default="sqlite+aiosqlite:///./cryptobot.db")  # Async SQLite for Railway
     REDIS_URL: Optional[str] = Field(default=None)  # Optional for Railway
     RABBITMQ_URL: Optional[str] = Field(default=None)  # Optional for Railway
     

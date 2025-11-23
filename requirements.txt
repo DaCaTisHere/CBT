@@ -103,7 +103,7 @@ pylint==3.0.3
 # Utilities
 click==8.1.7
 tqdm==4.66.1
-python-telegram-bot==20.7
+# python-telegram-bot==20.7  # Removed: conflicts with solana (httpx version)
 schedule==1.2.0
 
 # Cryptography & Security

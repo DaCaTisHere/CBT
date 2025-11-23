@@ -78,9 +78,9 @@ class Settings(BaseSettings):
     # ==========================================
     # DATABASE
     # ==========================================
-    DATABASE_URL: str = Field(default="postgresql://cryptobot:cryptobot@localhost:5432/cryptobot")
-    REDIS_URL: str = Field(default="redis://localhost:6379/0")
-    RABBITMQ_URL: str = Field(default="amqp://guest:guest@localhost:5672/")
+    DATABASE_URL: str = Field(default="sqlite:///./cryptobot.db")  # Use SQLite by default for Railway
+    REDIS_URL: Optional[str] = Field(default=None)  # Optional for Railway
+    RABBITMQ_URL: Optional[str] = Field(default=None)  # Optional for Railway
     
     # ==========================================
     # RISK MANAGEMENT

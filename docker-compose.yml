@@ -1,0 +1,150 @@
+# ==========================================
+# CRYPTOBOT ULTIMATE - Docker Compose
+# ==========================================
+# Local development environment
+# Run: docker-compose up -d
+
+version: '3.8'
+
+services:
+  # ==========================================
+  # PostgreSQL + TimescaleDB (Time-Series)
+  # ==========================================
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: cryptobot_postgres
+    environment:
+      - POSTGRES_USER=cryptobot
+      - POSTGRES_PASSWORD=cryptobot
+      - POSTGRES_DB=cryptobot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cryptobot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ==========================================
+  # Redis (Cache & Real-time Data)
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: cryptobot_redis
+    command: redis-server --appendonly yes --requirepass cryptobot
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ==========================================
+  # RabbitMQ (Message Queue)
+  # ==========================================
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: cryptobot_rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # ==========================================
+  # Grafana (Monitoring Dashboard)
+  # ==========================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: cryptobot_grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # ==========================================
+  # Prometheus (Metrics Collection)
+  # ==========================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cryptobot_prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+
+  # ==========================================
+  # Cryptobot Core (Main Application)
+  # ==========================================
+  # Uncomment when ready to run in Docker
+  # cryptobot-core:
+  #   build:
+  #     context: .
+  #     dockerfile: infrastructure/docker/Dockerfile.core
+  #   container_name: cryptobot_core
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #     - rabbitmq
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ./src:/app/src
+  #     - ./logs:/app/logs
+  #   restart: unless-stopped
+
+# ==========================================
+# Volumes (Persistent Data)
+# ==========================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+  grafana_data:
+    driver: local
+  prometheus_data:
+    driver: local
+
+# ==========================================
+# Networks
+# ==========================================
+networks:
+  default:
+    name: cryptobot_network
+    driver: bridge
+

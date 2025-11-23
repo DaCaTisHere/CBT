@@ -1,0 +1,144 @@
+# ==========================================
+# CRYPTOBOT ULTIMATE - Git Ignore
+# ==========================================
+
+# ==========================================
+# CRITICAL - Secrets & Keys
+# ==========================================
+
+
+
+# ==========================================
+# Python
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+ENV/
+env/
+.venv
+
+# ==========================================
+# IDEs
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ==========================================
+# Logs
+# ==========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==========================================
+# Database
+# ==========================================
+*.db
+*.sqlite
+*.sqlite3
+data/local/
+*.dump
+
+# ==========================================
+# ML/AI Models
+# ==========================================
+models/saved/
+models/checkpoints/
+*.pt
+*.pth
+*.h5
+*.pkl
+*.joblib
+wandb/
+mlruns/
+
+# ==========================================
+# Testing
+# ==========================================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# ==========================================
+# Docker
+# ==========================================
+*.tar
+*.zip
+
+# ==========================================
+# Jupyter Notebooks
+# ==========================================
+.ipynb_checkpoints
+*.ipynb
+
+# ==========================================
+# Temporary Files
+# ==========================================
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*~
+
+# ==========================================
+# OS Files
+# ==========================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==========================================
+# Project Specific
+# ==========================================
+# Historical data (large files)
+data/historical/*.csv
+data/historical/*.parquet
+
+# Backups
+backups/
+*.backup
+
+# Cache
+.cache/
+*.cache
+
+# Documentation builds
+docs/_build/
+site/
+

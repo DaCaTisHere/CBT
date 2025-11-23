@@ -74,7 +74,7 @@ pyarrow==14.0.1
 # Financial/Technical Analysis
 ta==0.11.0
 # ta-lib==0.4.28  # Requires C dependencies - optional, install manually if needed
-vectorbt==0.25.5  # Fixed version for Python 3.10
+# vectorbt==0.25.5  # Removed: incompatible with Python 3.10, uses old matplotlib
 
 # HTTP & Websockets
 requests==2.31.0

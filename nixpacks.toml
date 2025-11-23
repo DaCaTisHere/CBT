@@ -1,0 +1,9 @@
+[phases.setup]
+aptPkgs = ["build-essential", "libpq-dev"]
+
+[phases.install]
+cmds = ["pip install --no-cache-dir --no-deps -r requirements.txt"]
+
+[start]
+cmd = "python src/main.py"
+

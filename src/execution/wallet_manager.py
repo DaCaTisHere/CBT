@@ -38,6 +38,11 @@ class WalletManager:
     
     async def initialize(self):
         """Initialize wallet connections"""
+        # Skip RPC connection in simulation mode
+        if settings.SIMULATION_MODE:
+            self.logger.warning("[WARN] RPC connections skipped (simulation mode)")
+            return
+        
         try:
             # Ethereum
             rpc_url = settings.ETHEREUM_TESTNET_RPC_URL if settings.USE_TESTNET else settings.ETHEREUM_RPC_URL

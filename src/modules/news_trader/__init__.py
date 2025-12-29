@@ -1,12 +1,26 @@
 """
-News Trader Module - Trade on exchange listing announcements
+News Trader Module
 
-Strategy: Monitor Binance, Coinbase, etc. for listing announcements and buy instantly
-Potential: +20-100% per announcement
-Risk: High (need very low latency, competition with other bots)
+Automated trading on exchange announcements and listings.
+
+Components:
+- NewsTrader: Main trading bot
+- NewsAggregator: Aggregates news from multiple sources
+- News sources: Binance, Coinbase, Twitter monitors
 """
 
 from src.modules.news_trader.news_trader import NewsTrader
+from src.modules.news_trader.news_sources import (
+    NewsAggregator,
+    BinanceAnnouncementMonitor,
+    CoinbaseAnnouncementMonitor,
+    TwitterMonitor
+)
 
-__all__ = ["NewsTrader"]
-
+__all__ = [
+    "NewsTrader",
+    "NewsAggregator",
+    "BinanceAnnouncementMonitor",
+    "CoinbaseAnnouncementMonitor",
+    "TwitterMonitor"
+]

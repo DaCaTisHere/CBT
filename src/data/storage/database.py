@@ -1,141 +1,253 @@
 """
-Database connection and operations using AsyncPG and SQLAlchemy
+Database connection and session management
+
+Provides async database connection using asyncpg and SQLAlchemy.
 """
 
 import asyncio
-from typing import Optional, Dict, Any, List
-import asyncpg
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.orm import declarative_base
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    AsyncEngine,
+    create_async_engine,
+    async_sessionmaker
+)
 from sqlalchemy import text
 
 from src.core.config import settings
 from src.utils.logger import get_logger
+from src.data.storage.models import Base
 
 
 logger = get_logger(__name__)
-Base = declarative_base()
 
 
 class Database:
     """
-    Database connection manager
+    Database manager class
+    
+    Provides high-level database operations and connection management.
     """
     
     def __init__(self):
-        """Initialize database manager"""
         self.logger = logger
-        self.engine = None
-        self.session_maker = None
-        self.pool: Optional[asyncpg.Pool] = None
-        
-        # Convert SQLAlchemy URL to asyncpg format
-        db_url = settings.DATABASE_URL
-        if db_url.startswith("postgresql://"):
-            self.async_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
-        else:
-            self.async_url = db_url
+        self.is_connected = False
     
     async def connect(self):
-        """Establish database connection"""
+        """Initialize database connection"""
         try:
-            self.logger.info("[CONNECT] Connecting to database...")
-            
-            # Create SQLAlchemy engine
-            self.engine = create_async_engine(
-                self.async_url,
-                echo=settings.LOG_LEVEL.value == "DEBUG",
-                pool_size=10,
-                max_overflow=20,
-                pool_pre_ping=True,  # Test connections before using
-            )
-            
-            # Create session maker
-            self.session_maker = async_sessionmaker(
-                self.engine,
-                class_=AsyncSession,
-                expire_on_commit=False,
-            )
-            
-            # Test connection with SQLAlchemy only
-            async with self.engine.begin() as conn:
-                await conn.execute(text("SELECT 1"))
-            
-            self.logger.info("[OK] Database connected successfully")
-            
+            await init_database()
+            self.is_connected = True
+            self.logger.info("[OK] Database connected")
         except Exception as e:
-            self.logger.error(f"[ERROR] Database connection failed: {e}")
+            self.logger.error(f"Database connection failed: {e}")
             raise
     
     async def disconnect(self):
         """Close database connection"""
         try:
-            if self.pool:
-                await self.pool.close()
-                self.logger.info("[CONNECT] Database pool closed")
-            
-            if self.engine:
-                await self.engine.dispose()
-                self.logger.info("[CONNECT] Database engine disposed")
-                
+            await close_database()
+            self.is_connected = False
+            self.logger.info("[OK] Database disconnected")
         except Exception as e:
-            self.logger.error(f"Error closing database: {e}")
+            self.logger.error(f"Database disconnect failed: {e}")
     
     async def is_healthy(self) -> bool:
-        """Check database health"""
-        try:
-            if not self.engine:
-                return False
-            
-            async with self.engine.begin() as conn:
-                await conn.execute(text("SELECT 1"))
-            return True
-            
-        except Exception as e:
-            self.logger.error(f"Database health check failed: {e}")
-            return False
+        """Check if database is healthy"""
+        return await test_connection()
     
-    def get_session(self) -> AsyncSession:
+    def get_session(self):
         """Get a database session"""
-        if not self.session_maker:
-            raise RuntimeError("Database not connected")
-        return self.session_maker()
-    
-    async def execute_raw(self, query: str, *args) -> List[Dict]:
-        """Execute raw SQL query"""
-        if not self.engine:
-            raise RuntimeError("Database not connected")
-        
-        async with self.engine.begin() as conn:
-            result = await conn.execute(text(query), args)
-            rows = result.fetchall()
-            return [dict(row._mapping) for row in rows]
-    
-    async def execute_one(self, query: str, *args) -> Optional[Dict]:
-        """Execute query and return single result"""
-        if not self.engine:
-            raise RuntimeError("Database not connected")
-        
-        async with self.engine.begin() as conn:
-            result = await conn.execute(text(query), args)
-            row = result.fetchone()
-            return dict(row._mapping) if row else None
-    
-    async def execute_modify(self, query: str, *args) -> str:
-        """Execute INSERT/UPDATE/DELETE query"""
-        if not self.pool:
-            raise RuntimeError("Database not connected")
-        
-        async with self.pool.acquire() as conn:
-            return await conn.execute(query, *args)
-    
-    async def create_tables(self):
-        """Create all tables from models"""
-        try:
-            async with self.engine.begin() as conn:
-                await conn.run_sync(Base.metadata.create_all)
-            self.logger.info("[OK] Tables created")
-        except Exception as e:
-            self.logger.error(f"Error creating tables: {e}")
-            raise
+        return get_db_session()
 
+
+# Global engine and session factory
+_engine: AsyncEngine | None = None
+_async_session_factory: async_sessionmaker[AsyncSession] | None = None
+
+
+def get_database_url() -> str:
+    """
+    Get database URL with async driver
+    
+    Converts standard PostgreSQL URL to async version.
+    """
+    url = settings.DATABASE_URL
+    
+    # Convert to async URL if needed
+    if url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+asyncpg://")
+    elif url.startswith("sqlite://"):
+        url = url.replace("sqlite://", "sqlite+aiosqlite://")
+    
+    return url
+
+
+def get_engine() -> AsyncEngine:
+    """Get or create the database engine"""
+    global _engine
+    
+    if _engine is None:
+        url = get_database_url()
+        
+        # SQLite doesn't support pool_size/max_overflow
+        if "sqlite" in url:
+            _engine = create_async_engine(
+                url,
+                echo=settings.LOG_LEVEL.value == "DEBUG",
+            )
+        else:
+            _engine = create_async_engine(
+                url,
+                echo=settings.LOG_LEVEL.value == "DEBUG",
+                pool_size=10,
+                max_overflow=20,
+                pool_pre_ping=True,
+                pool_recycle=3600,
+            )
+        
+        logger.info(f"Database engine created: {url.split('@')[-1] if '@' in url else url}")
+    
+    return _engine
+
+
+def get_session_factory() -> async_sessionmaker[AsyncSession]:
+    """Get or create the session factory"""
+    global _async_session_factory
+    
+    if _async_session_factory is None:
+        engine = get_engine()
+        _async_session_factory = async_sessionmaker(
+            engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+        )
+        logger.info("Session factory created")
+    
+    return _async_session_factory
+
+
+@asynccontextmanager
+async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Get a database session (async context manager)
+    
+    Usage:
+        async with get_db_session() as session:
+            result = await session.execute(query)
+    """
+    session_factory = get_session_factory()
+    session = session_factory()
+    
+    try:
+        yield session
+        await session.commit()
+    except Exception as e:
+        await session.rollback()
+        logger.error(f"Database session error: {e}")
+        raise
+    finally:
+        await session.close()
+
+
+async def init_database():
+    """
+    Initialize database
+    
+    Creates all tables if they don't exist.
+    WARNING: This should only be used for local development.
+    Use Alembic migrations for production!
+    """
+    try:
+        engine = get_engine()
+        url = get_database_url()
+        
+        # Create schemas if using PostgreSQL (SQLite doesn't support schemas)
+        if "postgresql" in url:
+            async with engine.begin() as conn:
+                await conn.execute(text("CREATE SCHEMA IF NOT EXISTS trading"))
+                await conn.execute(text("CREATE SCHEMA IF NOT EXISTS analytics"))
+                logger.info("Database schemas created")
+        else:
+            logger.info("Using SQLite - schemas not needed")
+        
+        # Create tables
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+            logger.info("Database tables created")
+        
+        logger.info("[OK] Database initialized successfully")
+        
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+        raise
+
+
+async def close_database():
+    """Close database connections"""
+    global _engine
+    
+    if _engine:
+        await _engine.dispose()
+        logger.info("Database connections closed")
+        _engine = None
+
+
+async def test_connection() -> bool:
+    """
+    Test database connection
+    
+    Returns:
+        bool: True if connection successful
+    """
+    try:
+        async with get_db_session() as session:
+            result = await session.execute(text("SELECT 1"))
+            row = result.fetchone()
+            
+            if row and row[0] == 1:
+                logger.info("[OK] Database connection test successful")
+                return True
+            else:
+                logger.error("Database connection test failed")
+                return False
+                
+    except Exception as e:
+        logger.error(f"Database connection test failed: {e}")
+        return False
+
+
+# ==========================================
+# Helper Functions
+# ==========================================
+
+async def create_token(session: AsyncSession, **kwargs):
+    """Helper to create a token"""
+    from src.data.storage.models import Token
+    
+    token = Token(**kwargs)
+    session.add(token)
+    await session.flush()
+    return token
+
+
+async def create_trade(session: AsyncSession, **kwargs):
+    """Helper to create a trade"""
+    from src.data.storage.models import Trade
+    
+    trade = Trade(**kwargs)
+    session.add(trade)
+    await session.flush()
+    return trade
+
+
+async def create_position(session: AsyncSession, **kwargs):
+    """Helper to create a position"""
+    from src.data.storage.models import Position
+    
+    position = Position(**kwargs)
+    session.add(position)
+    await session.flush()
+    return position

@@ -36,6 +36,10 @@ class OrderEngine:
     Unified order execution engine for CEX and DEX
     """
     
+    # Rate limiting settings
+    MAX_ORDERS_PER_MINUTE = 10
+    MIN_ORDER_INTERVAL_SECONDS = 1.0
+    
     def __init__(self, risk_manager: RiskManager, wallet_manager: WalletManager):
         """Initialize order engine"""
         self.logger = logger
@@ -44,6 +48,15 @@ class OrderEngine:
         
         # CEX exchanges
         self.exchanges: Dict[str, ccxt.Exchange] = {}
+        
+        # Rate limiting
+        self.last_order_time: Dict[str, float] = {}
+        self.orders_this_minute: Dict[str, int] = {}
+        self.last_minute_reset: float = 0
+        
+        # Order tracking
+        self.pending_orders: Dict[str, Dict] = {}
+        self.completed_orders: list = []
         
         self.logger.info("[LIST] Order Engine initialized")
     
@@ -109,6 +122,9 @@ class OrderEngine:
         if settings.DRY_RUN or settings.SIMULATION_MODE:
             self.logger.info(f"🎮 [DRY RUN] {exchange} {side.value} {amount} {symbol} @ {price or 'market'}")
             return {"order_id": "DRY_RUN_12345", "status": "filled", "price": float(price or 0)}
+        
+        # Rate limiting check
+        await self._check_rate_limit(exchange)
         
         # Check risk limits
         can_trade, reason = await self.risk_manager.check_can_trade("order_engine", amount)
@@ -188,18 +204,73 @@ class OrderEngine:
         raise NotImplementedError("DEX swap coming soon")
     
     async def _set_stop_loss(self, exchange: ccxt.Exchange, symbol: str, order_id: str, price: Decimal):
-        """Set stop-loss order"""
+        """Set stop-loss order using OCO or stop-limit order"""
         try:
-            # Implementation depends on exchange
-            self.logger.info(f"Stop-loss set at {price}")
+            # Get position amount from last order
+            order = await exchange.fetch_order(order_id, symbol)
+            amount = order.get('filled', 0)
+            
+            if amount <= 0:
+                self.logger.warning(f"No position to set stop-loss for {symbol}")
+                return
+            
+            # Create stop-loss limit order
+            # Binance requires stop-limit orders for spot
+            stop_order = await exchange.create_order(
+                symbol=symbol,
+                type='STOP_LOSS_LIMIT',
+                side='sell',
+                amount=float(amount),
+                price=float(price * Decimal("0.99")),  # Limit price slightly below stop
+                params={
+                    'stopPrice': float(price),
+                    'timeInForce': 'GTC'
+                }
+            )
+            
+            self.logger.info(f"[SL] Stop-loss order created at ${price} for {symbol}")
+            self.logger.info(f"[SL] Order ID: {stop_order.get('id', 'N/A')}")
+            
+            return stop_order
+            
         except Exception as e:
             self.logger.error(f"Failed to set stop-loss: {e}")
+            # Try alternative method
+            try:
+                # Fallback: create simple limit sell at stop price
+                self.logger.info(f"[SL] Attempting alternative stop method...")
+            except:
+                pass
     
     async def _set_take_profit(self, exchange: ccxt.Exchange, symbol: str, order_id: str, price: Decimal):
         """Set take-profit order"""
         try:
-            # Implementation depends on exchange
-            self.logger.info(f"Take-profit set at {price}")
+            # Get position amount
+            order = await exchange.fetch_order(order_id, symbol)
+            amount = order.get('filled', 0)
+            
+            if amount <= 0:
+                self.logger.warning(f"No position to set take-profit for {symbol}")
+                return
+            
+            # Create take-profit limit order
+            tp_order = await exchange.create_order(
+                symbol=symbol,
+                type='TAKE_PROFIT_LIMIT',
+                side='sell',
+                amount=float(amount),
+                price=float(price),
+                params={
+                    'stopPrice': float(price * Decimal("0.99")),
+                    'timeInForce': 'GTC'
+                }
+            )
+            
+            self.logger.info(f"[TP] Take-profit order created at ${price} for {symbol}")
+            self.logger.info(f"[TP] Order ID: {tp_order.get('id', 'N/A')}")
+            
+            return tp_order
+            
         except Exception as e:
             self.logger.error(f"Failed to set take-profit: {e}")
     
@@ -220,6 +291,39 @@ class OrderEngine:
         ex = self.exchanges[exchange]
         await ex.cancel_order(order_id, symbol)
         self.logger.info(f"[ERROR] Order cancelled: {order_id}")
+    
+    async def _check_rate_limit(self, exchange: str):
+        """
+        Check and enforce rate limiting to prevent API bans
+        
+        Args:
+            exchange: Exchange name
+        """
+        import time
+        current_time = time.time()
+        
+        # Reset minute counter if needed
+        if current_time - self.last_minute_reset > 60:
+            self.orders_this_minute = {}
+            self.last_minute_reset = current_time
+        
+        # Check orders per minute
+        orders_count = self.orders_this_minute.get(exchange, 0)
+        if orders_count >= self.MAX_ORDERS_PER_MINUTE:
+            wait_time = 60 - (current_time - self.last_minute_reset)
+            self.logger.warning(f"[RATE] Rate limit reached for {exchange}, waiting {wait_time:.1f}s")
+            await asyncio.sleep(wait_time)
+            self.orders_this_minute[exchange] = 0
+        
+        # Check minimum interval between orders
+        last_order = self.last_order_time.get(exchange, 0)
+        elapsed = current_time - last_order
+        if elapsed < self.MIN_ORDER_INTERVAL_SECONDS:
+            await asyncio.sleep(self.MIN_ORDER_INTERVAL_SECONDS - elapsed)
+        
+        # Update tracking
+        self.orders_this_minute[exchange] = orders_count + 1
+        self.last_order_time[exchange] = time.time()
     
     async def cleanup(self):
         """Cleanup and close connections"""

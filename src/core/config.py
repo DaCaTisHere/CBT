@@ -102,6 +102,12 @@ class Settings(BaseSettings):
     ENABLE_DEFI_OPTIMIZER: bool = Field(default=False)
     ENABLE_COPY_TRADING: bool = Field(default=False)
     
+    # News Trader sources (sub-features)
+    ENABLE_BINANCE_NEWS: bool = Field(default=True)
+    ENABLE_COINBASE_NEWS: bool = Field(default=True)
+    ENABLE_KRAKEN_NEWS: bool = Field(default=False)
+    ENABLE_TWITTER_NEWS: bool = Field(default=False)  # Requires API keys
+    
     # ==========================================
     # EXTERNAL APIs (Optional)
     # ==========================================
@@ -112,6 +118,11 @@ class Settings(BaseSettings):
     TWITTER_ACCESS_TOKEN_SECRET: Optional[str] = None
     TWITTER_CLIENT_ID: Optional[str] = None
     TWITTER_CLIENT_SECRET: Optional[str] = None
+    
+    TELEGRAM_API_ID: Optional[str] = None
+    TELEGRAM_API_HASH: Optional[str] = None
+    TELEGRAM_BOT_TOKEN: Optional[str] = None
+    TELEGRAM_CHAT_ID: Optional[str] = None
     
     LUNARCRUSH_API_KEY: Optional[str] = None
     SANTIMENT_API_KEY: Optional[str] = None
@@ -138,10 +149,12 @@ class Settings(BaseSettings):
     ENABLE_CACHING: bool = Field(default=True)
     CACHE_TTL_SECONDS: int = Field(default=60)
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "ignore"
+    }
     
     @validator("WALLET_PRIVATE_KEY")
     def validate_private_key(cls, v):

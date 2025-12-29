@@ -10,8 +10,15 @@ Usage:
 
 import asyncio
 import sys
+import os
 import click
 from pathlib import Path
+
+# Fix Windows console encoding for emojis
+if sys.platform == "win32":
+    os.system("chcp 65001 > nul")
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -45,7 +52,7 @@ def main(testnet: bool, simulation: bool, mode: str, duration: int):
     
     if simulation or mode == 'simulation':
         settings.SIMULATION_MODE = True
-        logger.info("🎮 Simulation mode ENABLED via CLI")
+        logger.info("[SIM] Simulation mode ENABLED via CLI")
     
     # Display configuration
     display_config()
@@ -63,14 +70,14 @@ def main(testnet: bool, simulation: bool, mode: str, duration: int):
         
         if duration:
             # Run for specific duration (testing)
-            logger.info(f"⏱️  Running for {duration} seconds...")
+            logger.info(f"[TIMER] Running for {duration} seconds...")
             asyncio.run(run_with_duration(orchestrator, duration))
         else:
             # Run until interrupted
             asyncio.run(orchestrator.start())
             
     except KeyboardInterrupt:
-        logger.info("\n👋 Interrupted by user")
+        logger.info("[STOP] Interrupted by user")
     except Exception as e:
         logger.error(f"[FATAL] Fatal error: {e}", exc_info=True)
         sys.exit(1)
@@ -86,7 +93,7 @@ async def run_with_duration(orchestrator: Orchestrator, duration: int):
         await asyncio.sleep(duration)
         
         # Stop gracefully
-        logger.info("⏱️  Duration reached, stopping...")
+        logger.info("[TIMER] Duration reached, stopping...")
         await orchestrator.stop()
         
         # Cancel task

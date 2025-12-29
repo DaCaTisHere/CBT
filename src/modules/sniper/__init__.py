@@ -1,12 +1,22 @@
 """
-Sniper Bot Module - Buy new tokens at DEX launch
+Sniper Bot Module
 
-Strategy: Detect new token listings on DEX (Uniswap, PancakeSwap) and buy instantly
-Potential: x10-x100 per successful trade
-Risk: Very high (scams, honeypots, rug pulls)
+Exports all sniper bot components for easy importing.
 """
 
 from src.modules.sniper.sniper_bot import SniperBot
+from src.modules.sniper.contract_analyzer import ContractAnalyzer
+from src.modules.sniper.mempool_monitor import MempoolMonitor, MempoolMonitorV3
+from src.modules.sniper.flashbots_executor import FlashbotsExecutor, DirectExecutor
+from src.modules.sniper.strategy import SniperStrategy
 
-__all__ = ["SniperBot"]
 
+__all__ = [
+    "SniperBot",
+    "ContractAnalyzer",
+    "MempoolMonitor",
+    "MempoolMonitorV3",
+    "FlashbotsExecutor",
+    "DirectExecutor",
+    "SniperStrategy",
+]

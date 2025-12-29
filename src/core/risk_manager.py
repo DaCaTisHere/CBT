@@ -54,14 +54,53 @@ class RiskManager:
         self.logger.info(f"   Max daily loss: {self.max_daily_loss_pct}%")
         self.logger.info(f"   Stop loss: {self.stop_loss_pct}%")
     
-    async def initialize(self):
-        """Initialize risk manager with current capital"""
-        # In production, fetch from database/wallet
-        # For now, placeholder
-        self.initial_capital = Decimal("10000")  # $10k default
-        self.current_capital = self.initial_capital
-        self.daily_start_capital = self.initial_capital
-        self.peak_capital = self.initial_capital
+    async def initialize(self, wallet_manager=None):
+        """Initialize risk manager with current capital from wallet or config"""
+        from src.core.config import settings
+        import os
+        
+        # Try to get real balance from exchange if available
+        capital = Decimal("10000")  # Default fallback
+        
+        if not settings.SIMULATION_MODE and wallet_manager:
+            try:
+                # Fetch real USDT balance from Binance
+                import ccxt.async_support as ccxt
+                if settings.BINANCE_API_KEY and settings.BINANCE_SECRET:
+                    exchange = ccxt.binance({
+                        'apiKey': settings.BINANCE_API_KEY,
+                        'secret': settings.BINANCE_SECRET,
+                        'enableRateLimit': True,
+                    })
+                    balance = await exchange.fetch_balance()
+                    usdt_balance = balance.get('USDT', {}).get('free', 0)
+                    await exchange.close()
+                    
+                    if usdt_balance > 0:
+                        capital = Decimal(str(usdt_balance))
+                        self.logger.info(f"[WALLET] Real USDT balance: ${capital}")
+            except Exception as e:
+                self.logger.warning(f"[WALLET] Could not fetch real balance: {e}")
+                self.logger.info("[WALLET] Using default capital for simulation")
+        
+        # Load from saved state if exists
+        state_file = "data/risk_state.json"
+        if os.path.exists(state_file):
+            try:
+                import json
+                with open(state_file, "r") as f:
+                    state = json.load(f)
+                    saved_capital = Decimal(str(state.get("current_capital", capital)))
+                    if saved_capital > 0:
+                        capital = saved_capital
+                        self.logger.info(f"[RISK] Restored capital from state: ${capital}")
+            except Exception as e:
+                self.logger.warning(f"[RISK] Could not load state: {e}")
+        
+        self.initial_capital = capital
+        self.current_capital = capital
+        self.daily_start_capital = capital
+        self.peak_capital = capital
         
         self.logger.info(f"[OK] Initial capital: ${self.initial_capital}")
     
@@ -195,4 +234,33 @@ class RiskManager:
             "trading_enabled": self.trading_enabled,
             "open_positions": len(self.open_positions),
         }
+    
+    async def save_state(self):
+        """Persist current state to disk for recovery"""
+        import json
+        import os
+        
+        try:
+            os.makedirs("data", exist_ok=True)
+            state = {
+                "initial_capital": float(self.initial_capital),
+                "current_capital": float(self.current_capital),
+                "daily_start_capital": float(self.daily_start_capital),
+                "peak_capital": float(self.peak_capital),
+                "trading_enabled": self.trading_enabled,
+                "daily_loss_exceeded": self.daily_loss_exceeded,
+                "last_reset_date": self.last_reset_date.isoformat(),
+                "open_positions": {
+                    k: {**v, "opened_at": v["opened_at"].isoformat()}
+                    for k, v in self.open_positions.items()
+                },
+                "saved_at": datetime.utcnow().isoformat()
+            }
+            
+            with open("data/risk_state.json", "w") as f:
+                json.dump(state, f, indent=2, default=str)
+                
+            self.logger.debug("[RISK] State saved")
+        except Exception as e:
+            self.logger.error(f"[RISK] Failed to save state: {e}")
 

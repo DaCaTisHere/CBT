@@ -25,5 +25,5 @@ postgrest==0.13.2
 openai==1.10.0
 
 # Additional for integrations
-httpx==0.26.0
+httpx>=0.24,<0.26
 websockets==12.0

@@ -606,7 +606,7 @@ async def index(request):
     <div class="container">
         <header>
             <div class="logo">CRYPTOBOT ULTIMATE</div>
-            <div class="subtitle">Automated Trading System v0.1.0</div>
+            <div class="subtitle">Automated Trading System v4.2 - Optimized</div>
         </header>
         
         <div class="status-bar">
@@ -691,8 +691,8 @@ async def index(request):
         
         <div class="card">
             <div class="card-header">
-                <span class="card-title">Trading Strategy v2.0</span>
-                <span class="card-badge" style="background: #00ff8822; color: #00ff88;">ULTRA</span>
+                <span class="card-title">Trading Strategy v4.2</span>
+                <span class="card-badge" style="background: #00ff8822; color: #00ff88;">OPTIMIZED</span>
             </div>
             <div class="strategy-grid">
                 <div class="strategy-section">
@@ -709,27 +709,30 @@ async def index(request):
                 <div class="strategy-section">
                     <div class="strategy-title">🎯 Entry Filters</div>
                     <div class="filter-list">
-                        <div class="filter-item">Score ≥ 65/100</div>
-                        <div class="filter-item">Volume ≥ $200k</div>
-                        <div class="filter-item">RSI: 25-70</div>
-                        <div class="filter-item">BTC: Aligned</div>
+                        <div class="filter-item">Score ≥ 72/100</div>
+                        <div class="filter-item">Volume ≥ $150-350k</div>
+                        <div class="filter-item">RSI: 28-68</div>
+                        <div class="filter-item">StochRSI ≤ 75</div>
+                        <div class="filter-item">BTC: Aligned ✓</div>
                     </div>
                 </div>
                 <div class="strategy-section">
                     <div class="strategy-title">🛡️ Risk Management</div>
                     <div class="filter-list">
-                        <div class="filter-item">SL: 4-8% (ATR)</div>
-                        <div class="filter-item">TP1: +1.5% (25%)</div>
-                        <div class="filter-item">TP2: +4% (40%)</div>
-                        <div class="filter-item">TP3: +8% (rest)</div>
+                        <div class="filter-item">SL: 3-6% (ATR×1.5)</div>
+                        <div class="filter-item">TP1: +2% → sell 25%</div>
+                        <div class="filter-item">TP2: +4% → sell 35%</div>
+                        <div class="filter-item">TP3: +7% → full exit</div>
+                        <div class="filter-item">Trail: 1.8% @ +1.5%</div>
                     </div>
                 </div>
                 <div class="strategy-section">
                     <div class="strategy-title">⚡ Limits</div>
                     <div class="filter-list">
                         <div class="filter-item">Max: 5 positions</div>
-                        <div class="filter-item">Cooldown: 4h/token</div>
-                        <div class="filter-item">Timeout: 6h stagnant</div>
+                        <div class="filter-item">Max 3 BTC-correlated</div>
+                        <div class="filter-item">Cooldown: 6h/token</div>
+                        <div class="filter-item">Timeout: 3h stagnant</div>
                         <div class="filter-item">No leveraged tokens</div>
                     </div>
                 </div>

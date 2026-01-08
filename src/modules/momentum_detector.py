@@ -70,33 +70,33 @@ class MomentumDetector:
     - ATR-based volatility filter
     """
     
-    # Detection parameters - ULTRA-STRICT SELECTION (90% less trades)
-    VOLUME_SPIKE_MULTIPLIER = 3.0  # 3x = only real volume spikes (was 1.5x)
-    BREAKOUT_THRESHOLD_PCT = 5.0   # 5% = strong moves only (was 2%)
-    MIN_VOLUME_USD = 500000        # $500k min - avoid pump & dump (was $100k)
-    TOP_GAINERS_COUNT = 20         # Fewer candidates = better quality (was 50)
+    # Detection parameters - BALANCED for quality + quantity
+    VOLUME_SPIKE_MULTIPLIER = 2.5  # 2.5x = good volume spikes (balanced)
+    BREAKOUT_THRESHOLD_PCT = 4.0   # 4% = strong moves (slightly relaxed)
+    MIN_VOLUME_USD = 300000        # $300k min - balanced (was $500k)
+    TOP_GAINERS_COUNT = 30         # More candidates to evaluate (was 20)
     
-    # RSI thresholds - MORE STRICT
-    RSI_OVERBOUGHT = 70  # Stricter overbought (was 75)
-    RSI_OVERSOLD = 30    # Good entry opportunity
-    RSI_NEUTRAL_HIGH = 60  # Caution zone earlier (was 65)
+    # RSI thresholds - OPTIMIZED for win rate
+    RSI_OVERBOUGHT = 68  # Slightly stricter (was 70)
+    RSI_OVERSOLD = 32    # Good entry opportunity
+    RSI_NEUTRAL_HIGH = 58  # Earlier caution (was 60)
     
-    # Stochastic RSI thresholds
-    STOCH_RSI_OVERBOUGHT = 80
-    STOCH_RSI_OVERSOLD = 20
+    # Stochastic RSI thresholds - OPTIMIZED
+    STOCH_RSI_OVERBOUGHT = 75  # Stricter (was 80)
+    STOCH_RSI_OVERSOLD = 25   # Slightly higher (was 20)
     
-    # Volatility filter - MORE STRICT
-    MAX_VOLATILITY_24H = 15.0  # Skip tokens > 15% volatility (was 25%)
+    # Volatility filter - BALANCED
+    MAX_VOLATILITY_24H = 12.0  # Skip tokens > 12% volatility (stricter)
     
     # BTC correlation settings
-    BTC_TREND_THRESHOLD = 0.5  # Min BTC change % to consider trend
+    BTC_TREND_THRESHOLD = 0.3  # Lower threshold = more responsive
     REQUIRE_BTC_ALIGNMENT = True  # Only trade with BTC direction
     
-    # Cooldown settings - LONGER
-    TOKEN_COOLDOWN_HOURS = 8.0  # Don't trade same token for 8 hours (was 4h)
+    # Cooldown settings - OPTIMIZED
+    TOKEN_COOLDOWN_HOURS = 6.0  # 6 hours cooldown (balanced)
     
-    # Score requirements - MUCH HIGHER
-    MIN_ADVANCED_SCORE = 80  # Minimum score with all indicators (was 55)
+    # Score requirements - OPTIMIZED for best win rate
+    MIN_ADVANCED_SCORE = 72  # Balanced score (was 80, too strict)
     
     # Filters
     EXCLUDED_STABLECOINS = ['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP']

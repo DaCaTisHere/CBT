@@ -326,41 +326,41 @@ class Orchestrator:
                         if signal.symbol in paper_trader.portfolio.positions:
                             return
                         
-                        # === ANALYSE TECHNIQUE ULTRA-STRICTE ===
+                        # === ANALYSE TECHNIQUE OPTIMISÉE ===
                         
-                        # Score minimum BEAUCOUP PLUS ÉLEVÉ (de 65 à 80)
-                        MIN_SCORE = 80  # Score sur 100 - ULTRA STRICT pour meilleur win rate
+                        # Score minimum OPTIMISÉ pour balance win rate / opportunités
+                        MIN_SCORE = 72  # Score sur 100 - Balanced (was 80)
                         has_good_score = signal.score >= MIN_SCORE
                         
-                        # MACD: Doit être bullish ou neutral (pas bearish) - INCHANGÉ mais strict
+                        # MACD: Doit être bullish ou neutral (pas bearish)
                         macd_ok = signal.macd_signal in ["bullish", "neutral"]
                         
-                        # EMA Trend: Doit être bullish ou neutral - PLUS STRICT
+                        # EMA Trend: Doit être bullish ou neutral
                         ema_ok = signal.ema_trend in ["bullish", "bullish_cross", "neutral"]
                         
-                        # BTC Correlation: Trade AVEC le marché (pas contre) - PLUS STRICT
-                        btc_ok = signal.btc_correlation > 0  # Strict > 0 (était >= 0)
+                        # BTC Correlation: Trade AVEC le marché
+                        btc_ok = signal.btc_correlation > 0
                         
-                        # RSI: Zone saine PLUS STRICTE
-                        rsi_ok = 30 <= signal.rsi <= 65  # Plus strict (était 25-70)
+                        # RSI: Zone optimale pour entrée
+                        rsi_ok = 28 <= signal.rsi <= 68  # Slightly wider range
                         
-                        # Stochastic RSI: Pas en surachat - PLUS STRICT
-                        stoch_ok = signal.stoch_rsi <= 70  # Plus strict (était 80)
+                        # Stochastic RSI: Pas en surachat
+                        stoch_ok = signal.stoch_rsi <= 75  # Balanced (was 70)
                         
-                        # ATR: Volatilité contrôlée - PLUS STRICT
-                        atr_ok = signal.atr_percent <= 8 if signal.atr_percent > 0 else True  # Plus strict (était 10)
+                        # ATR: Volatilité contrôlée
+                        atr_ok = signal.atr_percent <= 10 if signal.atr_percent > 0 else True
                         
-                        # Volume: ADAPTATIF selon score - Excellent score = volume moyen OK
-                        if signal.score >= 85:
-                            min_volume = 200000  # Excellent score
-                        elif signal.score >= 80:
-                            min_volume = 400000  # Bon score = volume élevé requis
+                        # Volume: ADAPTATIF selon score
+                        if signal.score >= 80:
+                            min_volume = 150000  # Excellent score = lower volume OK
+                        elif signal.score >= 75:
+                            min_volume = 250000  # Good score
                         else:
-                            min_volume = 500000  # Fallback (ne devrait jamais arriver car MIN_SCORE=80)
+                            min_volume = 350000  # Lower score = need higher volume
                         volume_ok = signal.volume_usd >= min_volume
                         
-                        # Change percent: Plage PLUS STRICTE
-                        change_ok = 2.0 <= signal.change_percent <= 12.0  # Plus strict (était 1.5-15%)
+                        # Change percent: Plage optimale
+                        change_ok = 1.5 <= signal.change_percent <= 15.0  # Wider range
                         
                         # === DÉCISION FINALE ===
                         should_trade = (
@@ -375,16 +375,23 @@ class Orchestrator:
                             change_ok
                         )
                         
-                        # Bonus: Volume spike avec score TRÈS élevé = relax certains filtres
+                        # Bonus: Volume spike avec bon score = relax certains filtres
                         is_volume_spike = signal.signal_type == "volume_spike"
-                        if is_volume_spike and signal.score >= 75 and volume_ok and btc_ok:  # Plus strict (était 70, maintenant 75)
+                        if is_volume_spike and signal.score >= 68 and volume_ok and btc_ok:
                             should_trade = True  # Volume spike = early signal, override some filters
                         
-                        # === ML AUTO-LEARNING CHECK - PLUS STRICT ===
+                        # === CORRELATION CHECK ===
+                        # Avoid too many correlated positions (BTC-correlated coins)
+                        btc_correlated = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT']
+                        correlated_count = sum(1 for pos in paper_trader.portfolio.positions if pos in btc_correlated)
+                        if signal.symbol in btc_correlated and correlated_count >= 3:
+                            should_trade = False  # Max 3 BTC-correlated positions
+                        
+                        # === ML AUTO-LEARNING CHECK ===
                         # If the bot has learned enough, use predictions to filter trades
                         ml_approved = True
                         ml_confidence = 0.5
-                        ML_CONFIDENCE_THRESHOLD = 0.65  # Plus strict (était implicite à 0.55)
+                        ML_CONFIDENCE_THRESHOLD = 0.58  # Balanced threshold
                         
                         if should_trade and paper_trader.auto_learner and paper_trader.auto_learner.is_trained:
                             ml_approved, ml_confidence, ml_reasons = paper_trader.auto_learner.predict_success(
@@ -415,10 +422,10 @@ class Orchestrator:
                             
                             # Calculate dynamic stop-loss based on ATR
                             # ATR-based SL is more adaptive to market volatility
-                            base_sl = 0.05  # 5% default (augmenté)
+                            base_sl = 0.035  # 3.5% default (tighter for better risk management)
                             if signal.atr_percent > 0:
-                                # Use 2x ATR as stop-loss, but minimum 4%, maximum 8%
-                                dynamic_sl = max(0.04, min(0.08, signal.atr_percent * 2 / 100))
+                                # Use 1.5x ATR as stop-loss, but minimum 3%, maximum 6%
+                                dynamic_sl = max(0.03, min(0.06, signal.atr_percent * 1.5 / 100))
                             else:
                                 dynamic_sl = base_sl
                             

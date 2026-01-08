@@ -59,14 +59,14 @@ class Position:
     side: str = "BUY"  # BUY or SELL
     stop_loss: Optional[float] = None
     take_profit: Optional[float] = None
-    # Trailing stop-loss - OPTIMIZED (ne pas couper winners trop tôt)
+    # Trailing stop-loss - OPTIMIZED for capturing gains
     highest_price: Optional[float] = None  # Track highest price seen
-    trailing_stop_pct: float = 0.02  # 2% trailing stop (plus serré, était 2.5%)
-    trailing_activated: bool = False  # Activated after +2% profit (était +1.5%)
-    # Scaled take-profits - OPTIMIZED (laisser courir les winners)
-    tp1_hit: bool = False  # +3% - sell 20% (était +1.5% / 25%)
-    tp2_hit: bool = False  # +6% - sell 30% (était +4% / 40%)
-    tp3_hit: bool = False  # +10% - sell remaining (était +8%)
+    trailing_stop_pct: float = 0.018  # 1.8% trailing stop (tighter to lock profits)
+    trailing_activated: bool = False  # Activated after +1.5% profit
+    # Scaled take-profits - OPTIMIZED (take profits earlier)
+    tp1_hit: bool = False  # +2% - sell 25% (earlier profit taking)
+    tp2_hit: bool = False  # +4% - sell 35% (capture more gains)
+    tp3_hit: bool = False  # +7% - sell remaining (realistic target)
     original_amount: Optional[float] = None  # Track original amount
     # Timeout for stagnant positions
     last_movement_time: Optional[datetime] = None  # Track last significant price movement
@@ -393,12 +393,12 @@ class PaperTrader:
                 position.last_movement_time = datetime.utcnow()
             
             # ===== TIMEOUT FOR STAGNANT POSITIONS =====
-            # Close positions that haven't moved > 1% after 4 hours (réduit de 6h)
-            # Libère le capital PLUS rapidement pour saisir de meilleures opportunités
+            # Close positions that haven't moved > 0.8% after 3 hours
+            # Libère le capital RAPIDEMENT pour saisir de meilleures opportunités
             time_since_movement = (datetime.utcnow() - position.last_movement_time).total_seconds()
             hours_since_movement = time_since_movement / 3600
             
-            if hours_since_movement >= 4 and abs(pnl_pct) < 1.0:  # 4h au lieu de 6h
+            if hours_since_movement >= 3 and abs(pnl_pct) < 0.8:  # 3h timeout, 0.8% threshold
                 positions_to_close.append((symbol, current_price, f"Timeout: stagnant for {hours_since_movement:.1f}h (PnL: {pnl_pct:.2f}%)"))
                 continue  # Skip other checks
             
@@ -407,8 +407,8 @@ class PaperTrader:
                 position.highest_price = current_price
             
             # ===== TRAILING STOP-LOSS =====
-            # Activate trailing stop after +2% profit (laisser respirer le trade)
-            if pnl_pct >= 2.0 and not position.trailing_activated:  # 2% au lieu de 1.5%
+            # Activate trailing stop after +1.5% profit (lock profits earlier)
+            if pnl_pct >= 1.5 and not position.trailing_activated:
                 position.trailing_activated = True
                 self.logger.info(f"[TRAIL] 🔒 Trailing stop activated for {symbol} at +{pnl_pct:.1f}%")
             
@@ -422,24 +422,24 @@ class PaperTrader:
                     position.stop_loss = trailing_stop_price
                     self.logger.info(f"[TRAIL] 📈 {symbol} SL moved: ${old_sl:.6f} → ${trailing_stop_price:.6f}")
             
-            # ===== SCALED TAKE-PROFITS (OPTIMIZED - laisser courir les winners) =====
-            # TP1: +3% - Sell 20% (ne pas vendre trop tôt, était +1.5% / 25%)
-            if pnl_pct >= 3.0 and not position.tp1_hit and position.amount > 0:
-                sell_amount = position.original_amount * 0.20  # 20% au lieu de 25%
+            # ===== SCALED TAKE-PROFITS (OPTIMIZED - capture profits earlier) =====
+            # TP1: +2% - Sell 25% (take early profits)
+            if pnl_pct >= 2.0 and not position.tp1_hit and position.amount > 0:
+                sell_amount = position.original_amount * 0.25
                 if sell_amount > 0 and position.amount >= sell_amount:
-                    partial_sells.append((symbol, current_price, sell_amount, "TP1 (+3%)", 1))
+                    partial_sells.append((symbol, current_price, sell_amount, "TP1 (+2%)", 1))
                     position.tp1_hit = True
             
-            # TP2: +6% - Sell 30% of original (était +4% / 40%)
-            if pnl_pct >= 6.0 and not position.tp2_hit and position.amount > 0:
-                sell_amount = position.original_amount * 0.30  # 30% au lieu de 40%
+            # TP2: +4% - Sell 35% of original
+            if pnl_pct >= 4.0 and not position.tp2_hit and position.amount > 0:
+                sell_amount = position.original_amount * 0.35
                 if sell_amount > 0 and position.amount >= sell_amount:
-                    partial_sells.append((symbol, current_price, sell_amount, "TP2 (+6%)", 2))
+                    partial_sells.append((symbol, current_price, sell_amount, "TP2 (+4%)", 2))
                     position.tp2_hit = True
             
-            # TP3: +10% - Sell remaining (était +8%)
-            if pnl_pct >= 10.0 and not position.tp3_hit and position.amount > 0:
-                positions_to_close.append((symbol, current_price, "TP3 (+10%) - Full Exit"))
+            # TP3: +7% - Sell remaining (realistic target)
+            if pnl_pct >= 7.0 and not position.tp3_hit and position.amount > 0:
+                positions_to_close.append((symbol, current_price, "TP3 (+7%) - Full Exit"))
                 position.tp3_hit = True
                 continue  # Skip stop-loss check
             

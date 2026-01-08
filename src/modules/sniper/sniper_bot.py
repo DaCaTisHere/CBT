@@ -17,8 +17,15 @@ from decimal import Decimal
 from typing import Optional, Dict, Any
 from datetime import datetime
 
-from web3 import Web3
-from eth_utils import to_checksum_address
+# Web3 is optional - only needed for real sniping
+try:
+    from web3 import Web3
+    from eth_utils import to_checksum_address
+    WEB3_AVAILABLE = True
+except ImportError:
+    Web3 = None
+    to_checksum_address = lambda x: x
+    WEB3_AVAILABLE = False
 
 from src.core.config import settings
 from src.core.risk_manager import RiskManager

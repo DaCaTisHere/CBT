@@ -21,8 +21,8 @@ from src.core.risk_manager import RiskManager
 from src.utils.logger import get_logger
 from src.data.storage.database import Database
 
-# Strategy modules
-from src.modules.sniper.sniper_bot import SniperBot
+# Strategy modules (SniperBot requires web3, may be a dummy if not installed)
+from src.modules.sniper import SniperBot
 from src.modules.news_trader.news_trader import NewsTrader
 from src.modules.sentiment.sentiment_analyzer import SentimentAnalyzer
 from src.modules.ml_predictor.ml_predictor import MLPredictor

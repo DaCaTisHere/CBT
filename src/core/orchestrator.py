@@ -299,6 +299,10 @@ class Orchestrator:
                 # Initialize paper trader
                 await paper_trader.initialize()
                 
+                # Track last trade time to enforce minimum interval
+                self._last_trade_time = None
+                MIN_TRADE_INTERVAL_SECONDS = 120  # At least 2 minutes between trades
+                
                 # Connect momentum signals to paper trader with ULTRA-SMART filtering
                 async def on_momentum_signal(signal):
                     """Trade on momentum signals - ULTRA OPTIMIZED with FULL Technical Analysis
@@ -315,6 +319,14 @@ class Orchestrator:
                     """
                     try:
                         # === FILTRES DE SÉCURITÉ ===
+                        
+                        # 0. Enforce minimum time between trades (avoid over-trading)
+                        now = datetime.utcnow()
+                        if self._last_trade_time:
+                            seconds_since_last = (now - self._last_trade_time).total_seconds()
+                            if seconds_since_last < MIN_TRADE_INTERVAL_SECONDS:
+                                self.logger.debug(f"[TRADE] Skip {signal.symbol} - too soon since last trade ({seconds_since_last:.0f}s < {MIN_TRADE_INTERVAL_SECONDS}s)")
+                                return
                         
                         # 1. Vérifier STRICTEMENT qu'on n'a pas trop de positions
                         MAX_POSITIONS = 5
@@ -457,6 +469,9 @@ class Orchestrator:
                                 self.logger.info(f"[TRADE] ✅ Acheté {signal.symbol} @ ${signal.price:.6f} (SL: {dynamic_sl*100:.1f}%)")
                                 self.total_trades += 1
                                 
+                                # Update last trade time (enforce minimum interval)
+                                self._last_trade_time = datetime.utcnow()
+                                
                                 # Set cooldown for this token
                                 self.momentum_detector.set_token_cooldown(signal.symbol)
                                 
@@ -561,44 +576,15 @@ class Orchestrator:
             except Exception as e:
                 self.logger.warning(f"[MOMENTUM] Could not start momentum detector: {e}")
             
-            # Start Market Data Aggregator (CoinGecko + LunarCrush)
-            try:
-                from src.data.market_sources import start_market_aggregator
-                
-                self.market_aggregator = await start_market_aggregator()
-                
-                # Connect aggregator opportunities to paper trader
-                async def on_market_opportunity(opp):
-                    """Trade on market opportunities from CoinGecko/LunarCrush"""
-                    try:
-                        if opp.get('score', 0) >= 50:  # Only high-scoring opportunities
-                            symbol = opp.get('symbol', '')
-                            self.logger.info(f"[MARKET] 📊 Opportunity: {symbol} - {opp.get('reason', '')}")
-                            
-                            # Get current price from Binance
-                            async with aiohttp.ClientSession() as session:
-                                url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
-                                async with session.get(url, timeout=5) as response:
-                                    if response.status == 200:
-                                        data = await response.json()
-                                        price = float(data.get('price', 0))
-                                        
-                                        if price > 0:
-                                            position = await paper_trader.buy(
-                                                symbol=symbol,
-                                                price=price,
-                                                reason=f"Market: {opp.get('source', '')} - {opp.get('reason', '')}"
-                                            )
-                                            if position:
-                                                self.logger.info(f"[MARKET] ✅ Bought {symbol} @ ${price:.6f}")
-                                                self.total_trades += 1
-                    except Exception as e:
-                        self.logger.error(f"[MARKET] Trade error: {e}")
-                
-                self.market_aggregator.on_opportunity(on_market_opportunity)
-                self.logger.info("[MARKET] Market Aggregator started (CoinGecko + LunarCrush)")
-            except Exception as e:
-                self.logger.warning(f"[MARKET] Could not start market aggregator: {e}")
+            # Start Market Data Aggregator (CoinGecko + LunarCrush) - DISABLED due to bugs
+            # The market aggregator was causing issues:
+            # 1. Buying tokens without technical analysis
+            # 2. XMRUSDT and LITUSDT stuck at wrong prices
+            # 3. Too many force-closes due to excess positions
+            #
+            # SOLUTION: Disabled until we implement proper filtering
+            # Only use the Momentum Detector which has proper TA filters
+            self.logger.info("[MARKET] Market Aggregator DISABLED (using only Momentum Detector with TA filters)")
             
             # Main loop - monitor and coordinate
             await self._main_loop()

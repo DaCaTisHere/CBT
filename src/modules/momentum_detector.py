@@ -102,6 +102,12 @@ class MomentumDetector:
     EXCLUDED_STABLECOINS = ['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP']
     # CRITICAL: Exclude leveraged tokens - they lose value over time due to daily rebalancing!
     EXCLUDED_LEVERAGED_SUFFIXES = ['DOWN', 'UP', 'BEAR', 'BULL', '3L', '3S', '2L', '2S']
+    # BLACKLIST: Tokens with API/price issues (prices not updating correctly)
+    BLACKLISTED_TOKENS = [
+        'XMRUSDT',   # Price stuck at $118.70 - CoinGecko data issue
+        'LITUSDT',   # Price stuck at $0.743 - CoinGecko data issue
+        'BCHUSDT',   # Often has stale price data
+    ]
     MIN_PRICE = 0.00000001
     MAX_PRICE = 100000
     
@@ -387,6 +393,10 @@ class MomentumDetector:
                     if base in self.EXCLUDED_STABLECOINS:
                         continue
                     
+                    # CRITICAL: Skip blacklisted tokens (price data issues)
+                    if symbol in self.BLACKLISTED_TOKENS:
+                        continue
+                    
                     # CRITICAL: Skip leveraged tokens (they lose value over time!)
                     if self._is_leveraged_token(symbol):
                         continue
@@ -498,6 +508,10 @@ class MomentumDetector:
                     
                     base = symbol.replace('USDT', '')
                     if base in self.EXCLUDED_STABLECOINS:
+                        continue
+                    
+                    # CRITICAL: Skip blacklisted tokens (price data issues)
+                    if symbol in self.BLACKLISTED_TOKENS:
                         continue
                     
                     # CRITICAL: Skip leveraged tokens (they lose value over time!)

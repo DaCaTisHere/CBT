@@ -1,14 +1,21 @@
 """
-Momentum Detector - Detect trading opportunities on existing cryptos
+Momentum Detector v5.0 - PULLBACK STRATEGY
 
-Detects:
-- Volume spikes (unusual trading volume)
-- Price breakouts (sudden price movements)
-- Top gainers on Binance
-- RSI-based momentum (avoid overbought conditions)
+NOUVELLE STRATEGIE (v5.0):
+Au lieu d'acheter les "top gainers" au sommet, on utilise une stratégie PULLBACK:
+1. Détecter les tokens qui ont pumpé (+5% en 24h)
+2. ATTENDRE qu'ils retracent depuis leur plus haut (-2% minimum)
+3. Acheter sur le pullback (pas au sommet!)
+4. Meilleur timing d'entrée = meilleur win rate
+
+Cette stratégie évite le problème de "buy high, sell low".
+
+Filtres avancés:
+- RSI + Stochastic RSI (éviter surachat)
 - MACD confirmation
-- EMA trend analysis
-- BTC correlation (trade with market direction)
+- EMA trend direction
+- BTC correlation (trader avec le marché)
+- Distance from High (NOUVEAU - ne pas acheter au sommet)
 """
 
 import asyncio
@@ -70,33 +77,42 @@ class MomentumDetector:
     - ATR-based volatility filter
     """
     
-    # Detection parameters - BALANCED for quality + quantity
-    VOLUME_SPIKE_MULTIPLIER = 2.5  # 2.5x = good volume spikes (balanced)
-    BREAKOUT_THRESHOLD_PCT = 4.0   # 4% = strong moves (slightly relaxed)
-    MIN_VOLUME_USD = 300000        # $300k min - balanced (was $500k)
-    TOP_GAINERS_COUNT = 30         # More candidates to evaluate (was 20)
+    # ============ PULLBACK STRATEGY PARAMETERS v5.0 ============
     
-    # RSI thresholds - OPTIMIZED for win rate
-    RSI_OVERBOUGHT = 68  # Slightly stricter (was 70)
-    RSI_OVERSOLD = 32    # Good entry opportunity
-    RSI_NEUTRAL_HIGH = 58  # Earlier caution (was 60)
+    # Volume requirements (higher = more reliable signals)
+    MIN_VOLUME_USD = 500000        # $500k minimum - quality over quantity
+    TOP_GAINERS_COUNT = 50         # Scan more to find pullbacks
     
-    # Stochastic RSI thresholds - OPTIMIZED
-    STOCH_RSI_OVERBOUGHT = 75  # Stricter (was 80)
-    STOCH_RSI_OVERSOLD = 25   # Slightly higher (was 20)
+    # PULLBACK DETECTION - THE KEY CHANGE!
+    MIN_PUMP_24H = 3.0             # Token must have pumped at least 3% in 24h
+    MAX_PUMP_24H = 20.0            # But not too much (avoid extreme pumps)
+    MIN_PULLBACK_FROM_HIGH = 2.0   # Must be at least 2% below 24h high (pullback entry!)
+    MAX_PULLBACK_FROM_HIGH = 8.0   # But not more than 8% (avoid dumps)
     
-    # Volatility filter - BALANCED
-    MAX_VOLATILITY_24H = 12.0  # Skip tokens > 12% volatility (stricter)
+    # RSI thresholds - STRICT (buy when NOT overbought)
+    RSI_OVERBOUGHT = 60            # Much stricter! (was 68)
+    RSI_OVERSOLD = 35              # Good entry opportunity
+    RSI_NEUTRAL_HIGH = 55          # Earlier caution
+    
+    # Stochastic RSI thresholds - STRICT
+    STOCH_RSI_OVERBOUGHT = 65      # Much stricter! (was 75)
+    STOCH_RSI_OVERSOLD = 30        # Good entry
+    
+    # Volatility filter
+    MAX_VOLATILITY_24H = 15.0      # Allow slightly more volatility for pullbacks
     
     # BTC correlation settings
-    BTC_TREND_THRESHOLD = 0.3  # Lower threshold = more responsive
-    REQUIRE_BTC_ALIGNMENT = True  # Only trade with BTC direction
+    BTC_TREND_THRESHOLD = 0.3      
+    REQUIRE_BTC_ALIGNMENT = True   # Only trade with BTC direction
     
-    # Cooldown settings - OPTIMIZED
-    TOKEN_COOLDOWN_HOURS = 6.0  # 6 hours cooldown (balanced)
+    # Cooldown settings
+    TOKEN_COOLDOWN_HOURS = 4.0     # Reduced to catch more pullbacks
     
-    # Score requirements - OPTIMIZED for best win rate
-    MIN_ADVANCED_SCORE = 72  # Balanced score (was 80, too strict)
+    # Score requirements - HIGHER for quality
+    MIN_ADVANCED_SCORE = 75        # Higher score needed (was 72)
+    
+    # DISABLE volume_spike - 0% success rate in testing
+    ENABLE_VOLUME_SPIKE = False
     
     # Filters
     EXCLUDED_STABLECOINS = ['USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP']
@@ -231,125 +247,109 @@ class MomentumDetector:
             self.logger.error(f"[MOMENTUM] Analysis error for {symbol}: {e}")
             return None
     
-    def _calculate_advanced_score(
+    def _calculate_pullback_score(
         self, 
         change_pct: float, 
         volume: float, 
         rsi: float,
         volatility: float,
-        signal_type: str,
         stoch_rsi: float = 50.0,
         macd_signal: str = "neutral",
         ema_trend: str = "neutral",
         btc_aligned: bool = True,
-        atr_percent: float = 0.0
+        atr_percent: float = 0.0,
+        distance_from_high: float = 0.0
     ) -> float:
         """
-        Calculate ULTRA STRICT score - only best opportunities pass
+        PULLBACK STRATEGY SCORING v5.0
         
-        Score components (total 100 points):
-        - Base score from price change (0-20)
-        - Volume bonus (0-15)
-        - RSI adjustment (-20 to +15) - MORE PENALTIES
-        - Stochastic RSI bonus (-15 to +10) - MORE PENALTIES
-        - MACD confirmation (-20 to +15) - MORE PENALTIES
-        - EMA trend alignment (-15 to +10) - MORE PENALTIES
-        - BTC correlation (-20 to +15) - MORE PENALTIES
-        - Volatility/ATR penalty (0 to -20) - MORE PENALTIES
-        - Signal type bonus (0-10)
+        Score optimized for pullback entries:
+        - Pullback quality (distance from high) - NEW KEY METRIC
+        - Volume confirmation
+        - RSI (prefer lower, not overbought)
+        - Stochastic RSI
+        - MACD/EMA trend
+        - BTC correlation
         """
-        score = 40.0  # Start LOWER (was 50) - be more strict
+        score = 50.0  # Start neutral
         
-        # 1. Base score from price change (0-20 points)
-        if 2 <= change_pct <= 8:
-            base_score = 20  # Sweet spot
-        elif 1 <= change_pct < 2:
-            base_score = 10  # Early
-        elif 8 < change_pct <= 15:
-            base_score = 15  # Good but late
+        # 1. PULLBACK QUALITY - THE MOST IMPORTANT FACTOR (0-25 points)
+        # Ideal pullback: 3-5% from high
+        if 3.0 <= distance_from_high <= 5.0:
+            score += 25  # Perfect pullback zone
+        elif 2.0 <= distance_from_high < 3.0:
+            score += 20  # Good pullback
+        elif 5.0 < distance_from_high <= 6.0:
+            score += 15  # Deeper pullback, still ok
+        elif 6.0 < distance_from_high <= 8.0:
+            score += 5   # Getting risky
         else:
-            base_score = 5
-        score += base_score - 10  # Adjust to -5 to +10
+            score -= 10  # Too shallow or too deep
         
-        # 2. Volume bonus (0-15 points)
-        if volume >= 2000000:  # $2M+
+        # 2. Volume confirmation (0-15 points)
+        if volume >= 3000000:  # $3M+ = strong interest
             score += 15
-        elif volume >= 1000000:  # $1M+
+        elif volume >= 1500000:  # $1.5M+
             score += 12
-        elif volume >= 500000:  # $500k+
+        elif volume >= 750000:  # $750k+
             score += 8
-        elif volume >= 200000:  # $200k+
+        elif volume >= 500000:  # $500k+ minimum
             score += 4
         
-        # 3. RSI adjustment (-20 to +15 points) - MORE STRICT PENALTIES
-        if rsi <= self.RSI_OVERSOLD:
-            score += 15  # Oversold = great buy
-        elif rsi <= 40:
-            score += 10
-        elif rsi <= 50:
-            score += 5
-        elif rsi <= self.RSI_NEUTRAL_HIGH:
-            score -= 10  # Caution (was -5, now -10)
-        elif rsi <= self.RSI_OVERBOUGHT:
-            score -= 15  # Avoid (was -10, now -15)
+        # 3. RSI - prefer lower values (not overbought) (-15 to +15)
+        if rsi <= 35:
+            score += 15  # Oversold on pullback = great
+        elif rsi <= 45:
+            score += 10  # Good zone
+        elif rsi <= 55:
+            score += 5   # Acceptable
+        elif rsi <= 60:
+            score -= 5   # Getting high
         else:
-            score -= 20  # Overbought = REALLY avoid (was -15, now -20)
+            score -= 15  # Too high for pullback entry
         
-        # 4. Stochastic RSI bonus (-15 to +10 points) - MORE STRICT PENALTIES
-        if stoch_rsi <= self.STOCH_RSI_OVERSOLD:
-            score += 10  # Strong oversold
-        elif stoch_rsi <= 35:
+        # 4. Stochastic RSI (-10 to +10)
+        if stoch_rsi <= 30:
+            score += 10  # Oversold
+        elif stoch_rsi <= 50:
             score += 5
-        elif stoch_rsi >= self.STOCH_RSI_OVERBOUGHT:
-            score -= 15  # Strong overbought (was -10, now -15)
         elif stoch_rsi >= 65:
-            score -= 10  # Caution (was -5, now -10)
+            score -= 10  # Overbought
         
-        # 5. MACD confirmation (-20 to +15 points) - MORE STRICT PENALTIES
+        # 5. MACD confirmation (-10 to +10)
         if macd_signal == "bullish":
-            score += 15
+            score += 10  # Momentum turning up
         elif macd_signal == "bearish":
-            score -= 20  # Bearish = avoid more (was -15, now -20)
-        # neutral = 0
+            score -= 10  # Still falling
         
-        # 6. EMA trend alignment (-15 to +10 points) - MORE STRICT PENALTIES
-        if ema_trend == "bullish_cross":
-            score += 10  # Golden cross!
-        elif ema_trend == "bullish":
-            score += 5
-        elif ema_trend == "bearish_cross":
-            score -= 15  # Death cross (was -10, now -15)
-        elif ema_trend == "bearish":
-            score -= 10  # Bearish (was -5, now -10)
+        # 6. EMA trend (-10 to +10)
+        if ema_trend in ["bullish", "bullish_cross"]:
+            score += 10  # Uptrend intact
+        elif ema_trend in ["bearish", "bearish_cross"]:
+            score -= 10  # Downtrend
         
-        # 7. BTC correlation (-20 to +15 points) - MORE STRICT PENALTIES
+        # 7. BTC correlation (-15 to +10)
         if btc_aligned:
-            if self.btc_trend == "strong_bullish":
-                score += 15
-            elif self.btc_trend == "bullish":
+            if self.btc_trend in ["strong_bullish", "bullish"]:
                 score += 10
         else:
-            if self.btc_trend == "strong_bearish":
-                score -= 20  # Trading against dump (was -15, now -20)
-            elif self.btc_trend == "bearish":
-                score -= 15  # Against trend (was -10, now -15)
+            score -= 15  # Against BTC trend
         
-        # 8. Volatility/ATR penalty (0 to -20 points) - MORE STRICT PENALTIES
+        # 8. Volatility penalty (0 to -10)
         effective_vol = max(volatility, atr_percent)
-        if effective_vol > 15:  # Lowered threshold (was 20)
-            score -= 20  # Too volatile (was -15, now -20)
-        elif effective_vol > 12:  # Lowered threshold (was 15)
-            score -= 15  # Very volatile (was -10, now -15)
-        elif effective_vol > 8:  # Lowered threshold (was 10)
-            score -= 10  # Volatile (was -5, now -10)
+        if effective_vol > 15:
+            score -= 10
+        elif effective_vol > 12:
+            score -= 5
         
-        # 9. Signal type bonus (0-10 points)
-        if signal_type == "volume_spike":
-            score += 10  # Best signal type
-        elif signal_type == "breakout":
-            score += 7
+        # 9. 24h change validation
+        # Ideal: 4-10% pump then pullback
+        if 5.0 <= change_pct <= 10.0:
+            score += 5  # Sweet spot
+        elif 3.0 <= change_pct < 5.0 or 10.0 < change_pct <= 15.0:
+            score += 0  # OK
         else:
-            score += 5  # top_gainer
+            score -= 5  # Not ideal
         
         return max(0, min(100, score))
     
@@ -371,7 +371,16 @@ class MomentumDetector:
         self.logger.info("[MOMENTUM] Stopped")
     
     async def _monitor_top_gainers(self):
-        """Monitor Binance top gainers with FULL technical analysis"""
+        """
+        PULLBACK STRATEGY v5.0
+        
+        Au lieu d'acheter au sommet, on cherche des tokens qui:
+        1. Ont pumpé (+3% à +20% en 24h) = momentum confirmé
+        2. MAIS qui ont retracé depuis leur plus haut (-2% à -8%)
+        3. = Point d'entrée optimal sur pullback
+        
+        Cela évite le problème "buy high, sell low"
+        """
         while self.is_running:
             try:
                 # Update BTC trend first
@@ -379,25 +388,26 @@ class MomentumDetector:
                 
                 # Skip if BTC is dumping hard
                 if self.REQUIRE_BTC_ALIGNMENT and self.btc_trend == "strong_bearish":
-                    self.logger.info("[MOMENTUM] Skipping scan: BTC strong bearish")
+                    self.logger.info("[PULLBACK] ⏸️ Skipping scan: BTC strong bearish")
                     await asyncio.sleep(60)
                     continue
                 
                 gainers = await self._fetch_top_gainers()
+                pullback_candidates = 0
                 
                 for gainer in gainers[:self.TOP_GAINERS_COUNT]:
                     symbol = gainer.get('symbol', '')
                     
-                    # Skip stablecoins and already processed
+                    # Skip stablecoins
                     base = symbol.replace('USDT', '').replace('BTC', '').replace('ETH', '')
                     if base in self.EXCLUDED_STABLECOINS:
                         continue
                     
-                    # CRITICAL: Skip blacklisted tokens (price data issues)
+                    # Skip blacklisted tokens
                     if symbol in self.BLACKLISTED_TOKENS:
                         continue
                     
-                    # CRITICAL: Skip leveraged tokens (they lose value over time!)
+                    # Skip leveraged tokens
                     if self._is_leveraged_token(symbol):
                         continue
                     
@@ -411,16 +421,39 @@ class MomentumDetector:
                     high_price = float(gainer.get('highPrice', price))
                     low_price = float(gainer.get('lowPrice', price))
                     
-                    # Basic filters first
-                    if change_pct < 2 or volume < self.MIN_VOLUME_USD:
+                    # ============ PULLBACK FILTERS ============
+                    
+                    # 1. Volume filter
+                    if volume < self.MIN_VOLUME_USD:
                         continue
                     
-                    # Calculate basic volatility
+                    # 2. Pump filter: Token must have pumped (confirms momentum)
+                    if change_pct < self.MIN_PUMP_24H or change_pct > self.MAX_PUMP_24H:
+                        continue
+                    
+                    # 3. CRITICAL: Pullback filter - NOT at the top!
+                    # Calculate distance from 24h high
+                    if high_price > 0:
+                        distance_from_high = ((high_price - price) / high_price) * 100
+                    else:
+                        distance_from_high = 0
+                    
+                    # Must be in pullback zone (2-8% below high)
+                    if distance_from_high < self.MIN_PULLBACK_FROM_HIGH:
+                        # Too close to high = buying at top = BAD
+                        continue
+                    if distance_from_high > self.MAX_PULLBACK_FROM_HIGH:
+                        # Too far from high = might be dumping = BAD
+                        continue
+                    
+                    pullback_candidates += 1
+                    
+                    # 4. Volatility filter
                     volatility = self._calculate_volatility(high_price, low_price, price)
                     if volatility > self.MAX_VOLATILITY_24H:
                         continue
                     
-                    # Calculate basic RSI
+                    # 5. RSI filter (strict - no overbought)
                     if symbol not in self.price_history:
                         self.price_history[symbol] = []
                     self.price_history[symbol].append(price)
@@ -438,27 +471,30 @@ class MomentumDetector:
                     # === ADVANCED ANALYSIS ===
                     analysis = await self._get_full_analysis(symbol)
                     
-                    # Default values if analysis fails
                     stoch_rsi = analysis.stoch_rsi if analysis else 50.0
                     macd_signal = analysis.macd_signal if analysis else "neutral"
                     ema_trend = analysis.ema_trend if analysis else "neutral"
                     atr_percent = analysis.atr_percent if analysis else 0.0
                     
+                    # Strict StochRSI filter
+                    if stoch_rsi > self.STOCH_RSI_OVERBOUGHT:
+                        continue
+                    
                     # Check BTC alignment
                     btc_aligned = self.btc_trend in ["bullish", "strong_bullish", "neutral"]
                     
-                    # Calculate FULL advanced score
-                    score = self._calculate_advanced_score(
+                    # Calculate score with pullback bonus
+                    score = self._calculate_pullback_score(
                         change_pct=change_pct,
                         volume=volume,
                         rsi=rsi,
                         volatility=volatility,
-                        signal_type="top_gainer",
                         stoch_rsi=stoch_rsi,
                         macd_signal=macd_signal,
                         ema_trend=ema_trend,
                         btc_aligned=btc_aligned,
-                        atr_percent=atr_percent
+                        atr_percent=atr_percent,
+                        distance_from_high=distance_from_high
                     )
                     
                     # Only emit signal if score is high enough
@@ -467,7 +503,7 @@ class MomentumDetector:
                         
                         signal = MomentumSignal(
                             symbol=symbol,
-                            signal_type="top_gainer",
+                            signal_type="pullback",  # NEW signal type
                             price=price,
                             change_percent=change_pct,
                             volume_usd=volume,
@@ -482,23 +518,30 @@ class MomentumDetector:
                             atr_percent=atr_percent
                         )
                         
-                        await self._emit_signal(signal)
+                        await self._emit_signal(signal, distance_from_high)
+                
+                if pullback_candidates > 0:
+                    self.logger.debug(f"[PULLBACK] Scanned {len(gainers)} gainers, {pullback_candidates} in pullback zone")
                 
                 await asyncio.sleep(30)  # Check every 30 seconds
                 
             except Exception as e:
-                self.logger.error(f"[MOMENTUM] Top gainers error: {e}")
+                self.logger.error(f"[PULLBACK] Error: {e}")
                 await asyncio.sleep(60)
     
     async def _monitor_volume_spikes(self):
-        """Monitor for unusual volume spikes with FULL technical analysis"""
+        """
+        Volume spike detection - DISABLED in v5.0
+        
+        Data analysis shows 0% success rate for volume_spike signals.
+        This function now only maintains price history for RSI calculations.
+        """
+        if not self.ENABLE_VOLUME_SPIKE:
+            self.logger.info("[PULLBACK] Volume spike detection DISABLED (0% success rate)")
+        
         while self.is_running:
             try:
-                # Check BTC trend
-                if self.REQUIRE_BTC_ALIGNMENT and self.btc_trend == "strong_bearish":
-                    await asyncio.sleep(60)
-                    continue
-                
+                # Only update price history for RSI calculations
                 tickers = await self._fetch_all_tickers()
                 
                 for ticker in tickers:
@@ -506,105 +549,22 @@ class MomentumDetector:
                     if not symbol.endswith('USDT'):
                         continue
                     
-                    base = symbol.replace('USDT', '')
-                    if base in self.EXCLUDED_STABLECOINS:
-                        continue
-                    
-                    # CRITICAL: Skip blacklisted tokens (price data issues)
-                    if symbol in self.BLACKLISTED_TOKENS:
-                        continue
-                    
-                    # CRITICAL: Skip leveraged tokens (they lose value over time!)
-                    if self._is_leveraged_token(symbol):
-                        continue
-                    
-                    # Skip tokens on cooldown
-                    if self._is_token_on_cooldown(symbol):
-                        continue
-                    
-                    volume = float(ticker.get('quoteVolume', 0))
                     price = float(ticker.get('lastPrice', 0))
-                    change_pct = float(ticker.get('priceChangePercent', 0))
-                    high_price = float(ticker.get('highPrice', price))
-                    low_price = float(ticker.get('lowPrice', price))
+                    volume = float(ticker.get('quoteVolume', 0))
                     
-                    # Basic volatility filter
-                    volatility = self._calculate_volatility(high_price, low_price, price)
-                    if volatility > self.MAX_VOLATILITY_24H:
-                        continue
-                    
-                    # Update price history for RSI
+                    # Update price history for RSI (needed by pullback strategy)
                     if symbol not in self.price_history:
                         self.price_history[symbol] = []
                     self.price_history[symbol].append(price)
                     self.price_history[symbol] = self.price_history[symbol][-20:]
-                    rsi = self._calculate_rsi(self.price_history[symbol])
                     
-                    if rsi > self.RSI_OVERBOUGHT:
-                        continue
-                    
-                    # Detect volume spike
-                    prev_volume = self.last_prices.get(f"{symbol}_vol", 0)
-                    
-                    if prev_volume > 0 and volume > prev_volume * self.VOLUME_SPIKE_MULTIPLIER:
-                        if volume >= self.MIN_VOLUME_USD and change_pct > 0:
-                            signal_key = f"{symbol}_vol_{datetime.utcnow().strftime('%Y%m%d%H')}"
-                            if signal_key not in self.processed_symbols:
-                                
-                                # === ADVANCED ANALYSIS ===
-                                analysis = await self._get_full_analysis(symbol)
-                                
-                                stoch_rsi = analysis.stoch_rsi if analysis else 50.0
-                                macd_signal = analysis.macd_signal if analysis else "neutral"
-                                ema_trend = analysis.ema_trend if analysis else "neutral"
-                                atr_percent = analysis.atr_percent if analysis else 0.0
-                                
-                                btc_aligned = self.btc_trend in ["bullish", "strong_bullish", "neutral"]
-                                
-                                # Calculate FULL advanced score
-                                score = self._calculate_advanced_score(
-                                    change_pct=change_pct,
-                                    volume=volume,
-                                    rsi=rsi,
-                                    volatility=volatility,
-                                    signal_type="volume_spike",
-                                    stoch_rsi=stoch_rsi,
-                                    macd_signal=macd_signal,
-                                    ema_trend=ema_trend,
-                                    btc_aligned=btc_aligned,
-                                    atr_percent=atr_percent
-                                )
-                                
-                                # Volume spikes get lower threshold (they're usually early signals)
-                                if score >= self.MIN_ADVANCED_SCORE - 5:
-                                    self.processed_symbols.add(signal_key)
-                                    
-                                    signal = MomentumSignal(
-                                        symbol=symbol,
-                                        signal_type="volume_spike",
-                                        price=price,
-                                        change_percent=change_pct,
-                                        volume_usd=volume,
-                                        score=score,
-                                        timestamp=datetime.utcnow(),
-                                        rsi=rsi,
-                                        volatility=volatility,
-                                        stoch_rsi=stoch_rsi,
-                                        macd_signal=macd_signal,
-                                        ema_trend=ema_trend,
-                                        btc_correlation=1.0 if btc_aligned else -1.0,
-                                        atr_percent=atr_percent
-                                    )
-                                    
-                                    await self._emit_signal(signal)
-                    
-                    # Store for next comparison
+                    # Store volume for reference
                     self.last_prices[f"{symbol}_vol"] = volume
                 
-                await asyncio.sleep(60)  # Check every minute
+                await asyncio.sleep(120)  # Less frequent since we're just caching
                 
             except Exception as e:
-                self.logger.error(f"[MOMENTUM] Volume spike error: {e}")
+                self.logger.error(f"[PULLBACK] Cache update error: {e}")
                 await asyncio.sleep(120)
     
     async def _fetch_top_gainers(self) -> List[Dict]:
@@ -642,31 +602,28 @@ class MomentumDetector:
             self.logger.error(f"[MOMENTUM] Fetch tickers error: {e}")
         return []
     
-    async def _emit_signal(self, signal: MomentumSignal):
-        """Emit a momentum signal with full technical analysis"""
+    async def _emit_signal(self, signal: MomentumSignal, distance_from_high: float = 0.0):
+        """Emit a pullback signal with full technical analysis"""
         self.signals.append(signal)
         
         # Color code based on score
-        if signal.score >= 70:
-            emoji = "🟢"  # Strong buy
-        elif signal.score >= 60:
-            emoji = "🔵"  # Buy
+        if signal.score >= 80:
+            emoji = "🟢"  # Excellent
+        elif signal.score >= 75:
+            emoji = "🔵"  # Good
         else:
-            emoji = "🟡"  # Caution
+            emoji = "🟡"  # Acceptable
         
         self.logger.info(
-            f"[MOMENTUM] {emoji} SIGNAL: {signal.symbol} | "
-            f"Type: {signal.signal_type} | "
-            f"Change: {signal.change_percent:+.2f}% | "
-            f"Volume: ${signal.volume_usd:,.0f} | "
-            f"Score: {signal.score:.0f}/100"
+            f"[PULLBACK] {emoji} SIGNAL: {signal.symbol} | "
+            f"Score: {signal.score:.0f}/100 | "
+            f"Pullback: -{distance_from_high:.1f}% from high"
         )
         self.logger.info(
-            f"[MOMENTUM]   └── RSI: {signal.rsi:.0f} | "
-            f"StochRSI: {signal.stoch_rsi:.0f} | "
-            f"MACD: {signal.macd_signal} | "
-            f"EMA: {signal.ema_trend} | "
-            f"BTC: {'✓' if signal.btc_correlation > 0 else '✗'}"
+            f"[PULLBACK]   └── 24h: +{signal.change_percent:.1f}% | "
+            f"Vol: ${signal.volume_usd/1000000:.1f}M | "
+            f"RSI: {signal.rsi:.0f} | "
+            f"MACD: {signal.macd_signal}"
         )
         
         # Notify callbacks
@@ -674,7 +631,7 @@ class MomentumDetector:
             try:
                 await callback(signal)
             except Exception as e:
-                self.logger.error(f"[MOMENTUM] Callback error: {e}")
+                self.logger.error(f"[PULLBACK] Callback error: {e}")
     
     def get_recent_signals(self, hours: int = 24) -> List[MomentumSignal]:
         """Get signals from the last N hours"""

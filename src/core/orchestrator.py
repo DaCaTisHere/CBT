@@ -338,43 +338,38 @@ class Orchestrator:
                         if signal.symbol in paper_trader.portfolio.positions:
                             return
                         
-                        # === ANALYSE TECHNIQUE OPTIMISÉE ===
+                        # === PULLBACK STRATEGY v5.0 FILTERS ===
                         
-                        # Score minimum OPTIMISÉ pour balance win rate / opportunités
-                        MIN_SCORE = 72  # Score sur 100 - Balanced (was 80)
+                        # Score minimum - HIGHER for quality over quantity
+                        MIN_SCORE = 75  # Pullback signals are pre-filtered, use higher threshold
                         has_good_score = signal.score >= MIN_SCORE
                         
-                        # MACD: Doit être bullish ou neutral (pas bearish)
+                        # MACD: Prefer bullish (momentum turning up on pullback)
                         macd_ok = signal.macd_signal in ["bullish", "neutral"]
                         
-                        # EMA Trend: Doit être bullish ou neutral
+                        # EMA Trend: Uptrend should be intact
                         ema_ok = signal.ema_trend in ["bullish", "bullish_cross", "neutral"]
                         
-                        # BTC Correlation: Trade AVEC le marché
+                        # BTC Correlation: Trade WITH the market
                         btc_ok = signal.btc_correlation > 0
                         
-                        # RSI: Zone optimale pour entrée
-                        rsi_ok = 28 <= signal.rsi <= 68  # Slightly wider range
+                        # RSI: STRICT - not overbought (key for pullback entry)
+                        rsi_ok = 25 <= signal.rsi <= 60  # Stricter upper limit for pullback
                         
-                        # Stochastic RSI: Pas en surachat
-                        stoch_ok = signal.stoch_rsi <= 75  # Balanced (was 70)
+                        # Stochastic RSI: STRICT - not overbought
+                        stoch_ok = signal.stoch_rsi <= 65  # Stricter for pullback
                         
-                        # ATR: Volatilité contrôlée
-                        atr_ok = signal.atr_percent <= 10 if signal.atr_percent > 0 else True
+                        # ATR: Volatility controlled
+                        atr_ok = signal.atr_percent <= 12 if signal.atr_percent > 0 else True
                         
-                        # Volume: ADAPTATIF selon score
-                        if signal.score >= 80:
-                            min_volume = 150000  # Excellent score = lower volume OK
-                        elif signal.score >= 75:
-                            min_volume = 250000  # Good score
-                        else:
-                            min_volume = 350000  # Lower score = need higher volume
+                        # Volume: Higher requirement for pullback reliability
+                        min_volume = 500000  # $500k minimum for pullback
                         volume_ok = signal.volume_usd >= min_volume
                         
-                        # Change percent: Plage optimale
-                        change_ok = 1.5 <= signal.change_percent <= 15.0  # Wider range
+                        # Change percent: Must have pumped (pullback requires prior pump)
+                        change_ok = 3.0 <= signal.change_percent <= 20.0  # Pullback range
                         
-                        # === DÉCISION FINALE ===
+                        # === PULLBACK DECISION ===
                         should_trade = (
                             has_good_score and
                             macd_ok and
@@ -387,10 +382,8 @@ class Orchestrator:
                             change_ok
                         )
                         
-                        # Bonus: Volume spike avec bon score = relax certains filtres
-                        is_volume_spike = signal.signal_type == "volume_spike"
-                        if is_volume_spike and signal.score >= 68 and volume_ok and btc_ok:
-                            should_trade = True  # Volume spike = early signal, override some filters
+                        # DISABLE volume_spike override - 0% success rate
+                        # Pullback signals only from now on
                         
                         # === CORRELATION CHECK ===
                         # Avoid too many correlated positions (BTC-correlated coins)
@@ -426,18 +419,19 @@ class Orchestrator:
                                 self.logger.debug(f"[ML] ✓ Approved {signal.symbol} ({ml_confidence*100:.0f}%)")
                         
                         if should_trade:
-                            self.logger.info(f"[TRADE] 🚀 Signal VALIDÉ: {signal.symbol} (Score: {signal.score:.0f}/100)")
+                            self.logger.info(f"[PULLBACK] 🎯 Signal VALIDÉ: {signal.symbol} (Score: {signal.score:.0f}/100)")
                             self.logger.info(
-                                f"[TRADE]   Type: {signal.signal_type} | Change: +{signal.change_percent:.1f}% | "
-                                f"Vol: ${signal.volume_usd:,.0f} | MACD: {signal.macd_signal} | EMA: {signal.ema_trend}"
+                                f"[PULLBACK]   24h: +{signal.change_percent:.1f}% | "
+                                f"Vol: ${signal.volume_usd/1000000:.1f}M | RSI: {signal.rsi:.0f} | "
+                                f"MACD: {signal.macd_signal}"
                             )
                             
-                            # Calculate dynamic stop-loss based on ATR
+                            # PULLBACK STRATEGY SL - tighter since we're entering at better price
                             # ATR-based SL is more adaptive to market volatility
-                            base_sl = 0.035  # 3.5% default (tighter for better risk management)
+                            base_sl = 0.03  # 3% default (tighter for pullback entry)
                             if signal.atr_percent > 0:
-                                # Use 1.5x ATR as stop-loss, but minimum 3%, maximum 6%
-                                dynamic_sl = max(0.03, min(0.06, signal.atr_percent * 1.5 / 100))
+                                # Use 1.2x ATR as stop-loss, but minimum 2.5%, maximum 5%
+                                dynamic_sl = max(0.025, min(0.05, signal.atr_percent * 1.2 / 100))
                             else:
                                 dynamic_sl = base_sl
                             

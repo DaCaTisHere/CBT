@@ -606,7 +606,7 @@ async def index(request):
     <div class="container">
         <header>
             <div class="logo">CRYPTOBOT ULTIMATE</div>
-            <div class="subtitle">Automated Trading System v4.2 - Optimized</div>
+            <div class="subtitle">PULLBACK Trading System v5.0</div>
         </header>
         
         <div class="status-bar">
@@ -691,39 +691,38 @@ async def index(request):
         
         <div class="card">
             <div class="card-header">
-                <span class="card-title">Trading Strategy v4.2</span>
-                <span class="card-badge" style="background: #00ff8822; color: #00ff88;">OPTIMIZED</span>
+                <span class="card-title">PULLBACK Strategy v5.0</span>
+                <span class="card-badge" style="background: #aa66ff22; color: #aa66ff;">NEW</span>
             </div>
             <div class="strategy-grid">
                 <div class="strategy-section">
-                    <div class="strategy-title">📊 Technical Indicators</div>
-                    <div class="indicator-list">
-                        <span class="indicator">RSI (14)</span>
-                        <span class="indicator">Stochastic RSI</span>
-                        <span class="indicator">MACD (12,26,9)</span>
-                        <span class="indicator">EMA Cross (9/21)</span>
-                        <span class="indicator">ATR (14)</span>
-                        <span class="indicator">BTC Correlation</span>
+                    <div class="strategy-title">🎯 Pullback Entry (KEY)</div>
+                    <div class="filter-list">
+                        <div class="filter-item">24h pump: +3% to +20%</div>
+                        <div class="filter-item">Pullback: -2% to -8% from high</div>
+                        <div class="filter-item">= Buy AFTER retrace, not at top</div>
+                        <div class="filter-item">Score ≥ 75/100</div>
+                        <div class="filter-item">Volume ≥ $500k</div>
                     </div>
                 </div>
                 <div class="strategy-section">
-                    <div class="strategy-title">🎯 Entry Filters</div>
+                    <div class="strategy-title">📊 Technical Filters</div>
                     <div class="filter-list">
-                        <div class="filter-item">Score ≥ 72/100</div>
-                        <div class="filter-item">Volume ≥ $150-350k</div>
-                        <div class="filter-item">RSI: 28-68</div>
-                        <div class="filter-item">StochRSI ≤ 75</div>
+                        <div class="filter-item">RSI: 25-60 (strict)</div>
+                        <div class="filter-item">StochRSI ≤ 65 (strict)</div>
+                        <div class="filter-item">MACD: bullish/neutral</div>
+                        <div class="filter-item">EMA: uptrend intact</div>
                         <div class="filter-item">BTC: Aligned ✓</div>
                     </div>
                 </div>
                 <div class="strategy-section">
                     <div class="strategy-title">🛡️ Risk Management</div>
                     <div class="filter-list">
-                        <div class="filter-item">SL: 3-6% (ATR×1.5)</div>
-                        <div class="filter-item">TP1: +2% → sell 25%</div>
-                        <div class="filter-item">TP2: +4% → sell 35%</div>
-                        <div class="filter-item">TP3: +7% → full exit</div>
-                        <div class="filter-item">Trail: 1.8% @ +1.5%</div>
+                        <div class="filter-item">SL: 2.5-5% (ATR×1.2)</div>
+                        <div class="filter-item">TP1: +3% → sell 25%</div>
+                        <div class="filter-item">TP2: +5% → sell 35%</div>
+                        <div class="filter-item">TP3: +8% → full exit</div>
+                        <div class="filter-item">Trail: 1.5% @ +2%</div>
                     </div>
                 </div>
                 <div class="strategy-section">
@@ -731,9 +730,9 @@ async def index(request):
                     <div class="filter-list">
                         <div class="filter-item">Max: 5 positions</div>
                         <div class="filter-item">Max 3 BTC-correlated</div>
-                        <div class="filter-item">Cooldown: 6h/token</div>
+                        <div class="filter-item">Cooldown: 4h/token</div>
                         <div class="filter-item">Timeout: 3h stagnant</div>
-                        <div class="filter-item">No leveraged tokens</div>
+                        <div class="filter-item">Volume spike: DISABLED</div>
                     </div>
                 </div>
             </div>

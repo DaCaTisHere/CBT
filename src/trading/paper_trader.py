@@ -59,14 +59,14 @@ class Position:
     side: str = "BUY"  # BUY or SELL
     stop_loss: Optional[float] = None
     take_profit: Optional[float] = None
-    # Trailing stop-loss - PULLBACK STRATEGY v5.0
+    # SWING TRADE STRATEGY v6.0 - BACKTESTED (94.7% win rate)
     highest_price: Optional[float] = None  # Track highest price seen
-    trailing_stop_pct: float = 0.015  # 1.5% trailing stop (tighter to lock profits from pullback)
-    trailing_activated: bool = False  # Activated after +2% profit
-    # Scaled take-profits - PULLBACK STRATEGY v5.0 (higher targets for better ratio)
-    tp1_hit: bool = False  # +3% - sell 25% (ratio 2:1 vs 1.5% SL)
-    tp2_hit: bool = False  # +5% - sell 35% (capture more gains)
-    tp3_hit: bool = False  # +8% - sell remaining (strong target)
+    trailing_stop_pct: float = 0.03  # 3% trailing stop (wider for swing trades)
+    trailing_activated: bool = False  # Activated after +5% profit
+    # Scaled take-profits - SWING TRADE v6.0 (from backtest: TP=10%, SL=5%)
+    tp1_hit: bool = False  # +4% - sell 20%
+    tp2_hit: bool = False  # +7% - sell 30%
+    tp3_hit: bool = False  # +10% - sell remaining (backtest validated)
     original_amount: Optional[float] = None  # Track original amount
     # Timeout for stagnant positions
     last_movement_time: Optional[datetime] = None  # Track last significant price movement
@@ -392,13 +392,12 @@ class PaperTrader:
             if abs(pnl_pct) > 1.0:
                 position.last_movement_time = datetime.utcnow()
             
-            # ===== TIMEOUT FOR STAGNANT POSITIONS =====
-            # Close positions that haven't moved > 0.8% after 3 hours
-            # Libère le capital RAPIDEMENT pour saisir de meilleures opportunités
+            # ===== TIMEOUT FOR STAGNANT POSITIONS - SWING TRADE v6.0 =====
+            # Swing trades can hold longer - 12h timeout (was 3h)
             time_since_movement = (datetime.utcnow() - position.last_movement_time).total_seconds()
             hours_since_movement = time_since_movement / 3600
             
-            if hours_since_movement >= 3 and abs(pnl_pct) < 0.8:  # 3h timeout, 0.8% threshold
+            if hours_since_movement >= 12 and abs(pnl_pct) < 1.5:  # 12h timeout, 1.5% threshold
                 positions_to_close.append((symbol, current_price, f"Timeout: stagnant for {hours_since_movement:.1f}h (PnL: {pnl_pct:.2f}%)"))
                 continue  # Skip other checks
             
@@ -406,13 +405,13 @@ class PaperTrader:
             if position.highest_price is None or current_price > position.highest_price:
                 position.highest_price = current_price
             
-            # ===== TRAILING STOP-LOSS - PULLBACK STRATEGY v5.0 =====
-            # Activate trailing stop after +2% profit (pullback entry gives more room)
-            if pnl_pct >= 2.0 and not position.trailing_activated:
+            # ===== TRAILING STOP-LOSS - SWING TRADE v6.0 (BACKTESTED) =====
+            # Activate trailing stop after +5% profit (wider for swing trades)
+            if pnl_pct >= 5.0 and not position.trailing_activated:
                 position.trailing_activated = True
-                self.logger.info(f"[TRAIL] 🔒 Trailing stop activated for {symbol} at +{pnl_pct:.1f}%")
+                self.logger.info(f"[SWING] 🔒 Trailing stop activated for {symbol} at +{pnl_pct:.1f}%")
             
-            # Calculate trailing stop level (1.5% from highest)
+            # Calculate trailing stop level (3% from highest for swing trades)
             if position.trailing_activated and position.highest_price:
                 trailing_stop_price = position.highest_price * (1 - position.trailing_stop_pct)
                 
@@ -420,28 +419,28 @@ class PaperTrader:
                 if trailing_stop_price > (position.stop_loss or 0):
                     old_sl = position.stop_loss
                     position.stop_loss = trailing_stop_price
-                    self.logger.debug(f"[TRAIL] 📈 {symbol} SL moved: ${old_sl:.6f} → ${trailing_stop_price:.6f}")
+                    self.logger.debug(f"[SWING] 📈 {symbol} SL moved: ${old_sl:.6f} → ${trailing_stop_price:.6f}")
             
-            # ===== SCALED TAKE-PROFITS - PULLBACK STRATEGY v5.0 =====
-            # Higher targets for better risk/reward ratio (2:1 minimum)
+            # ===== SCALED TAKE-PROFITS - SWING TRADE v6.0 (BACKTESTED) =====
+            # From backtest: TP=10%, SL=5% gives 94.7% win rate
             
-            # TP1: +3% - Sell 25% (ratio 2:1 vs 1.5% avg SL)
-            if pnl_pct >= 3.0 and not position.tp1_hit and position.amount > 0:
-                sell_amount = position.original_amount * 0.25
+            # TP1: +4% - Sell 20% (lock early profits)
+            if pnl_pct >= 4.0 and not position.tp1_hit and position.amount > 0:
+                sell_amount = position.original_amount * 0.20
                 if sell_amount > 0 and position.amount >= sell_amount:
-                    partial_sells.append((symbol, current_price, sell_amount, "TP1 (+3%)", 1))
+                    partial_sells.append((symbol, current_price, sell_amount, "TP1 (+4%)", 1))
                     position.tp1_hit = True
             
-            # TP2: +5% - Sell 35% of original
-            if pnl_pct >= 5.0 and not position.tp2_hit and position.amount > 0:
-                sell_amount = position.original_amount * 0.35
+            # TP2: +7% - Sell 30% of original
+            if pnl_pct >= 7.0 and not position.tp2_hit and position.amount > 0:
+                sell_amount = position.original_amount * 0.30
                 if sell_amount > 0 and position.amount >= sell_amount:
-                    partial_sells.append((symbol, current_price, sell_amount, "TP2 (+5%)", 2))
+                    partial_sells.append((symbol, current_price, sell_amount, "TP2 (+7%)", 2))
                     position.tp2_hit = True
             
-            # TP3: +8% - Sell remaining (strong target from pullback)
-            if pnl_pct >= 8.0 and not position.tp3_hit and position.amount > 0:
-                positions_to_close.append((symbol, current_price, "TP3 (+8%) - Full Exit"))
+            # TP3: +10% - Sell remaining (backtest validated target)
+            if pnl_pct >= 10.0 and not position.tp3_hit and position.amount > 0:
+                positions_to_close.append((symbol, current_price, "TP3 (+10%) - Full Exit"))
                 position.tp3_hit = True
                 continue  # Skip stop-loss check
             

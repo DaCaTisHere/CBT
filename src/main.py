@@ -27,6 +27,13 @@ from src.core.orchestrator import Orchestrator
 from src.core.config import settings
 from src.utils.logger import get_logger
 
+# Import autonomous systems
+try:
+    from src.core.autonomous_manager import AutonomousManager
+    AUTONOMOUS_AVAILABLE = True
+except ImportError as e:
+    AUTONOMOUS_AVAILABLE = False
+    print(f"[WARN] Autonomous systems not available: {e}")
 
 logger = get_logger(__name__)
 
@@ -64,17 +71,23 @@ def main(testnet: bool, simulation: bool, mode: str, duration: int):
             logger.info("Aborted by user")
             return
     
-    # Start orchestrator
+    # Start orchestrator with autonomous systems
     try:
         orchestrator = Orchestrator()
+        
+        # Initialize autonomous manager (Supabase, AI Optimizer, etc.)
+        autonomous_manager = None
+        if AUTONOMOUS_AVAILABLE:
+            autonomous_manager = AutonomousManager()
+            logger.info("[AUTO] Autonomous systems manager created")
         
         if duration:
             # Run for specific duration (testing)
             logger.info(f"[TIMER] Running for {duration} seconds...")
-            asyncio.run(run_with_duration(orchestrator, duration))
+            asyncio.run(run_with_duration(orchestrator, duration, autonomous_manager))
         else:
             # Run until interrupted
-            asyncio.run(orchestrator.start())
+            asyncio.run(run_with_autonomous(orchestrator, autonomous_manager))
             
     except KeyboardInterrupt:
         logger.info("[STOP] Interrupted by user")
@@ -83,9 +96,34 @@ def main(testnet: bool, simulation: bool, mode: str, duration: int):
         sys.exit(1)
 
 
-async def run_with_duration(orchestrator: Orchestrator, duration: int):
+async def run_with_autonomous(orchestrator: Orchestrator, autonomous_manager=None):
+    """Run orchestrator with autonomous systems"""
+    try:
+        # Initialize autonomous systems first
+        if autonomous_manager:
+            logger.info("[AUTO] Starting autonomous systems (Supabase, AI Optimizer)...")
+            await autonomous_manager.initialize()
+            logger.info("[AUTO] Autonomous systems initialized")
+        
+        # Start orchestrator
+        await orchestrator.start()
+        
+    except Exception as e:
+        logger.error(f"[ERROR] Error in main loop: {e}", exc_info=True)
+        raise
+    finally:
+        # Cleanup autonomous systems
+        if autonomous_manager:
+            await autonomous_manager.stop()
+
+
+async def run_with_duration(orchestrator: Orchestrator, duration: int, autonomous_manager=None):
     """Run orchestrator for a specific duration"""
     try:
+        # Initialize autonomous systems first
+        if autonomous_manager:
+            await autonomous_manager.initialize()
+        
         # Start orchestrator in background
         task = asyncio.create_task(orchestrator.start())
         
@@ -106,6 +144,10 @@ async def run_with_duration(orchestrator: Orchestrator, duration: int):
     except Exception as e:
         logger.error(f"Error during timed run: {e}")
         await orchestrator.stop()
+    finally:
+        # Cleanup autonomous systems
+        if autonomous_manager:
+            await autonomous_manager.stop()
 
 
 def print_banner():

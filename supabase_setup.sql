@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS trades (
     id BIGSERIAL PRIMARY KEY,
     timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     symbol VARCHAR(20) NOT NULL,
-    action VARCHAR(10) NOT NULL, -- 'entry' or 'exit'
+    action VARCHAR(10) NOT NULL,
     price DECIMAL(20, 8) NOT NULL,
     amount DECIMAL(20, 8),
     signal_score DECIMAL(5, 2),
@@ -25,14 +25,14 @@ CREATE TABLE IF NOT EXISTS trades (
     pnl_percent DECIMAL(10, 4),
     exit_reason VARCHAR(100),
     hold_time_minutes DECIMAL(10, 2),
-    status VARCHAR(20), -- 'open' or 'closed'
-    
-    -- Indexes pour requêtes rapides
-    INDEX idx_trades_timestamp (timestamp DESC),
-    INDEX idx_trades_symbol (symbol),
-    INDEX idx_trades_status (status),
-    INDEX idx_trades_pnl (pnl_percent DESC)
+    status VARCHAR(20)
 );
+
+-- Indexes pour trades
+CREATE INDEX IF NOT EXISTS idx_trades_timestamp ON trades(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_trades_symbol ON trades(symbol);
+CREATE INDEX IF NOT EXISTS idx_trades_status ON trades(status);
+CREATE INDEX IF NOT EXISTS idx_trades_pnl ON trades(pnl_percent DESC);
 
 -- ==========================================
 -- TABLE: signals
@@ -45,13 +45,14 @@ CREATE TABLE IF NOT EXISTS signals (
     signal_type VARCHAR(50) NOT NULL,
     score DECIMAL(5, 2) NOT NULL,
     indicators JSONB NOT NULL,
-    action_taken VARCHAR(50) NOT NULL, -- 'traded', 'ignored', 'filtered'
-    
-    INDEX idx_signals_timestamp (timestamp DESC),
-    INDEX idx_signals_symbol (symbol),
-    INDEX idx_signals_score (score DESC),
-    INDEX idx_signals_action (action_taken)
+    action_taken VARCHAR(50) NOT NULL
 );
+
+-- Indexes pour signals
+CREATE INDEX IF NOT EXISTS idx_signals_timestamp ON signals(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_signals_symbol ON signals(symbol);
+CREATE INDEX IF NOT EXISTS idx_signals_score ON signals(score DESC);
+CREATE INDEX IF NOT EXISTS idx_signals_action ON signals(action_taken);
 
 -- ==========================================
 -- TABLE: metrics
@@ -66,10 +67,11 @@ CREATE TABLE IF NOT EXISTS metrics (
     daily_pnl DECIMAL(20, 2),
     active_positions INT,
     avg_win DECIMAL(10, 4),
-    avg_loss DECIMAL(10, 4),
-    
-    INDEX idx_metrics_timestamp (timestamp DESC)
+    avg_loss DECIMAL(10, 4)
 );
+
+-- Index pour metrics
+CREATE INDEX IF NOT EXISTS idx_metrics_timestamp ON metrics(timestamp DESC);
 
 -- ==========================================
 -- TABLE: events
@@ -79,14 +81,15 @@ CREATE TABLE IF NOT EXISTS events (
     id BIGSERIAL PRIMARY KEY,
     timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     event_type VARCHAR(50) NOT NULL,
-    severity VARCHAR(20) NOT NULL, -- 'info', 'warning', 'critical'
+    severity VARCHAR(20) NOT NULL,
     message TEXT NOT NULL,
-    data JSONB,
-    
-    INDEX idx_events_timestamp (timestamp DESC),
-    INDEX idx_events_type (event_type),
-    INDEX idx_events_severity (severity)
+    data JSONB
 );
+
+-- Indexes pour events
+CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_events_type ON events(event_type);
+CREATE INDEX IF NOT EXISTS idx_events_severity ON events(severity);
 
 -- ==========================================
 -- TABLE: parameters
@@ -99,11 +102,19 @@ CREATE TABLE IF NOT EXISTS parameters (
     old_value TEXT,
     new_value TEXT NOT NULL,
     reason TEXT,
-    applied_by VARCHAR(50), -- 'ai_optimizer', 'manual', 'auto_learner'
-    
-    INDEX idx_parameters_timestamp (timestamp DESC),
-    INDEX idx_parameters_name (parameter_name)
+    applied_by VARCHAR(50)
 );
+
+-- Indexes pour parameters
+CREATE INDEX IF NOT EXISTS idx_parameters_timestamp ON parameters(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_parameters_name ON parameters(parameter_name);
+
+-- ==========================================
+-- INDEXES SUPPLÉMENTAIRES pour PERFORMANCE
+-- ==========================================
+CREATE INDEX IF NOT EXISTS idx_trades_pnl_symbol ON trades(pnl_percent, symbol) WHERE pnl_percent IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_trades_timestamp_exit ON trades(timestamp DESC) WHERE action = 'exit';
+CREATE INDEX IF NOT EXISTS idx_signals_score_action ON signals(score DESC, action_taken);
 
 -- ==========================================
 -- VIEWS: Analytics prêtes à l'emploi
@@ -116,7 +127,7 @@ SELECT
     COUNT(*) as total_trades,
     COUNT(*) FILTER (WHERE pnl_percent > 0) as wins,
     COUNT(*) FILTER (WHERE pnl_percent <= 0) as losses,
-    ROUND(100.0 * COUNT(*) FILTER (WHERE pnl_percent > 0) / COUNT(*), 2) as win_rate,
+    ROUND(100.0 * COUNT(*) FILTER (WHERE pnl_percent > 0) / NULLIF(COUNT(*), 0), 2) as win_rate,
     ROUND(AVG(pnl_percent), 4) as avg_pnl,
     ROUND(SUM(pnl_percent), 4) as total_pnl,
     ROUND(AVG(CASE WHEN pnl_percent > 0 THEN pnl_percent END), 4) as avg_win,
@@ -129,14 +140,14 @@ ORDER BY total_pnl DESC;
 -- Vue: Performance par type de signal
 CREATE OR REPLACE VIEW v_performance_by_signal_type AS
 SELECT 
-    t.signal_type,
+    signal_type,
     COUNT(*) as total_trades,
-    COUNT(*) FILTER (WHERE t.pnl_percent > 0) as wins,
-    ROUND(100.0 * COUNT(*) FILTER (WHERE t.pnl_percent > 0) / COUNT(*), 2) as win_rate,
-    ROUND(AVG(t.pnl_percent), 4) as avg_pnl
-FROM trades t
-WHERE t.action = 'exit' AND t.pnl_percent IS NOT NULL
-GROUP BY t.signal_type
+    COUNT(*) FILTER (WHERE pnl_percent > 0) as wins,
+    ROUND(100.0 * COUNT(*) FILTER (WHERE pnl_percent > 0) / NULLIF(COUNT(*), 0), 2) as win_rate,
+    ROUND(AVG(pnl_percent), 4) as avg_pnl
+FROM trades
+WHERE action = 'exit' AND pnl_percent IS NOT NULL
+GROUP BY signal_type
 ORDER BY avg_pnl DESC;
 
 -- Vue: Performance par heure (UTC)
@@ -145,7 +156,7 @@ SELECT
     EXTRACT(HOUR FROM timestamp) as hour_utc,
     COUNT(*) as total_trades,
     COUNT(*) FILTER (WHERE pnl_percent > 0) as wins,
-    ROUND(100.0 * COUNT(*) FILTER (WHERE pnl_percent > 0) / COUNT(*), 2) as win_rate,
+    ROUND(100.0 * COUNT(*) FILTER (WHERE pnl_percent > 0) / NULLIF(COUNT(*), 0), 2) as win_rate,
     ROUND(AVG(pnl_percent), 4) as avg_pnl
 FROM trades
 WHERE action = 'exit' AND pnl_percent IS NOT NULL
@@ -214,14 +225,14 @@ RETURNS TABLE(
     total_pnl DECIMAL
 ) AS $$
     SELECT 
-        symbol,
+        t.symbol,
         COUNT(*) as total_trades,
-        ROUND(100.0 * COUNT(*) FILTER (WHERE pnl_percent > 0) / COUNT(*), 2) as win_rate,
-        ROUND(SUM(pnl_percent), 4) as total_pnl
-    FROM trades
-    WHERE action = 'exit' AND pnl_percent IS NOT NULL
-    GROUP BY symbol
-    HAVING COUNT(*) >= 5  -- Au moins 5 trades
+        ROUND(100.0 * COUNT(*) FILTER (WHERE t.pnl_percent > 0) / NULLIF(COUNT(*), 0), 2) as win_rate,
+        ROUND(SUM(t.pnl_percent), 4) as total_pnl
+    FROM trades t
+    WHERE t.action = 'exit' AND t.pnl_percent IS NOT NULL
+    GROUP BY t.symbol
+    HAVING COUNT(*) >= 5
     ORDER BY total_pnl DESC
     LIMIT limit_count;
 $$ LANGUAGE SQL;
@@ -230,7 +241,7 @@ $$ LANGUAGE SQL;
 -- TRIGGERS: Notifications automatiques
 -- ==========================================
 
--- Trigger: Alerte si grosse perte
+-- Function pour trigger
 CREATE OR REPLACE FUNCTION notify_large_loss()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -251,6 +262,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Drop trigger if exists then create
+DROP TRIGGER IF EXISTS trigger_large_loss ON trades;
 CREATE TRIGGER trigger_large_loss
 AFTER INSERT ON trades
 FOR EACH ROW
@@ -258,7 +271,6 @@ EXECUTE FUNCTION notify_large_loss();
 
 -- ==========================================
 -- RLS (Row Level Security)
--- Permettre accès à tous les utilisateurs authentifiés
 -- ==========================================
 
 ALTER TABLE trades ENABLE ROW LEVEL SECURITY;
@@ -267,14 +279,26 @@ ALTER TABLE metrics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE parameters ENABLE ROW LEVEL SECURITY;
 
--- Policy: Tout le monde peut lire
+-- Policies pour lecture
+DROP POLICY IF EXISTS "Allow read access" ON trades;
+DROP POLICY IF EXISTS "Allow read access" ON signals;
+DROP POLICY IF EXISTS "Allow read access" ON metrics;
+DROP POLICY IF EXISTS "Allow read access" ON events;
+DROP POLICY IF EXISTS "Allow read access" ON parameters;
+
 CREATE POLICY "Allow read access" ON trades FOR SELECT USING (true);
 CREATE POLICY "Allow read access" ON signals FOR SELECT USING (true);
 CREATE POLICY "Allow read access" ON metrics FOR SELECT USING (true);
 CREATE POLICY "Allow read access" ON events FOR SELECT USING (true);
 CREATE POLICY "Allow read access" ON parameters FOR SELECT USING (true);
 
--- Policy: Seul le service peut écrire
+-- Policies pour écriture
+DROP POLICY IF EXISTS "Allow insert access" ON trades;
+DROP POLICY IF EXISTS "Allow insert access" ON signals;
+DROP POLICY IF EXISTS "Allow insert access" ON metrics;
+DROP POLICY IF EXISTS "Allow insert access" ON events;
+DROP POLICY IF EXISTS "Allow insert access" ON parameters;
+
 CREATE POLICY "Allow insert access" ON trades FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow insert access" ON signals FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow insert access" ON metrics FOR INSERT WITH CHECK (true);
@@ -282,28 +306,9 @@ CREATE POLICY "Allow insert access" ON events FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow insert access" ON parameters FOR INSERT WITH CHECK (true);
 
 -- ==========================================
--- INDEXES SUPPLÉMENTAIRES pour PERFORMANCE
+-- SUCCESS MESSAGE
 -- ==========================================
-
-CREATE INDEX IF NOT EXISTS idx_trades_pnl_symbol ON trades(pnl_percent, symbol) WHERE pnl_percent IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_trades_timestamp_exit ON trades(timestamp DESC) WHERE action = 'exit';
-CREATE INDEX IF NOT EXISTS idx_signals_score_action ON signals(score DESC, action_taken);
-
--- ==========================================
--- SAMPLE QUERIES
--- ==========================================
-
--- Win rate derniers 7 jours
--- SELECT get_win_rate(7);
-
--- Top 10 symboles
--- SELECT * FROM get_top_symbols(10);
-
--- Sharpe ratio
--- SELECT get_sharpe_ratio(30);
-
--- Performance par heure
--- SELECT * FROM v_performance_by_hour;
-
--- Alertes critiques
--- SELECT * FROM v_recent_critical_events;
+-- Si vous voyez ce message, le schema a été créé avec succès!
+-- Tables créées: trades, signals, metrics, events, parameters
+-- Views créées: v_performance_by_symbol, v_performance_by_signal_type, etc.
+-- Functions créées: get_win_rate, get_sharpe_ratio, get_top_symbols

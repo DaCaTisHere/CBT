@@ -81,6 +81,10 @@ class AutoLearner:
     MIN_TRADES_FOR_TRAINING = 20  # Minimum trades before model is useful
     RETRAIN_INTERVAL_HOURS = 6   # Re-train every 6 hours
     
+    # Strategy version - increment to force reset when strategy changes
+    # v7.0 = Backtest-aligned filters (whitelist symbols, simplified filters)
+    STRATEGY_VERSION = "7.0"
+    
     def __init__(self):
         self.logger = logger
         os.makedirs(self.DATA_DIR, exist_ok=True)
@@ -136,6 +140,18 @@ class AutoLearner:
         """Load existing data and start auto-retraining"""
         await self._load_data()
         await self._load_patterns()
+        
+        # === VERSION CHECK - FORCE RESET ON STRATEGY CHANGE ===
+        # This ensures we don't use patterns learned from old strategy
+        loaded_version = self.patterns.get("strategy_version", "0.0")
+        if loaded_version != self.STRATEGY_VERSION:
+            self.logger.warning(f"[ML] ⚠️ Strategy version changed: {loaded_version} -> {self.STRATEGY_VERSION}")
+            self.logger.warning("[ML] 🔄 RESETTING all learned patterns (old data invalid)")
+            await self._reset_patterns()
+            self.trade_records = []  # Clear old trade records too
+            await self._save_data()
+            await self._save_patterns()
+            self.logger.info("[ML] ✅ ML data reset complete - starting fresh with new strategy")
         
         # Count completed trades (with exit time)
         completed_trades = [t for t in self.trade_records if t.exit_time is not None]
@@ -593,12 +609,52 @@ class AutoLearner:
         try:
             filepath = os.path.join(self.DATA_DIR, self.MODEL_FILE)
             
+            # Always include strategy version
+            self.patterns["strategy_version"] = self.STRATEGY_VERSION
+            
             with open(filepath, 'w') as f:
                 json.dump(self.patterns, f, indent=2, default=str)
             
             self.logger.debug("[ML] Saved learned patterns")
         except Exception as e:
             self.logger.error(f"[ML] Failed to save patterns: {e}")
+    
+    async def _reset_patterns(self):
+        """Reset all learned patterns to defaults (used when strategy changes)"""
+        self.patterns = {
+            "strategy_version": self.STRATEGY_VERSION,
+            "weights": {
+                "score": 0.3,
+                "rsi": 0.15,
+                "stoch_rsi": 0.1,
+                "macd": 0.15,
+                "ema": 0.1,
+                "volume": 0.1,
+                "btc_correlation": 0.1
+            },
+            "optimal_ranges": {
+                "rsi_min": 30,
+                "rsi_max": 45,  # Stricter RSI for v7.0
+                "stoch_rsi_max": 75,
+                "score_min": 60,
+                "volume_min": 500000,  # $500k minimum
+                "change_min": 5.0,     # From backtest
+                "change_max": 30.0     # From backtest
+            },
+            "signal_type_success": {},
+            "macd_success": {},
+            "ema_success": {},
+            "hour_success": {},
+            "day_success": {},
+            "total_trades": 0,
+            "profitable_trades": 0,
+            "avg_win_pnl": 0.0,
+            "avg_loss_pnl": 0.0,
+            "win_rate": 0.0,
+            "last_trained": None
+        }
+        self.is_trained = False
+        self.logger.info("[ML] Patterns reset to defaults")
     
     async def _load_patterns(self):
         """Load learned patterns from disk"""

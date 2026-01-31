@@ -97,10 +97,10 @@ class MomentumDetector:
     MIN_PULLBACK_FROM_HIGH = 3.0   # Deeper pullback (3% from high)
     MAX_PULLBACK_FROM_HIGH = 12.0  # But not dumping (max 12%)
     
-    # RSI thresholds - VERY STRICT (key to 94.7% win rate)
-    RSI_OVERBOUGHT = 50            # VERY strict - don't buy above 50 RSI!
+    # RSI thresholds - STRICTER THAN BACKTEST for better results
+    RSI_OVERBOUGHT = 45            # STRICTER - don't buy above 45 RSI (was 50 in backtest)
     RSI_OVERSOLD = 30              # Ideal entry zone
-    RSI_NEUTRAL_HIGH = 45          # Caution above 45
+    RSI_NEUTRAL_HIGH = 40          # Caution above 40
     
     # Stochastic RSI thresholds - STRICT
     STOCH_RSI_OVERBOUGHT = 55      # Very strict
@@ -132,6 +132,17 @@ class MomentumDetector:
         'LITUSDT',   # Price stuck at $0.743 - CoinGecko data issue
         'BCHUSDT',   # Often has stale price data
     ]
+    
+    # ============ WHITELIST - ONLY TRADE BACKTESTED SYMBOLS ============
+    # These 20 symbols were validated in backtest with 94.7% win rate
+    # Trading other symbols is GAMBLING (not validated)
+    WHITELISTED_SYMBOLS = [
+        'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT',
+        'DOGEUSDT', 'ADAUSDT', 'AVAXUSDT', 'DOTUSDT', 'MATICUSDT',
+        'LINKUSDT', 'ATOMUSDT', 'LTCUSDT', 'ETCUSDT', 'NEARUSDT',
+        'APTUSDT', 'ARBUSDT', 'OPUSDT', 'INJUSDT', 'SUIUSDT'
+    ]
+    USE_WHITELIST = True  # CRITICAL: Set to True to only trade validated symbols
     MIN_PRICE = 0.00000001
     MAX_PRICE = 100000
     
@@ -415,6 +426,11 @@ class MomentumDetector:
                     # Skip blacklisted tokens
                     if symbol in self.BLACKLISTED_TOKENS:
                         continue
+                    
+                    # ============ WHITELIST CHECK - CRITICAL FOR WIN RATE ============
+                    # Only trade symbols that were validated in backtest (94.7% win rate)
+                    if self.USE_WHITELIST and symbol not in self.WHITELISTED_SYMBOLS:
+                        continue  # Skip unvalidated symbols
                     
                     # Skip leveraged tokens
                     if self._is_leveraged_token(symbol):

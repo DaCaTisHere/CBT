@@ -35,6 +35,14 @@ except ImportError as e:
     AUTONOMOUS_AVAILABLE = False
     print(f"[WARN] Autonomous systems not available: {e}")
 
+# Import trading mode manager for preflight checks
+try:
+    from src.core.trading_mode import get_trading_mode_manager
+    TRADING_MODE_AVAILABLE = True
+except ImportError as e:
+    TRADING_MODE_AVAILABLE = False
+    print(f"[WARN] Trading mode manager not available: {e}")
+
 logger = get_logger(__name__)
 
 
@@ -99,6 +107,24 @@ def main(testnet: bool, simulation: bool, mode: str, duration: int):
 async def run_with_autonomous(orchestrator: Orchestrator, autonomous_manager=None):
     """Run orchestrator with autonomous systems"""
     try:
+        # === PREFLIGHT CHECKS FOR REAL TRADING ===
+        if TRADING_MODE_AVAILABLE and not settings.SIMULATION_MODE and not settings.DRY_RUN:
+            trading_mode = get_trading_mode_manager()
+            logger.info("")
+            logger.warning("⚠️  REAL TRADING MODE DETECTED - Running preflight checks...")
+            
+            all_passed, results = await trading_mode.run_preflight_checks()
+            
+            if not all_passed:
+                logger.error("❌ PREFLIGHT CHECKS FAILED - Cannot start real trading")
+                logger.error("   Fix the issues above or switch to SIMULATION_MODE=true")
+                logger.info(trading_mode.get_mode_switch_instructions())
+                raise SystemExit("Preflight checks failed")
+            
+            logger.info("✅ Preflight checks passed - Real trading enabled")
+            logger.warning("💰 REAL MONEY IS AT RISK - Trade responsibly!")
+            logger.info("")
+        
         # Initialize autonomous systems first
         if autonomous_manager:
             logger.info("[AUTO] Starting autonomous systems (Supabase, AI Optimizer)...")

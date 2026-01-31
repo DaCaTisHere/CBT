@@ -618,7 +618,7 @@ async def index(request):
     <div class="container">
         <header>
             <div class="logo">CRYPTOBOT ULTIMATE</div>
-            <div class="subtitle">SWING TRADE v7.0 - BACKTEST ALIGNED (20 symbols, RSI&lt;45)</div>
+            <div class="subtitle">v7.0 - DISCOVERY MODE (New Listings + 20 Major Coins)</div>
         </header>
         
         <div class="status-bar">

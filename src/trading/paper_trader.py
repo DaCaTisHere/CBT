@@ -6,6 +6,7 @@ Includes auto-learning integration for continuous improvement.
 """
 
 import asyncio
+import aiohttp
 from datetime import datetime
 from decimal import Decimal
 from typing import Dict, List, Optional, Any
@@ -542,10 +543,10 @@ class PaperTrader:
         self,
         symbol: str,
         exchange: str = "binance",
-        amount_usd: float = 100.0
+        amount_usd: float = 500.0  # Increased for new listings (high confidence)
     ) -> Optional["ListingTrade"]:
         """
-        Handle a new token listing - buy and track
+        Handle a new token listing - buy with REAL price from API
         
         Args:
             symbol: Token symbol (e.g., "PEPE")
@@ -555,22 +556,46 @@ class PaperTrader:
         Returns:
             ListingTrade object with trade details
         """
-        # Generate a simulated listing price
-        listing_price = random.uniform(0.0001, 10.0)
+        # Build the trading pair
+        trading_pair = f"{symbol}USDT"
+        
+        # Fetch REAL price from Binance API
+        listing_price = await self._fetch_real_price(trading_pair)
+        
+        if listing_price is None or listing_price <= 0:
+            self.logger.warning(f"[LISTING] Could not get price for {trading_pair}, trying alternatives...")
+            # Try with different quote currencies
+            for quote in ["BUSD", "BTC", "ETH"]:
+                alt_pair = f"{symbol}{quote}"
+                listing_price = await self._fetch_real_price(alt_pair)
+                if listing_price and listing_price > 0:
+                    trading_pair = alt_pair
+                    break
+            
+            if listing_price is None or listing_price <= 0:
+                self.logger.error(f"[LISTING] ❌ Cannot find price for {symbol} on any pair")
+                return None
+        
+        self.logger.info(f"[LISTING] 🆕 NEW LISTING DETECTED: {symbol}")
+        self.logger.info(f"[LISTING] 💰 Real price from API: ${listing_price:.8f}")
         
         # Calculate amount based on USD
         amount = amount_usd / listing_price
         
-        # Execute buy
+        # Execute buy with special stop loss for new listings (more volatile)
         position = await self.buy(
-            symbol=f"{symbol}/USDT",
+            symbol=trading_pair,
             price=listing_price,
             amount=amount,
-            reason=f"New Listing on {exchange}"
+            reason=f"🆕 NEW LISTING on {exchange}",
+            stop_loss_pct=0.15  # 15% SL for new listings (more volatile)
         )
         
         if not position:
+            self.logger.error(f"[LISTING] ❌ Failed to buy {symbol}")
             return None
+        
+        self.logger.info(f"[LISTING] ✅ Bought {amount:.4f} {symbol} @ ${listing_price:.8f} = ${amount_usd:.2f}")
         
         # Return trade info
         return ListingTrade(
@@ -581,6 +606,29 @@ class PaperTrader:
             value_usd=amount_usd,
             timestamp=datetime.utcnow()
         )
+    
+    async def _fetch_real_price(self, symbol: str) -> Optional[float]:
+        """
+        Fetch real price from Binance API
+        
+        Args:
+            symbol: Trading pair (e.g., "BTCUSDT")
+            
+        Returns:
+            Current price or None if not available
+        """
+        try:
+            url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=5) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        return float(data.get("price", 0))
+                    else:
+                        return None
+        except Exception as e:
+            self.logger.debug(f"[API] Price fetch error for {symbol}: {e}")
+            return None
     
     def get_stats(self) -> Dict[str, Any]:
         """Get trading statistics"""

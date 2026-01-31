@@ -236,10 +236,14 @@ class SupabaseLogger:
             return {}
         
         try:
+            # Calculate date N days ago in ISO format
+            from datetime import timedelta
+            cutoff_date = (datetime.utcnow() - timedelta(days=days)).isoformat()
+            
             # Query metrics des derniers N jours
             response = self.supabase.table('metrics')\
                 .select('*')\
-                .gte('timestamp', f'now() - interval \'{days} days\'')\
+                .gte('timestamp', cutoff_date)\
                 .order('timestamp', desc=True)\
                 .limit(1000)\
                 .execute()

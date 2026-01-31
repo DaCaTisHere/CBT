@@ -145,6 +145,18 @@ async def index(request):
         ml_avg_win = ml_info.get('avg_win', '+0%')
         ml_avg_loss = ml_info.get('avg_loss', '0%')
         ml_last_trained = ml_info.get('last_trained', 'Never')
+        
+        # Use ML stats if paper_trader stats are missing (after redeploy)
+        if total_trades == 0 and ml_samples > 0:
+            total_trades = ml_samples
+            # Parse win_rate from ML (e.g., "40.9%" -> 40.9)
+            try:
+                win_rate = float(ml_win_rate.replace('%', ''))
+            except:
+                win_rate = 0
+            # Calculate wins/losses from ML data
+            winning = int(total_trades * (win_rate / 100))
+            losing = total_trades - winning
     else:
         ml_trained = False
         ml_samples = 0

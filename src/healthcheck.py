@@ -618,7 +618,7 @@ async def index(request):
     <div class="container">
         <header>
             <div class="logo">CRYPTOBOT ULTIMATE</div>
-            <div class="subtitle">SWING TRADE v6.0 - BACKTESTED (94.7% win rate)</div>
+            <div class="subtitle">SWING TRADE v7.0 - BACKTEST ALIGNED (20 symbols, RSI&lt;45)</div>
         </header>
         
         <div class="status-bar">
@@ -703,17 +703,17 @@ async def index(request):
         
         <div class="card">
             <div class="card-header">
-                <span class="card-title">SWING TRADE v6.0 - BACKTESTED</span>
+                <span class="card-title">SWING TRADE v7.0 - BACKTEST ALIGNED</span>
                 <span class="card-badge" style="background: #00ff8822; color: #00ff88;">94.7% WIN</span>
             </div>
             <div class="strategy-grid">
                 <div class="strategy-section">
                     <div class="strategy-title">🎯 Entry (BACKTESTED)</div>
                     <div class="filter-list">
+                        <div class="filter-item">20 WHITELISTED SYMBOLS ONLY</div>
                         <div class="filter-item">24h pump: +5% to +30%</div>
                         <div class="filter-item">Pullback: -3% to -12% from high</div>
-                        <div class="filter-item">RSI &lt; 50 (STRICT)</div>
-                        <div class="filter-item">StochRSI &lt; 55</div>
+                        <div class="filter-item">RSI &lt; 45 (STRICTER)</div>
                         <div class="filter-item">Volume &gt; $500k</div>
                     </div>
                 </div>

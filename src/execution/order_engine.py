@@ -63,6 +63,12 @@ class OrderEngine:
     async def initialize(self):
         """Initialize exchanges"""
         try:
+            # Skip exchange initialization in simulation mode
+            # This prevents rate limit issues when not actually trading
+            if settings.SIMULATION_MODE:
+                self.logger.info("[OK] Order Engine ready (simulation mode - no exchange connections)")
+                return
+            
             # Initialize Binance if API keys provided
             if settings.BINANCE_API_KEY and settings.BINANCE_SECRET:
                 self.exchanges["binance"] = ccxt.binance({
@@ -74,23 +80,44 @@ class OrderEngine:
                     }
                 })
                 
-                # Test connection
-                await self.exchanges["binance"].load_markets()
-                self.logger.info("[OK] Binance connected")
+                # Test connection with retry
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        await self.exchanges["binance"].load_markets()
+                        self.logger.info("[OK] Binance connected")
+                        break
+                    except ccxt.DDoSProtection as e:
+                        if attempt < max_retries - 1:
+                            wait_time = 30 * (attempt + 1)  # 30s, 60s, 90s
+                            self.logger.warning(f"[RATE] Binance rate limited, waiting {wait_time}s...")
+                            await asyncio.sleep(wait_time)
+                        else:
+                            self.logger.warning(f"[WARN] Binance temporarily unavailable, will retry later")
+                    except Exception as e:
+                        if attempt < max_retries - 1:
+                            await asyncio.sleep(10)
+                        else:
+                            self.logger.warning(f"[WARN] Could not connect to Binance: {e}")
             
             # Initialize Coinbase if API keys provided
             if settings.COINBASE_API_KEY and settings.COINBASE_SECRET:
-                self.exchanges["coinbase"] = ccxt.coinbasepro({
-                    'apiKey': settings.COINBASE_API_KEY,
-                    'secret': settings.COINBASE_SECRET,
-                    'enableRateLimit': True,
-                })
-                await self.exchanges["coinbase"].load_markets()
-                self.logger.info("[OK] Coinbase connected")
+                try:
+                    self.exchanges["coinbase"] = ccxt.coinbasepro({
+                        'apiKey': settings.COINBASE_API_KEY,
+                        'secret': settings.COINBASE_SECRET,
+                        'enableRateLimit': True,
+                    })
+                    await self.exchanges["coinbase"].load_markets()
+                    self.logger.info("[OK] Coinbase connected")
+                except Exception as e:
+                    self.logger.warning(f"[WARN] Could not connect to Coinbase: {e}")
             
         except Exception as e:
             self.logger.error(f"Exchange initialization error: {e}")
-            raise
+            # Don't raise in simulation mode
+            if not settings.SIMULATION_MODE:
+                raise
     
     async def execute_cex_order(
         self,

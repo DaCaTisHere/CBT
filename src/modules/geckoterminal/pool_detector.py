@@ -39,7 +39,8 @@ class PoolDetector:
     """
     
     # Chains to monitor (prioritized by opportunity)
-    PRIORITY_CHAINS = ["solana", "base", "eth", "arbitrum", "bsc"]
+    # Reduced to 3 chains to avoid rate limits (30 calls/minute)
+    PRIORITY_CHAINS = ["solana", "base", "eth"]
     
     # Filters for new pools
     MIN_LIQUIDITY_USD = 10000      # $10k minimum liquidity
@@ -112,11 +113,11 @@ class PoolDetector:
                     # Scan trending pools
                     await self._scan_trending_pools(chain)
                     
-                    # Small delay between chains
-                    await asyncio.sleep(2)
+                    # Delay between chains (rate limit: 30 calls/minute)
+                    await asyncio.sleep(5)
                     
-                # Wait before next scan cycle
-                await asyncio.sleep(30)  # Scan every 30 seconds
+                # Wait before next scan cycle (60s to respect rate limits)
+                await asyncio.sleep(60)
                 
             except asyncio.CancelledError:
                 break

@@ -87,7 +87,7 @@ class GeckoTerminalClient:
         self.session: Optional[aiohttp.ClientSession] = None
         self._call_times: List[datetime] = []
         self._cache: Dict[str, tuple] = {}  # (data, timestamp)
-        self._cache_ttl = 30  # seconds
+        self._cache_ttl = 60  # seconds - increased to reduce API calls
         
     async def initialize(self):
         """Initialize the client"""

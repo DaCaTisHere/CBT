@@ -546,17 +546,28 @@ class Orchestrator:
             # Detects new pools and trending tokens across DEXes
             try:
                 from src.modules.geckoterminal.pool_detector import PoolDetector, PoolSignal
+                from src.trading.dex_trader import DEXTrader
                 
                 pool_detector = PoolDetector()
                 await pool_detector.initialize()
+                
+                # Initialize DEX trader for real trading
+                dex_trader = DEXTrader()
+                dex_initialized = await dex_trader.initialize()
+                
+                if dex_initialized:
+                    self.logger.info("[DEX] DEX Trader ready for real trading")
+                else:
+                    self.logger.info("[DEX] DEX Trader in simulation mode (wallet not configured)")
                 
                 async def on_pool_signal(signal: PoolSignal):
                     """Handle new pool/trending signals from GeckoTerminal"""
                     try:
                         pool = signal.pool
                         
-                        # Skip if we already have max positions
-                        if len(paper_trader.portfolio.positions) >= 5:
+                        # Skip if we already have max positions (CEX + DEX combined)
+                        total_positions = len(paper_trader.portfolio.positions) + len(dex_trader.positions)
+                        if total_positions >= 5:
                             return
                         
                         # Log the signal
@@ -565,15 +576,25 @@ class Orchestrator:
                         else:
                             self.logger.info(f"[GECKO] 🔥 Trending signal: {pool.base_token} on {pool.network}")
                         
-                        # For now, just log - trading on DEX requires wallet
-                        # In future: integrate with DEX trading when wallet is configured
+                        # Only trade on EVM-compatible networks for now
                         if pool.network in ["eth", "bsc", "arbitrum", "base"]:
                             self.logger.info(f"[GECKO]   Price: ${pool.price_usd:.8f} | Liq: ${pool.liquidity_usd:,.0f}")
                             self.logger.info(f"[GECKO]   24h: {pool.price_change_24h:+.1f}% | Vol: ${pool.volume_24h:,.0f}")
                             self.logger.info(f"[GECKO]   Score: {signal.score:.0f}/100 - {', '.join(signal.reasons)}")
                             
-                            # TODO: Execute DEX trade when wallet is configured
-                            # await dex_trader.buy(pool.network, pool.address, amount_usd=100)
+                            # Execute DEX trade if wallet is configured and score is high
+                            if dex_initialized and signal.score >= 70:
+                                trade = await dex_trader.buy(
+                                    network=pool.network,
+                                    token_address=pool.address,
+                                    amount_usd=100,  # $100 per trade
+                                    token_symbol=pool.base_token
+                                )
+                                if trade:
+                                    self.logger.info(f"[GECKO] ✅ DEX Trade executed: {pool.base_token}")
+                                    self.total_trades += 1
+                            elif signal.score >= 70:
+                                self.logger.info(f"[GECKO] ⚠️ Would trade {pool.base_token} but DEX not configured")
                             
                     except Exception as e:
                         self.logger.error(f"[GECKO] Signal handler error: {e}")
@@ -581,7 +602,7 @@ class Orchestrator:
                 pool_detector.on_signal(on_pool_signal)
                 asyncio.create_task(pool_detector.start())
                 self.logger.info("[GECKO] GeckoTerminal Pool Detector started")
-                self.logger.info("[GECKO]   Monitoring: Solana, Base, Ethereum, Arbitrum, BSC")
+                self.logger.info("[GECKO]   Monitoring: Solana, Base, Ethereum")
                 self.logger.info("[GECKO]   Detecting: New pools + Trending tokens")
                 
             except Exception as e:

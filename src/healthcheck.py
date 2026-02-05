@@ -703,34 +703,34 @@ async def index(request):
         
         <div class="card">
             <div class="card-header">
-                <span class="card-title">SWING TRADE v7.0 - BACKTEST ALIGNED</span>
-                <span class="card-badge" style="background: #00ff8822; color: #00ff88;">94.7% WIN</span>
+                <span class="card-title">SWING TRADE v8.0 - MULTI-SOURCE</span>
+                <span class="card-badge" style="background: #00ff8822; color: #00ff88;">OPTIMIZED</span>
             </div>
             <div class="strategy-grid">
                 <div class="strategy-section">
-                    <div class="strategy-title">🎯 Entry (BACKTESTED)</div>
+                    <div class="strategy-title">🎯 Entry (CEX - Binance)</div>
                     <div class="filter-list">
-                        <div class="filter-item">20 WHITELISTED SYMBOLS ONLY</div>
+                        <div class="filter-item">50 WHITELISTED SYMBOLS</div>
                         <div class="filter-item">24h pump: +5% to +30%</div>
                         <div class="filter-item">Pullback: -3% to -12% from high</div>
-                        <div class="filter-item">RSI &lt; 45 (STRICTER)</div>
+                        <div class="filter-item">RSI &lt; 50 (relaxed)</div>
                         <div class="filter-item">Volume &gt; $500k</div>
                     </div>
                 </div>
                 <div class="strategy-section">
-                    <div class="strategy-title">📊 Backtest Results</div>
+                    <div class="strategy-title">🦎 GeckoTerminal DEX</div>
                     <div class="filter-list">
-                        <div class="filter-item">Win Rate: 94.7%</div>
-                        <div class="filter-item">Expectancy: +3.56%/trade</div>
-                        <div class="filter-item">30 days of data</div>
-                        <div class="filter-item">20 liquid pairs tested</div>
-                        <div class="filter-item">VALIDATED strategy</div>
+                        <div class="filter-item">Networks: SOL, BASE, ETH</div>
+                        <div class="filter-item">New pools: $10k+ liquidity</div>
+                        <div class="filter-item">Trending: +10% to +500%</div>
+                        <div class="filter-item">Min transactions: 50/24h</div>
+                        <div class="filter-item">Buy ratio: &gt; 40%</div>
                     </div>
                 </div>
                 <div class="strategy-section">
                     <div class="strategy-title">🛡️ Risk Management</div>
                     <div class="filter-list">
-                        <div class="filter-item">SL: 5% (from backtest)</div>
+                        <div class="filter-item">SL: 5% (ATR adaptive)</div>
                         <div class="filter-item">TP1: +4% → sell 20%</div>
                         <div class="filter-item">TP2: +7% → sell 30%</div>
                         <div class="filter-item">TP3: +10% → full exit</div>
@@ -742,9 +742,9 @@ async def index(request):
                     <div class="filter-list">
                         <div class="filter-item">Max: 5 positions</div>
                         <div class="filter-item">Hold time: up to 48h</div>
-                        <div class="filter-item">Cooldown: 8h/token</div>
+                        <div class="filter-item">Cooldown: 4h/token</div>
                         <div class="filter-item">BTC must be bullish</div>
-                        <div class="filter-item">Quality over quantity</div>
+                        <div class="filter-item">Score minimum: 50/100</div>
                     </div>
                 </div>
             </div>
@@ -757,7 +757,11 @@ async def index(request):
             <div class="modules-grid">
                 <div class="module-item">
                     <div class="module-icon"></div>
-                    <span>Momentum Detector</span>
+                    <span>Momentum Detector (50 coins)</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"></div>
+                    <span>GeckoTerminal DEX</span>
                 </div>
                 <div class="module-item">
                     <div class="module-icon"></div>
@@ -769,15 +773,19 @@ async def index(request):
                 </div>
                 <div class="module-item">
                     <div class="module-icon"></div>
-                    <span>BTC Correlation</span>
+                    <span>News Trader</span>
                 </div>
                 <div class="module-item">
                     <div class="module-icon"></div>
-                    <span>ML Predictor</span>
+                    <span>ML Auto-Learner</span>
                 </div>
                 <div class="module-item">
                     <div class="module-icon"></div>
                     <span>Risk Manager</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"></div>
+                    <span>DEX Trader (ready)</span>
                 </div>
             </div>
         </div>
@@ -790,11 +798,76 @@ async def index(request):
 </html>"""
     return web.Response(text=html, content_type='text/html')
 
+async def preflight(request):
+    """Preflight checks for real trading"""
+    try:
+        from src.core.trading_mode import get_trading_mode_manager
+        
+        manager = get_trading_mode_manager()
+        all_passed, results = await manager.run_preflight_checks()
+        
+        checks = []
+        for check_name, (passed, message) in results.items():
+            checks.append({
+                "name": check_name,
+                "passed": passed,
+                "message": message
+            })
+        
+        return web.json_response({
+            "all_passed": all_passed,
+            "current_mode": manager.get_current_mode(),
+            "checks": checks,
+            "instructions": manager.get_mode_switch_instructions() if not all_passed else None
+        })
+    except Exception as e:
+        return web.json_response({
+            "error": str(e),
+            "all_passed": False
+        }, status=500)
+
+
+async def dex_status(request):
+    """DEX Trader status"""
+    try:
+        from src.trading.dex_trader import DEXTrader
+        
+        trader = DEXTrader()
+        initialized = await trader.initialize()
+        
+        if initialized:
+            stats = trader.get_stats()
+            return web.json_response({
+                "status": "ready",
+                "networks": stats.get("networks_connected", []),
+                "total_trades": stats.get("total_trades", 0),
+                "positions": stats.get("positions", {})
+            })
+        else:
+            return web.json_response({
+                "status": "not_configured",
+                "message": "Wallet not configured for DEX trading",
+                "instructions": [
+                    "1. Add WALLET_PRIVATE_KEY to environment",
+                    "2. Add ETHEREUM_RPC_URL (get free at alchemy.com)",
+                    "3. Optional: Add BASE_RPC_URL, ARBITRUM_RPC_URL for more chains",
+                    "4. Set SIMULATION_MODE=false to enable real trading"
+                ]
+            })
+    except Exception as e:
+        return web.json_response({
+            "status": "error",
+            "message": str(e)
+        }, status=500)
+
+
 async def start_healthcheck_server(port=8080):
     """Start healthcheck server on specified port"""
     app = web.Application()
     app.router.add_get('/health', health)
     app.router.add_get('/status', status)
+    app.router.add_get('/preflight', preflight)
+    app.router.add_get('/dex', dex_status)
     app.router.add_get('/', index)
     
     runner = web.AppRunner(app)

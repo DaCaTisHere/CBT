@@ -353,9 +353,9 @@ class Orchestrator:
                         
                         # --- BACKTEST VALIDATED FILTERS ONLY ---
                         
-                        # 1. RSI: VERY STRICT (key to 94.7% win rate)
-                        # STRICTER: RSI < 45 instead of < 50 for extra safety
-                        rsi_ok = signal.rsi < 45  # Don't buy above RSI 45!
+                        # 1. RSI: Back to backtest value for more trades
+                        # Was < 45 (too strict), now < 50 (backtest validated)
+                        rsi_ok = signal.rsi < 50  # Don't buy above RSI 50
                         
                         # 2. Volume: $500k minimum (from backtest)
                         min_volume = 500000
@@ -367,8 +367,8 @@ class Orchestrator:
                         # 4. BTC Correlation: Trade WITH the market (from backtest)
                         btc_ok = signal.btc_correlation > 0
                         
-                        # 5. Basic score filter (keep as sanity check)
-                        MIN_SCORE = 60  # Lower threshold - backtest didn't use score
+                        # 5. Basic score filter (relaxed for more trades)
+                        MIN_SCORE = 50  # Lowered from 60 for more opportunities
                         has_good_score = signal.score >= MIN_SCORE
                         
                         # === DECISION - BACKTEST ALIGNED ===
@@ -460,7 +460,7 @@ class Orchestrator:
                             # Log pourquoi on skip (backtest-aligned filters only)
                             reasons = []
                             if not rsi_ok:
-                                reasons.append(f"RSI={signal.rsi:.0f} (>45)")
+                                reasons.append(f"RSI={signal.rsi:.0f} (>50)")
                             if not volume_ok:
                                 reasons.append(f"Vol=${signal.volume_usd/1000:.0f}k (<$500k)")
                             if not change_ok:
@@ -541,6 +541,51 @@ class Orchestrator:
                 self.logger.info("[POSITIONS] Auto position manager started (SL/TP monitoring)")
             except Exception as e:
                 self.logger.warning(f"[MOMENTUM] Could not start momentum detector: {e}")
+            
+            # ============ GECKOTERMINAL POOL DETECTOR ============
+            # Detects new pools and trending tokens across DEXes
+            try:
+                from src.modules.geckoterminal.pool_detector import PoolDetector, PoolSignal
+                
+                pool_detector = PoolDetector()
+                await pool_detector.initialize()
+                
+                async def on_pool_signal(signal: PoolSignal):
+                    """Handle new pool/trending signals from GeckoTerminal"""
+                    try:
+                        pool = signal.pool
+                        
+                        # Skip if we already have max positions
+                        if len(paper_trader.portfolio.positions) >= 5:
+                            return
+                        
+                        # Log the signal
+                        if signal.signal_type == "new_pool":
+                            self.logger.info(f"[GECKO] 🆕 New pool signal: {pool.base_token} on {pool.network}")
+                        else:
+                            self.logger.info(f"[GECKO] 🔥 Trending signal: {pool.base_token} on {pool.network}")
+                        
+                        # For now, just log - trading on DEX requires wallet
+                        # In future: integrate with DEX trading when wallet is configured
+                        if pool.network in ["eth", "bsc", "arbitrum", "base"]:
+                            self.logger.info(f"[GECKO]   Price: ${pool.price_usd:.8f} | Liq: ${pool.liquidity_usd:,.0f}")
+                            self.logger.info(f"[GECKO]   24h: {pool.price_change_24h:+.1f}% | Vol: ${pool.volume_24h:,.0f}")
+                            self.logger.info(f"[GECKO]   Score: {signal.score:.0f}/100 - {', '.join(signal.reasons)}")
+                            
+                            # TODO: Execute DEX trade when wallet is configured
+                            # await dex_trader.buy(pool.network, pool.address, amount_usd=100)
+                            
+                    except Exception as e:
+                        self.logger.error(f"[GECKO] Signal handler error: {e}")
+                
+                pool_detector.on_signal(on_pool_signal)
+                asyncio.create_task(pool_detector.start())
+                self.logger.info("[GECKO] GeckoTerminal Pool Detector started")
+                self.logger.info("[GECKO]   Monitoring: Solana, Base, Ethereum, Arbitrum, BSC")
+                self.logger.info("[GECKO]   Detecting: New pools + Trending tokens")
+                
+            except Exception as e:
+                self.logger.warning(f"[GECKO] Could not start pool detector: {e}")
             
             # Start Market Data Aggregator (CoinGecko + LunarCrush) - DISABLED due to bugs
             # The market aggregator was causing issues:

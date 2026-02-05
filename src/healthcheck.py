@@ -618,7 +618,7 @@ async def index(request):
     <div class="container">
         <header>
             <div class="logo">CRYPTOBOT ULTIMATE</div>
-            <div class="subtitle">v7.0 - DISCOVERY MODE (New Listings + 20 Major Coins)</div>
+            <div class="subtitle">v8.0 - MULTI-SOURCE (50 Coins + GeckoTerminal DEX)</div>
         </header>
         
         <div class="status-bar">

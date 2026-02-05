@@ -97,27 +97,27 @@ class MomentumDetector:
     MIN_PULLBACK_FROM_HIGH = 3.0   # Deeper pullback (3% from high)
     MAX_PULLBACK_FROM_HIGH = 12.0  # But not dumping (max 12%)
     
-    # RSI thresholds - STRICTER THAN BACKTEST for better results
-    RSI_OVERBOUGHT = 45            # STRICTER - don't buy above 45 RSI (was 50 in backtest)
+    # RSI thresholds - BALANCED (not too strict, not too loose)
+    RSI_OVERBOUGHT = 50            # Back to backtest value for more trades
     RSI_OVERSOLD = 30              # Ideal entry zone
-    RSI_NEUTRAL_HIGH = 40          # Caution above 40
+    RSI_NEUTRAL_HIGH = 45          # OK zone
     
-    # Stochastic RSI thresholds - STRICT
-    STOCH_RSI_OVERBOUGHT = 55      # Very strict
+    # Stochastic RSI thresholds - RELAXED for more trades
+    STOCH_RSI_OVERBOUGHT = 60      # Relaxed from 55
     STOCH_RSI_OVERSOLD = 30        # Good entry
     
     # Volatility filter
-    MAX_VOLATILITY_24H = 20.0      # Allow more volatility for swing trades
+    MAX_VOLATILITY_24H = 25.0      # Allow more volatility
     
     # BTC correlation settings
     BTC_TREND_THRESHOLD = 0.3      
     REQUIRE_BTC_ALIGNMENT = True   # Only trade with BTC direction
     
     # Cooldown settings
-    TOKEN_COOLDOWN_HOURS = 8.0     # Longer cooldown for swing style
+    TOKEN_COOLDOWN_HOURS = 4.0     # Reduced from 8h for more opportunities
     
     # Score requirements
-    MIN_ADVANCED_SCORE = 70        # Score based on new criteria
+    MIN_ADVANCED_SCORE = 50        # Lowered from 70 for more trades
     
     # DISABLE volume_spike - 0% success rate in backtesting
     ENABLE_VOLUME_SPIKE = False
@@ -133,16 +133,25 @@ class MomentumDetector:
         'BCHUSDT',   # Often has stale price data
     ]
     
-    # ============ WHITELIST - ONLY TRADE BACKTESTED SYMBOLS ============
-    # These 20 symbols were validated in backtest with 94.7% win rate
-    # Trading other symbols is GAMBLING (not validated)
+    # ============ WHITELIST - TOP 50 LIQUID COINS ============
+    # Expanded from 20 to 50 for more trading opportunities
+    # All are high-volume, liquid pairs on Binance
     WHITELISTED_SYMBOLS = [
+        # Tier 1 - Major coins (original 20)
         'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT',
         'DOGEUSDT', 'ADAUSDT', 'AVAXUSDT', 'DOTUSDT', 'MATICUSDT',
         'LINKUSDT', 'ATOMUSDT', 'LTCUSDT', 'ETCUSDT', 'NEARUSDT',
-        'APTUSDT', 'ARBUSDT', 'OPUSDT', 'INJUSDT', 'SUIUSDT'
+        'APTUSDT', 'ARBUSDT', 'OPUSDT', 'INJUSDT', 'SUIUSDT',
+        # Tier 2 - High volume alts (added 15)
+        'FILUSDT', 'IMXUSDT', 'STXUSDT', 'RUNEUSDT', 'SEIUSDT',
+        'TIAUSDT', 'JUPUSDT', 'WLDUSDT', 'BLURUSDT', 'PENDLEUSDT',
+        'FETUSDT', 'RENDERUSDT', 'ARUSDT', 'GRTUSDT', 'THETAUSDT',
+        # Tier 3 - Popular momentum coins (added 15)
+        'PEPEUSDT', 'WIFUSDT', 'BONKUSDT', 'FLOKIUSDT', 'SHIBUSDT',
+        'ORDIUSDT', 'KASUSDT', 'TAOUSDT', 'ENAUSDT', 'JUPUSDT',
+        'STRKUSDT', 'ZETAUSDT', 'PYTHUSDT', 'MANTAUSDT', 'ONDOUSDT'
     ]
-    USE_WHITELIST = True  # CRITICAL: Set to True to only trade validated symbols
+    USE_WHITELIST = True  # Keep whitelist but with 50 coins now
     MIN_PRICE = 0.00000001
     MAX_PRICE = 100000
     

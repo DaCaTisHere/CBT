@@ -671,6 +671,8 @@ class Orchestrator:
                                 continue
                             
                             now = _time.time()
+                            symbols = [t["symbol"] for t in _watchlist.values()]
+                            self.logger.info(f"[WATCH] 🔄 Checking {len(_watchlist)} tokens: {', '.join(symbols)}")
                             to_remove = []
                             
                             for addr, token in list(_watchlist.items()):
@@ -698,13 +700,12 @@ class Orchestrator:
                                 # Get CURRENT price to check momentum
                                 current_price = await dex_trader._get_token_price(token["network"], addr)
                                 if not current_price or current_price <= 0:
+                                    self.logger.debug(f"[WATCH] No price data for {token['symbol']} on {token['network']} ({addr[:12]}...)")
                                     continue
                                 
                                 price_change_pct = ((current_price - token["detect_price"]) / token["detect_price"]) * 100
                                 
-                                # Log periodic status
-                                if int(age) % 300 < 65:  # Log ~every 5 min
-                                    self.logger.info(f"[WATCH] 📊 {token['symbol']}: {price_change_pct:+.1f}% since detection ({age/60:.0f}min ago)")
+                                self.logger.info(f"[WATCH] 📊 {token['symbol']}: {price_change_pct:+.1f}% since detection ({age/60:.0f}min ago) | need +{MOMENTUM_CONFIRM_PCT}%")
                                 
                                 # ===== MOMENTUM CONFIRMED — BUY! =====
                                 if price_change_pct >= MOMENTUM_CONFIRM_PCT:

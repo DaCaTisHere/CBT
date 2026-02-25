@@ -592,12 +592,13 @@ class Orchestrator:
                 # Instead of buying immediately, tokens go to watchlist
                 # Only buy when momentum is CONFIRMED (price up + volume spike)
                 import time as _time
-                _watchlist = {}  # {token_address: {symbol, network, pool_address, detect_price, detect_time, score, liquidity, volume}}
+                _watchlist = {}  # {token_address: {symbol, network, ..., confirm_count, last_price}}
                 _last_buy_time = [0]
                 BUY_MIN_INTERVAL = 600  # 10 min between buys
                 WATCHLIST_MAX_AGE = 7200  # Remove after 2h if no confirmation
                 WATCHLIST_MAX_SIZE = 20
-                MOMENTUM_CONFIRM_PCT = 8.0  # Need +8% price increase to confirm
+                MOMENTUM_CONFIRM_PCT = 15.0  # Need +15% price increase from detection
+                CONFIRMS_NEEDED = 3  # Need 3 consecutive rising checks before buying
                 
                 SCAM_EXACT_NAMES = {
                     "DOGE", "DOGECOIN", "SHIB", "SHIBA", "BITCOIN", "BTC", "ETH",
@@ -633,8 +634,8 @@ class Orchestrator:
                             if substr in token_upper:
                                 return
                         
-                        # Quality filters
-                        if pool.liquidity_usd < 50000 or pool.volume_24h < 20000:
+                        # Quality filters — strict to avoid low-quality tokens
+                        if pool.liquidity_usd < 100000 or pool.volume_24h < 50000:
                             return
                         if signal.score < 60:
                             return
@@ -654,6 +655,8 @@ class Orchestrator:
                             "score": signal.score,
                             "liquidity": pool.liquidity_usd,
                             "volume": pool.volume_24h,
+                            "confirm_count": 0,
+                            "last_price": pool.price_usd,
                         }
                         self.logger.info(f"[WATCH] 👁️ Added {pool.base_token} to watchlist @ ${pool.price_usd:.8f} (score:{signal.score:.0f} liq:${pool.liquidity_usd:,.0f} vol:${pool.volume_24h:,.0f})")
                         self.logger.info(f"[WATCH] Watchlist: {len(_watchlist)} tokens | Waiting for +{MOMENTUM_CONFIRM_PCT}% momentum to buy")
@@ -705,10 +708,18 @@ class Orchestrator:
                                 
                                 price_change_pct = ((current_price - token["detect_price"]) / token["detect_price"]) * 100
                                 
-                                self.logger.info(f"[WATCH] 📊 {token['symbol']}: {price_change_pct:+.1f}% since detection ({age/60:.0f}min ago) | need +{MOMENTUM_CONFIRM_PCT}%")
+                                # Track consecutive rising checks
+                                if current_price >= token["last_price"]:
+                                    token["confirm_count"] = token.get("confirm_count", 0) + 1
+                                else:
+                                    token["confirm_count"] = 0  # Reset on any dip
+                                token["last_price"] = current_price
+                                
+                                self.logger.info(f"[WATCH] 📊 {token['symbol']}: {price_change_pct:+.1f}% ({age/60:.0f}min) | confirms: {token['confirm_count']}/{CONFIRMS_NEEDED} | need +{MOMENTUM_CONFIRM_PCT}%")
                                 
                                 # ===== MOMENTUM CONFIRMED — BUY! =====
-                                if price_change_pct >= MOMENTUM_CONFIRM_PCT:
+                                # Must be up +15% AND have 3 consecutive rising checks
+                                if price_change_pct >= MOMENTUM_CONFIRM_PCT and token["confirm_count"] >= CONFIRMS_NEEDED:
                                     self.logger.info(f"[WATCH] 🚀 MOMENTUM CONFIRMED: {token['symbol']} is UP {price_change_pct:+.1f}% !")
                                     self.logger.info(f"[WATCH]    Detect: ${token['detect_price']:.8f} → Now: ${current_price:.8f}")
                                     
@@ -752,11 +763,11 @@ class Orchestrator:
                                         token_address=addr,
                                         amount_usd=position_size,
                                         token_symbol=token["symbol"],
-                                        tp1_pct=ai_result.take_profit_targets[0],
-                                        tp2_pct=ai_result.take_profit_targets[1],
-                                        tp3_pct=ai_result.take_profit_targets[2],
-                                        sl_pct=ai_result.stop_loss_percent,
-                                        max_hold_hours=4
+                                        tp1_pct=15.0,
+                                        tp2_pct=30.0,
+                                        tp3_pct=60.0,
+                                        sl_pct=8.0,  # Tight 8% trailing stop
+                                        max_hold_hours=3
                                     )
                                     if trade:
                                         safety.record_buy(

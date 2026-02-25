@@ -627,8 +627,10 @@ class Orchestrator:
                 WATCHLIST_MAX_SIZE = 50  # Increased from 20 for more opportunities
                 MOMENTUM_CONFIRM_PCT = 15.0
                 CONFIRMS_NEEDED = 3
-                FAST_TRACK_PCT = 25.0  # Skip confirms if momentum is extreme
-                CONFIRM_DIP_TOLERANCE = 3.0  # Only reset confirms if dip > 3%
+                HIGH_CONFIRM_THRESHOLD = 8  # With 8+ confirms, lower momentum threshold
+                HIGH_CONFIRM_MOMENTUM_PCT = 10.0  # Only need +10% with 8+ confirms
+                FAST_TRACK_PCT = 25.0
+                CONFIRM_DIP_TOLERANCE = 3.0
                 
                 SCAM_EXACT_NAMES = {
                     "DOGE", "DOGECOIN", "SHIB", "SHIBA", "BITCOIN", "BTC", "ETH",
@@ -762,17 +764,17 @@ class Orchestrator:
                                 
                                 self.logger.info(f"[WATCH] {token['symbol']}: {price_change_pct:+.1f}% ({age/60:.0f}min) | confirms: {token['confirm_count']}/{CONFIRMS_NEEDED}")
                                 
-                                # Fast-track: extreme momentum skips confirm requirement
                                 fast_track = price_change_pct >= FAST_TRACK_PCT
                                 confirmed = (price_change_pct >= MOMENTUM_CONFIRM_PCT and token["confirm_count"] >= CONFIRMS_NEEDED)
+                                high_confirm = (token["confirm_count"] >= HIGH_CONFIRM_THRESHOLD and price_change_pct >= HIGH_CONFIRM_MOMENTUM_PCT)
                                 
-                                if confirmed or fast_track:
+                                if confirmed or fast_track or high_confirm:
                                     # BTC trend gate: skip if BTC is crashing
                                     if await _is_btc_dumping():
                                         self.logger.info(f"[WATCH] BTC dump detected, skipping {token['symbol']}")
                                         continue
                                     
-                                    mode_str = "FAST-TRACK" if fast_track else "CONFIRMED"
+                                    mode_str = "FAST-TRACK" if fast_track else ("HIGH-CONFIRM" if high_confirm else "CONFIRMED")
                                     self.logger.info(f"[WATCH] {mode_str}: {token['symbol']} UP {price_change_pct:+.1f}%")
                                     self.logger.info(f"[WATCH]    Detect: ${token['detect_price']:.8f} → Now: ${current_price:.8f}")
                                     

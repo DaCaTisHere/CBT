@@ -122,11 +122,12 @@ class GridTrader:
         self.is_running = False
 
         self._last_prices: Dict[str, float] = {}
-        self._price_history: Dict[str, List[float]] = {}  # For ATR / regime detection
+        self._price_history: Dict[str, List[float]] = {}
         self._current_regime: Dict[str, MarketRegime] = {}
         self._regime_since: Dict[str, float] = {}
+        self._cycle_count = 0
 
-        self._gecko_client = None  # Persistent client
+        self._gecko_client = None
 
     async def _get_client(self):
         if self._gecko_client is None:
@@ -254,12 +255,23 @@ class GridTrader:
                 results = await asyncio.gather(*price_tasks.values(), return_exceptions=True)
                 prices = dict(zip(price_tasks.keys(), results))
 
+                self._cycle_count += 1
+
                 for pair_id, current_price in prices.items():
                     if isinstance(current_price, Exception) or not current_price or current_price <= 0:
                         continue
 
                     config = self.GRID_PAIRS[pair_id]
                     last_price = self._last_prices.get(pair_id, current_price)
+
+                    # Periodic status log every 10 cycles (~5 min)
+                    if self._cycle_count % 10 == 0:
+                        center = self.center_prices.get(pair_id, current_price)
+                        regime = self._current_regime.get(pair_id, MarketRegime.RANGE)
+                        active = len(self.active_buys.get(pair_id, []))
+                        dev = abs(current_price - center) / center * 100
+                        self.logger.info(f"[GRID] {config.base_symbol}: ${current_price:,.2f} (center ${center:,.2f}, dev {dev:.1f}%) | "
+                                         f"regime={regime.value} | buys={active} | cycles={self.total_cycles}")
 
                     # Record price for regime detection
                     hist = self._price_history.setdefault(pair_id, [])

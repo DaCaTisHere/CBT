@@ -73,6 +73,7 @@ class GridPairConfig:
     quote_token: str
     base_symbol: str
     quote_symbol: str
+    pool_address: str = ""  # For OHLCV history
     base_amount_per_grid_usd: float = 10.0
     price_range_pct: float = 10.0
 
@@ -90,6 +91,7 @@ class GridTrader:
             quote_token="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
             base_symbol="ETH",
             quote_symbol="USDC",
+            pool_address="0x96d4b53a38337a5733179751781178a2613306063c511b78cd02684739288c0a",
             base_amount_per_grid_usd=10.0,
             price_range_pct=10.0,
         ),
@@ -99,15 +101,17 @@ class GridTrader:
             quote_token="0x55d398326f99059fF775485246999027B3197955",
             base_symbol="BNB",
             quote_symbol="USDT",
+            pool_address="0x16b9a82891338f9ba80e2d6970fdda79d1eb0dae",
             base_amount_per_grid_usd=10.0,
             price_range_pct=10.0,
         ),
     }
 
-    def __init__(self, dex_trader=None, safety_manager=None):
+    def __init__(self, dex_trader=None, safety_manager=None, telegram=None):
         self.logger = get_logger("GridTrader")
         self.dex_trader = dex_trader
         self.safety = safety_manager
+        self.telegram = telegram
 
         self.grids: Dict[str, List[GridLevel]] = {}
         self.center_prices: Dict[str, float] = {}
@@ -145,6 +149,21 @@ class GridTrader:
             self._gecko_client = None  # Force reconnect on next call
             return None
 
+    async def _load_price_history(self, pair_id: str, config: GridPairConfig) -> List[float]:
+        """Load hourly price history from GeckoTerminal OHLCV for accurate regime detection."""
+        if not config.pool_address:
+            return []
+        try:
+            client = await self._get_client()
+            candles = await client.get_ohlcv(config.network, config.pool_address, "hour", 100)
+            if candles:
+                prices = [c["close"] for c in candles]
+                self.logger.info(f"[GRID] Loaded {len(prices)} hourly candles for {config.base_symbol}")
+                return prices
+        except Exception as e:
+            self.logger.warning(f"[GRID] Could not load history for {config.base_symbol}: {e}")
+        return []
+
     async def initialize(self):
         self.logger.info("[GRID] Initializing Regime-Adaptive Grid Trading Engine...")
 
@@ -160,11 +179,20 @@ class GridTrader:
             self._last_prices[pair_id] = price
             self.completed_cycles[pair_id] = []
             self.active_buys[pair_id] = []
-            self._price_history[pair_id] = [price]
-            self._current_regime[pair_id] = MarketRegime.RANGE  # Default
+
+            # Load real price history for regime detection
+            history = await self._load_price_history(pair_id, config)
+            if history:
+                self._price_history[pair_id] = history
+            else:
+                self._price_history[pair_id] = [price]
+
+            # Detect initial regime from history
+            initial_regime = self._detect_regime(pair_id)
+            self._current_regime[pair_id] = initial_regime
             self._regime_since[pair_id] = time.time()
 
-            rp = REGIME_PARAMS[MarketRegime.RANGE]
+            rp = REGIME_PARAMS[initial_regime]
             self._build_grid(pair_id, price, config, rp["spacing_pct"], rp["num_grids"],
                              config.base_amount_per_grid_usd * rp["amount_mult"], rp["range_pct"])
 
@@ -172,7 +200,14 @@ class GridTrader:
             low = price * (1 - rp["range_pct"] / 100)
             high = price * (1 + rp["range_pct"] / 100)
             self.logger.info(f"[GRID]   Center: ${price:,.2f} | Range: ${low:,.2f} — ${high:,.2f}")
-            self.logger.info(f"[GRID]   Regime: RANGE | Spacing: {rp['spacing_pct']}% | {len(self.grids[pair_id])} levels")
+            self.logger.info(f"[GRID]   Regime: {initial_regime.value.upper()} | Spacing: {rp['spacing_pct']}% | {len(self.grids[pair_id])} levels")
+            self.logger.info(f"[GRID]   History: {len(self._price_history[pair_id])} data points loaded")
+
+        # Run quick backtest on each pair to validate parameters
+        for pair_id in list(self.grids.keys()):
+            bt = self.backtest(pair_id)
+            if "error" not in bt:
+                self.logger.info(f"[GRID] Backtest {bt['pair']}: {bt['cycles']} cycles, {bt['profit_usd']}, WR {bt['win_rate']}")
 
         self.logger.info(f"[GRID] Ready on {len(self.grids)} pairs")
 
@@ -413,6 +448,16 @@ class GridTrader:
             self.logger.info(f"[GRID] Total: {self.total_cycles} cycles | P&L: ${self.total_profit_usd:+.2f} | "
                              f"Win: {self.wins}/{self.total_cycles}")
 
+            if self.telegram and hasattr(self.telegram, 'is_enabled') and self.telegram.is_enabled:
+                try:
+                    await self.telegram.notify_trade_closed(
+                        symbol=f"GRID {config.base_symbol}",
+                        entry_price=buy_price, exit_price=current_price,
+                        pnl=profit_usd, pnl_pct=profit_pct,
+                        reason=f"Grid cycle #{self.total_cycles}")
+                except Exception:
+                    pass
+
             if self.safety:
                 self.safety.record_sell(token=f"GRID_{config.base_symbol}", network=config.network,
                                         amount_usd=amount_usd, buy_price=buy_price, sell_price=current_price,
@@ -526,6 +571,62 @@ class GridTrader:
             "win_rate": f"{win_rate:.1f}%",
             "total_pnl": f"${self.total_profit_usd:+.2f}",
             "pairs": pairs_status,
+        }
+
+    def backtest(self, pair_id: str) -> dict:
+        """Run a quick backtest on loaded price history to validate grid parameters."""
+        history = self._price_history.get(pair_id, [])
+        if len(history) < 20:
+            return {"error": "Not enough history", "data_points": len(history)}
+
+        config = self.GRID_PAIRS[pair_id]
+        regime = self._current_regime.get(pair_id, MarketRegime.RANGE)
+        rp = REGIME_PARAMS[regime]
+
+        center = history[len(history) // 2]
+        spacing = rp["spacing_pct"] / 100.0
+        amount = config.base_amount_per_grid_usd * rp["amount_mult"]
+        gas = GAS_COST_USD.get(config.network, 0.1)
+
+        buy_levels = [center * (1 - spacing * i) for i in range(1, rp["num_grids"] + 1)]
+        sell_levels = [center * (1 + spacing * i) for i in range(1, rp["num_grids"] + 1)]
+
+        bt_buys = []
+        bt_cycles = 0
+        bt_profit = 0.0
+        bt_wins = 0
+
+        for i in range(1, len(history)):
+            old_p, new_p = history[i - 1], history[i]
+
+            for bl in buy_levels:
+                if old_p > bl >= new_p and len(bt_buys) < rp["num_grids"]:
+                    bt_buys.append(new_p)
+
+            for sl in sell_levels:
+                if old_p < sl <= new_p and bt_buys:
+                    bp = bt_buys.pop(0)
+                    pnl_pct = ((new_p - bp) / bp) * 100
+                    pnl_usd = amount * (pnl_pct / 100) - gas * 2
+                    bt_profit += pnl_usd
+                    bt_cycles += 1
+                    if pnl_usd > 0:
+                        bt_wins += 1
+
+        wr = (bt_wins / max(bt_cycles, 1)) * 100
+        self.logger.info(f"[GRID] BACKTEST {config.base_symbol}: {bt_cycles} cycles, "
+                         f"P&L: ${bt_profit:+.2f}, WR: {wr:.0f}%, regime: {regime.value}")
+
+        return {
+            "pair": f"{config.base_symbol}/{config.quote_symbol}",
+            "regime": regime.value,
+            "data_points": len(history),
+            "cycles": bt_cycles,
+            "wins": bt_wins,
+            "win_rate": f"{wr:.1f}%",
+            "profit_usd": f"${bt_profit:+.2f}",
+            "avg_profit_per_cycle": f"${bt_profit / max(bt_cycles, 1):+.2f}",
+            "open_positions_at_end": len(bt_buys),
         }
 
     def stop(self):

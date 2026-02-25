@@ -840,8 +840,16 @@ class Orchestrator:
                                             is_sim=safety.is_simulation_mode()
                                         )
                                         _last_buy_time[0] = now
-                                        self.logger.info(f"[TRADE] ✅ BOUGHT {token['symbol']} after +{price_change_pct:.1f}% momentum | {safety.get_progress_bar()}")
+                                        self.logger.info(f"[TRADE] BOUGHT {token['symbol']} after +{price_change_pct:.1f}% momentum | {safety.get_progress_bar()}")
                                         self.total_trades += 1
+                                        try:
+                                            if hasattr(self, 'telegram') and self.telegram.is_enabled:
+                                                await self.telegram.notify_trade_opened(
+                                                    symbol=token["symbol"], side="BUY",
+                                                    price=trade.price_usd, amount=position_size,
+                                                    reason=f"{mode_str} +{price_change_pct:.1f}%")
+                                        except Exception:
+                                            pass
                                     to_remove.append(addr)
                                 
                                 # Token dumping from detection price — remove
@@ -878,7 +886,8 @@ class Orchestrator:
                 # ============ GRID TRADING ENGINE (PRIMARY STRATEGY) ============
                 try:
                     from src.trading.grid_trader import GridTrader
-                    grid_trader = GridTrader(dex_trader=dex_trader, safety_manager=safety)
+                    _tg = self.telegram if hasattr(self, 'telegram') else None
+                    grid_trader = GridTrader(dex_trader=dex_trader, safety_manager=safety, telegram=_tg)
                     await grid_trader.initialize()
                     asyncio.create_task(grid_trader.run())
                     self.grid_trader = grid_trader
@@ -921,18 +930,22 @@ class Orchestrator:
     
     async def _main_loop(self):
         """Main orchestrator loop"""
+        import time as _t
+        _last_daily_report = _t.time()
+        DAILY_REPORT_INTERVAL = 3600 * 6  # Every 6 hours
+
         while self.is_running:
             try:
-                # Monitor system health
                 await self._health_check()
-                
-                # Update metrics
                 await self._update_metrics()
-                
-                # Check risk limits
                 await self.risk_manager.check_global_limits()
-                
-                # Sleep for a bit
+
+                # Periodic Telegram report
+                now = _t.time()
+                if now - _last_daily_report > DAILY_REPORT_INTERVAL:
+                    _last_daily_report = now
+                    await self._send_telegram_report()
+
                 await asyncio.sleep(10)
                 
             except asyncio.CancelledError:
@@ -941,6 +954,29 @@ class Orchestrator:
             except Exception as e:
                 self.logger.error(f"Error in main loop: {e}")
                 await asyncio.sleep(5)
+
+    async def _send_telegram_report(self):
+        """Send periodic performance report via Telegram."""
+        try:
+            if not (hasattr(self, 'telegram') and self.telegram and self.telegram.is_enabled):
+                return
+            from src.core.safety_manager import get_safety_manager
+            safety = get_safety_manager()
+            status = safety.get_status()
+            grid_info = ""
+            if hasattr(self, 'grid_trader') and self.grid_trader:
+                gs = self.grid_trader.get_status()
+                grid_info = f"\nGrid: {gs['total_cycles']} cycles, {gs['total_pnl']}, WR {gs['win_rate']}"
+            msg = (f"<b>BOT REPORT</b>\n\n"
+                   f"Mode: {status['safety']['current_mode']}\n"
+                   f"Sim trades: {status['simulation']['trades']} (WR {status['simulation']['win_rate']})\n"
+                   f"Grid: {status['grid']['trades']}t, WR {status['grid']['win_rate']}, PnL {status['grid']['pnl']}\n"
+                   f"Momentum: {status['momentum']['trades']}t, WR {status['momentum']['win_rate']}, PnL {status['momentum']['pnl']}\n"
+                   f"Total PnL: {status['simulation']['total_pnl']}"
+                   f"{grid_info}")
+            await self.telegram.send_message(msg, silent=True)
+        except Exception as e:
+            self.logger.debug(f"[TELEGRAM] Report error: {e}")
     
     async def _health_check(self):
         """Perform health check on all components"""

@@ -1021,6 +1021,21 @@ async def grid_status(request):
         return web.json_response({"error": str(e)}, status=500)
 
 
+async def grid_backtest(request):
+    """Run grid backtest on loaded history"""
+    try:
+        from src.core.orchestrator import Orchestrator
+        orch = Orchestrator._instance if hasattr(Orchestrator, '_instance') else None
+        if orch and hasattr(orch, 'grid_trader') and orch.grid_trader:
+            results = {}
+            for pair_id in orch.grid_trader.GRID_PAIRS:
+                results[pair_id] = orch.grid_trader.backtest(pair_id)
+            return web.json_response(results)
+        return web.json_response({"status": "not_running"})
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
 async def start_healthcheck_server(port=8080):
     """Start healthcheck server on specified port"""
     app = web.Application()
@@ -1031,6 +1046,7 @@ async def start_healthcheck_server(port=8080):
     app.router.add_get('/safety', safety_status)
     app.router.add_get('/safety/reset', safety_reset)
     app.router.add_get('/grid', grid_status)
+    app.router.add_get('/backtest', grid_backtest)
     app.router.add_get('/', index)
     
     runner = web.AppRunner(app)

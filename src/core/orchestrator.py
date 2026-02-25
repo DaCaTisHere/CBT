@@ -673,7 +673,7 @@ class Orchestrator:
                     """Step 2: Check watchlist tokens for CONFIRMED momentum before buying"""
                     while self.is_running:
                         try:
-                            await asyncio.sleep(60)  # Check every 60 seconds
+                            await asyncio.sleep(90)  # Check every 90 seconds (avoid API rate limits)
                             
                             if not _watchlist:
                                 continue

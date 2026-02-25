@@ -201,6 +201,8 @@ class GridTrader:
                     current_price = await self._get_price(config)
                     if not current_price or current_price <= 0:
                         continue
+                    
+                    await asyncio.sleep(3)  # Stagger API calls to avoid rate limits
 
                     last_price = self._last_prices.get(pair_id, current_price)
                     await self._check_grid_crossings(pair_id, config, last_price, current_price)

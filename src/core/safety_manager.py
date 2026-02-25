@@ -47,6 +47,14 @@ class SafetyStats:
     sim_avg_loss_pct: float = 0.0
     sim_total_pnl_usd: float = 0.0
     
+    # Separate tracking: grid vs momentum
+    grid_trades_total: int = 0
+    grid_trades_won: int = 0
+    grid_total_pnl_usd: float = 0.0
+    momentum_trades_total: int = 0
+    momentum_trades_won: int = 0
+    momentum_total_pnl_usd: float = 0.0
+    
     real_trades_total: int = 0
     real_trades_won: int = 0
     real_trades_lost: int = 0
@@ -214,21 +222,23 @@ class SafetyManager:
         
         self._save_stats()
     
-    def record_sell(self, token: str, network: str, amount_usd: float, pnl_pct: float, pnl_usd: float, is_sim: bool):
+    def record_sell(self, token: str, network: str, amount_usd: float,
+                    pnl_pct: float = 0.0, pnl_usd: float = 0.0, is_sim: bool = True,
+                    buy_price: float = 0.0, sell_price: float = 0.0):
+        if pnl_usd == 0.0 and buy_price > 0 and sell_price > 0:
+            pnl_pct = ((sell_price - buy_price) / buy_price) * 100
+            pnl_usd = amount_usd * (pnl_pct / 100)
+
         record = TradeRecord(
             timestamp=datetime.utcnow().isoformat(),
-            token=token,
-            network=network,
-            action="sell",
-            amount_usd=amount_usd,
-            price=0,
-            is_simulation=is_sim,
-            pnl_percent=pnl_pct,
-            pnl_usd=pnl_usd,
+            token=token, network=network, action="sell",
+            amount_usd=amount_usd, price=sell_price,
+            is_simulation=is_sim, pnl_percent=pnl_pct, pnl_usd=pnl_usd,
         )
         self.trade_history.append(record)
         
         won = pnl_pct > 0
+        is_grid = token.startswith("GRID_")
         
         if is_sim:
             self.stats.sim_trades_total += 1
@@ -237,8 +247,24 @@ class SafetyManager:
             else:
                 self.stats.sim_trades_lost += 1
             self.stats.sim_total_pnl_usd += pnl_usd
+            
+            if is_grid:
+                self.stats.grid_trades_total += 1
+                if won:
+                    self.stats.grid_trades_won += 1
+                self.stats.grid_total_pnl_usd += pnl_usd
+            else:
+                self.stats.momentum_trades_total += 1
+                if won:
+                    self.stats.momentum_trades_won += 1
+                self.stats.momentum_total_pnl_usd += pnl_usd
+            
             self._recalc_sim_stats()
-            logger.info(f"[SAFETY] SIM sell: {token} PnL {pnl_pct:+.1f}% (${pnl_usd:+.2f}) | Win rate: {self.stats.sim_win_rate:.1f}% ({self.stats.sim_trades_total} trades)")
+            grid_wr = (self.stats.grid_trades_won / max(self.stats.grid_trades_total, 1)) * 100
+            mom_wr = (self.stats.momentum_trades_won / max(self.stats.momentum_trades_total, 1)) * 100
+            logger.info(f"[SAFETY] SIM sell: {token} PnL {pnl_pct:+.1f}% (${pnl_usd:+.2f}) | "
+                        f"Overall: {self.stats.sim_win_rate:.1f}% ({self.stats.sim_trades_total}t) | "
+                        f"Grid: {grid_wr:.0f}% ({self.stats.grid_trades_total}t) | Mom: {mom_wr:.0f}% ({self.stats.momentum_trades_total}t)")
         else:
             self.stats.real_trades_total += 1
             if won:
@@ -262,14 +288,25 @@ class SafetyManager:
         self.stats.sim_avg_win_pct = sum(wins) / len(wins) if wins else 0
         self.stats.sim_avg_loss_pct = sum(losses) / len(losses) if losses else 0
     
+    MIN_GRID_TRADES_FOR_UNLOCK = 10
+    MIN_GRID_WIN_RATE = 50.0
+    
     def _check_unlock_status(self):
         was_unlocked = self.stats.real_trading_unlocked
         
-        criteria_met = (
-            self.stats.sim_trades_total >= self.MIN_SIM_TRADES and
-            self.stats.sim_win_rate >= self.MIN_SIM_WIN_RATE and
-            not self.stats.emergency_stop
+        # Grid trades unlock faster (higher inherent win rate)
+        grid_wr = (self.stats.grid_trades_won / max(self.stats.grid_trades_total, 1)) * 100
+        grid_criteria = (
+            self.stats.grid_trades_total >= self.MIN_GRID_TRADES_FOR_UNLOCK and
+            grid_wr >= self.MIN_GRID_WIN_RATE
         )
+        
+        overall_criteria = (
+            self.stats.sim_trades_total >= self.MIN_SIM_TRADES and
+            self.stats.sim_win_rate >= self.MIN_SIM_WIN_RATE
+        )
+        
+        criteria_met = (grid_criteria or overall_criteria) and not self.stats.emergency_stop
         
         if criteria_met:
             self.stats.real_trading_unlocked = True
@@ -304,6 +341,8 @@ class SafetyManager:
     def get_status(self) -> Dict:
         self._reset_daily_if_needed()
         self._check_unlock_status()
+        grid_wr = (self.stats.grid_trades_won / max(self.stats.grid_trades_total, 1)) * 100
+        mom_wr = (self.stats.momentum_trades_won / max(self.stats.momentum_trades_total, 1)) * 100
         return {
             "simulation": {
                 "trades": self.stats.sim_trades_total,
@@ -314,6 +353,19 @@ class SafetyManager:
                 "avg_loss": f"{self.stats.sim_avg_loss_pct:.1f}%",
                 "total_pnl": f"${self.stats.sim_total_pnl_usd:+.2f}",
                 "needed_for_unlock": max(0, self.MIN_SIM_TRADES - self.stats.sim_trades_total),
+            },
+            "grid": {
+                "trades": self.stats.grid_trades_total,
+                "won": self.stats.grid_trades_won,
+                "win_rate": f"{grid_wr:.1f}%",
+                "pnl": f"${self.stats.grid_total_pnl_usd:+.2f}",
+                "unlock_at": f"{self.MIN_GRID_TRADES_FOR_UNLOCK} trades @ {self.MIN_GRID_WIN_RATE}% WR",
+            },
+            "momentum": {
+                "trades": self.stats.momentum_trades_total,
+                "won": self.stats.momentum_trades_won,
+                "win_rate": f"{mom_wr:.1f}%",
+                "pnl": f"${self.stats.momentum_total_pnl_usd:+.2f}",
             },
             "real": {
                 "trades": self.stats.real_trades_total,
@@ -332,8 +384,6 @@ class SafetyManager:
                 "unlock_reason": self.stats.unlock_reason,
                 "daily_loss_limit": f"${self.MAX_DAILY_LOSS_USD}",
                 "max_trade_usd": self.MAX_TRADE_USD,
-                "min_sim_trades": self.MIN_SIM_TRADES,
-                "min_win_rate": f"{self.MIN_SIM_WIN_RATE}%",
             }
         }
     

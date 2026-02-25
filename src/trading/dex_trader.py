@@ -1416,19 +1416,38 @@ class DEXTrader:
     
     async def check_sniper_positions(self):
         """
-        Check all sniper positions for TP/SL triggers
-        Should be called periodically (every 30s-1min)
+        Check all sniper positions for TP/SL triggers.
+        Fetches prices concurrently for performance.
         """
         if not self.sniper_positions:
             return
+        
+        # Fetch all prices concurrently
+        async def _fetch(addr, pos):
+            return addr, await self._get_token_price(pos["network"], addr)
+        
+        price_tasks = [_fetch(addr, pos) for addr, pos in self.sniper_positions.items()]
+        price_results = await asyncio.gather(*price_tasks, return_exceptions=True)
+        price_map = {}
+        for result in price_results:
+            if isinstance(result, Exception):
+                continue
+            addr, price = result
+            if price:
+                price_map[addr] = price
         
         positions_to_close = []
         
         for token_address, pos in self.sniper_positions.items():
             try:
-                current_price = await self._get_token_price(pos["network"], token_address)
+                current_price = price_map.get(token_address)
                 if not current_price:
+                    pos["_price_fail_count"] = pos.get("_price_fail_count", 0) + 1
+                    if pos["_price_fail_count"] > 10:
+                        self.logger.warning(f"[SNIPER] No price data for {pos.get('symbol', '?')} after 10 tries, closing")
+                        positions_to_close.append(token_address)
                     continue
+                pos["_price_fail_count"] = 0
                 
                 symbol = pos.get("symbol", token_address[:10])
                 entry_price = pos["entry_price"]
@@ -1440,7 +1459,7 @@ class DEXTrader:
                 # Update highest price and trailing SL
                 if current_price > pos.get("highest_price", entry_price):
                     pos["highest_price"] = current_price
-                    trailing_pct = pos.get("trailing_pct", 10)
+                    trailing_pct = pos.get("trailing_pct", 8)
                     new_sl = current_price * (1 - trailing_pct / 100)
                     if new_sl > pos["sl_price"]:
                         old_sl = pos["sl_price"]
@@ -1465,10 +1484,18 @@ class DEXTrader:
                 
                 if should_close:
                     self.logger.warning(f"[SNIPER] {close_reason} for {symbol}")
-                    await self.sell(
-                        network=pos["network"], token_address=token_address,
-                        percent=100, slippage=3.0, token_symbol=symbol
-                    )
+                    try:
+                        await self.sell(
+                            network=pos["network"], token_address=token_address,
+                            percent=100, slippage=3.0, token_symbol=symbol
+                        )
+                    except Exception as sell_err:
+                        pos["_sell_retries"] = pos.get("_sell_retries", 0) + 1
+                        self.logger.error(f"[SNIPER] Sell failed for {symbol} (attempt {pos['_sell_retries']}): {sell_err}")
+                        if pos["_sell_retries"] >= 3:
+                            self.logger.error(f"[SNIPER] Max retries reached for {symbol}, removing position")
+                            positions_to_close.append(token_address)
+                        continue
                     pnl_usd = remaining_usd * (pnl_pct / 100)
                     self.safety.record_sell(symbol, pos["network"], remaining_usd, pnl_pct, pnl_usd, self.safety.is_simulation_mode())
                     positions_to_close.append(token_address)

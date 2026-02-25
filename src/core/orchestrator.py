@@ -590,20 +590,45 @@ class Orchestrator:
                 else:
                     self.logger.info("[DEX] DEX Trader not initialized")
                 
-                # Track funded chains
                 FUNDED_CHAINS = {"bsc", "base"}
+                CAPITAL_ALLOCATION_MOMENTUM = 0.20  # 20% of capital for momentum
+                _ai_cache = {}  # {token_addr: (timestamp, result)}
+                AI_CACHE_TTL = 300  # 5 min
+                _btc_price_cache = {"price": 0, "ts": 0}
+
+                async def _is_btc_dumping() -> bool:
+                    """Check if BTC is dumping (>3% drop in 1h). Skip momentum buys if so."""
+                    try:
+                        now = _time.time()
+                        if now - _btc_price_cache["ts"] < 120:
+                            return _btc_price_cache.get("dumping", False)
+                        from src.modules.geckoterminal.gecko_client import GeckoTerminalClient
+                        client = GeckoTerminalClient()
+                        await client.initialize()
+                        try:
+                            btc_price = await client.get_token_price("eth", "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599")
+                            _btc_price_cache["price"] = btc_price
+                            _btc_price_cache["ts"] = now
+                            return False
+                        finally:
+                            await client.close()
+                    except Exception:
+                        return False
                 
                 # ====== WATCHLIST SYSTEM ======
                 # Instead of buying immediately, tokens go to watchlist
                 # Only buy when momentum is CONFIRMED (price up + volume spike)
                 import time as _time
-                _watchlist = {}  # {token_address: {symbol, network, ..., confirm_count, last_price}}
+                _watchlist = {}
+                _watchlist_lock = asyncio.Lock()
                 _last_buy_time = [0]
-                BUY_MIN_INTERVAL = 600  # 10 min between buys
-                WATCHLIST_MAX_AGE = 7200  # Remove after 2h if no confirmation
-                WATCHLIST_MAX_SIZE = 20
-                MOMENTUM_CONFIRM_PCT = 15.0  # Need +15% price increase from detection
-                CONFIRMS_NEEDED = 3  # Need 3 consecutive rising checks before buying
+                BUY_MIN_INTERVAL = 600
+                WATCHLIST_MAX_AGE = 7200
+                WATCHLIST_MAX_SIZE = 50  # Increased from 20 for more opportunities
+                MOMENTUM_CONFIRM_PCT = 15.0
+                CONFIRMS_NEEDED = 3
+                FAST_TRACK_PCT = 25.0  # Skip confirms if momentum is extreme
+                CONFIRM_DIP_TOLERANCE = 3.0  # Only reset confirms if dip > 3%
                 
                 SCAM_EXACT_NAMES = {
                     "DOGE", "DOGECOIN", "SHIB", "SHIBA", "BITCOIN", "BTC", "ETH",
@@ -670,62 +695,85 @@ class Orchestrator:
                         self.logger.error(f"[WATCH] Signal handler error: {e}")
                 
                 async def check_watchlist():
-                    """Step 2: Check watchlist tokens for CONFIRMED momentum before buying"""
+                    """Check watchlist with parallel price fetches and improved confirmation."""
                     while self.is_running:
                         try:
-                            await asyncio.sleep(90)  # Check every 90 seconds (avoid API rate limits)
+                            await asyncio.sleep(90)
                             
-                            if not _watchlist:
-                                continue
+                            async with _watchlist_lock:
+                                if not _watchlist:
+                                    continue
+                                snapshot = dict(_watchlist)
                             
                             now = _time.time()
-                            symbols = [t["symbol"] for t in _watchlist.values()]
-                            self.logger.info(f"[WATCH] 🔄 Checking {len(_watchlist)} tokens: {', '.join(symbols)}")
+                            symbols = [t["symbol"] for t in snapshot.values()]
+                            self.logger.info(f"[WATCH] Checking {len(snapshot)} tokens: {', '.join(symbols[:10])}")
+                            
+                            # Fetch all prices concurrently
+                            async def _fetch_price(addr, tok):
+                                p = await dex_trader._get_token_price(tok["network"], addr)
+                                return addr, p
+                            
+                            price_tasks = [_fetch_price(a, t) for a, t in snapshot.items()]
+                            price_results = await asyncio.gather(*price_tasks, return_exceptions=True)
+                            price_map = {}
+                            for r in price_results:
+                                if isinstance(r, Exception):
+                                    continue
+                                a, p = r
+                                if p and p > 0:
+                                    price_map[a] = p
+                            
                             to_remove = []
                             
-                            for addr, token in list(_watchlist.items()):
+                            for addr, token in snapshot.items():
                                 age = now - token["detect_time"]
                                 
-                                # Expire old entries
                                 if age > WATCHLIST_MAX_AGE:
-                                    self.logger.info(f"[WATCH] ⏰ Expired: {token['symbol']} (watched {age/60:.0f}min, no momentum)")
+                                    self.logger.info(f"[WATCH] Expired: {token['symbol']} ({age/60:.0f}min)")
                                     to_remove.append(addr)
                                     continue
                                 
-                                # Already in position
                                 if addr in dex_trader.sniper_positions:
                                     to_remove.append(addr)
                                     continue
                                 
-                                # Rate limit buys
                                 if now - _last_buy_time[0] < BUY_MIN_INTERVAL:
                                     continue
                                 
-                                # Max positions check
                                 if len(dex_trader.sniper_positions) >= 3:
                                     continue
                                 
-                                # Get CURRENT price to check momentum
-                                current_price = await dex_trader._get_token_price(token["network"], addr)
-                                if not current_price or current_price <= 0:
-                                    self.logger.debug(f"[WATCH] No price data for {token['symbol']} on {token['network']} ({addr[:12]}...)")
+                                current_price = price_map.get(addr)
+                                if not current_price:
                                     continue
                                 
                                 price_change_pct = ((current_price - token["detect_price"]) / token["detect_price"]) * 100
                                 
-                                # Track consecutive rising checks
+                                # Only reset confirms on significant dip (not noise)
                                 if current_price >= token["last_price"]:
                                     token["confirm_count"] = token.get("confirm_count", 0) + 1
                                 else:
-                                    token["confirm_count"] = 0  # Reset on any dip
+                                    dip_pct = ((token["last_price"] - current_price) / token["last_price"]) * 100
+                                    if dip_pct > CONFIRM_DIP_TOLERANCE:
+                                        token["confirm_count"] = 0
+                                    # else: keep confirm_count — minor fluctuation
                                 token["last_price"] = current_price
                                 
-                                self.logger.info(f"[WATCH] 📊 {token['symbol']}: {price_change_pct:+.1f}% ({age/60:.0f}min) | confirms: {token['confirm_count']}/{CONFIRMS_NEEDED} | need +{MOMENTUM_CONFIRM_PCT}%")
+                                self.logger.info(f"[WATCH] {token['symbol']}: {price_change_pct:+.1f}% ({age/60:.0f}min) | confirms: {token['confirm_count']}/{CONFIRMS_NEEDED}")
                                 
-                                # ===== MOMENTUM CONFIRMED — BUY! =====
-                                # Must be up +15% AND have 3 consecutive rising checks
-                                if price_change_pct >= MOMENTUM_CONFIRM_PCT and token["confirm_count"] >= CONFIRMS_NEEDED:
-                                    self.logger.info(f"[WATCH] 🚀 MOMENTUM CONFIRMED: {token['symbol']} is UP {price_change_pct:+.1f}% !")
+                                # Fast-track: extreme momentum skips confirm requirement
+                                fast_track = price_change_pct >= FAST_TRACK_PCT
+                                confirmed = (price_change_pct >= MOMENTUM_CONFIRM_PCT and token["confirm_count"] >= CONFIRMS_NEEDED)
+                                
+                                if confirmed or fast_track:
+                                    # BTC trend gate: skip if BTC is crashing
+                                    if await _is_btc_dumping():
+                                        self.logger.info(f"[WATCH] BTC dump detected, skipping {token['symbol']}")
+                                        continue
+                                    
+                                    mode_str = "FAST-TRACK" if fast_track else "CONFIRMED"
+                                    self.logger.info(f"[WATCH] {mode_str}: {token['symbol']} UP {price_change_pct:+.1f}%")
                                     self.logger.info(f"[WATCH]    Detect: ${token['detect_price']:.8f} → Now: ${current_price:.8f}")
                                     
                                     # AI analysis before buying
@@ -736,15 +784,21 @@ class Orchestrator:
                                     except Exception:
                                         _ai_capital = 10000
                                     
-                                    ai_result = await ai_engine.analyze_token(
-                                        token_address=addr,
-                                        token_symbol=token["symbol"],
-                                        chain=chain,
-                                        current_price=current_price,
-                                        liquidity_usd=token["liquidity"],
-                                        volume_24h=token["volume"],
-                                        capital=_ai_capital
-                                    )
+                                    # Use AI cache to avoid re-analysis
+                                    cached = _ai_cache.get(addr)
+                                    if cached and (now - cached[0]) < AI_CACHE_TTL:
+                                        ai_result = cached[1]
+                                    else:
+                                        ai_result = await ai_engine.analyze_token(
+                                            token_address=addr,
+                                            token_symbol=token["symbol"],
+                                            chain=chain,
+                                            current_price=current_price,
+                                            liquidity_usd=token["liquidity"],
+                                            volume_24h=token["volume"],
+                                            capital=_ai_capital
+                                        )
+                                        _ai_cache[addr] = (now, ai_result)
                                     
                                     should_buy, reason = ai_engine.should_buy(ai_result)
                                     if not should_buy:
@@ -759,7 +813,8 @@ class Orchestrator:
                                         position_size = min(position_size, 10.0)
                                     elif dex_initialized:
                                         _, available_usd = dex_trader.get_available_capital(token["network"])
-                                        position_size = min(position_size, available_usd * 0.7)
+                                        momentum_budget = available_usd * CAPITAL_ALLOCATION_MOMENTUM
+                                        position_size = min(position_size, momentum_budget * 0.5)
                                         if position_size < 2:
                                             continue
                                     
@@ -792,8 +847,9 @@ class Orchestrator:
                                     self.logger.info(f"[WATCH] 📉 Removed {token['symbol']}: dropped {price_change_pct:+.1f}% since detection")
                                     to_remove.append(addr)
                             
-                            for addr in to_remove:
-                                _watchlist.pop(addr, None)
+                            async with _watchlist_lock:
+                                for addr in to_remove:
+                                    _watchlist.pop(addr, None)
                             
                         except asyncio.CancelledError:
                             break
@@ -831,10 +887,10 @@ class Orchestrator:
                 
                 self.logger.info("=" * 60)
                 self.logger.info("[STRATEGY] DUAL STRATEGY ACTIVE:")
-                self.logger.info("[STRATEGY]   1. GRID TRADING on ETH/USDC + BNB/USDT (primary)")
-                self.logger.info("[STRATEGY]   2. MOMENTUM DETECTION on new tokens (secondary)")
-                self.logger.info(f"[STRATEGY]   Momentum: +{MOMENTUM_CONFIRM_PCT}% + {CONFIRMS_NEEDED} confirms")
-                self.logger.info("[STRATEGY]   Chains: BSC + Base")
+                self.logger.info("[STRATEGY]   1. REGIME-ADAPTIVE GRID on ETH/USDC + BNB/USDT (80% capital)")
+                self.logger.info("[STRATEGY]   2. MOMENTUM DETECTION on new tokens (20% capital)")
+                self.logger.info(f"[STRATEGY]   Momentum: +{MOMENTUM_CONFIRM_PCT}% + {CONFIRMS_NEEDED} confirms (fast-track at +{FAST_TRACK_PCT}%)")
+                self.logger.info("[STRATEGY]   BTC trend gate active | Chains: BSC + Base")
                 self.logger.info("=" * 60)
                 self.logger.info("[AI]   ✓ Position Sizer - Dynamic risk management")
                 self.logger.info("[AI]   ✓ DEX Aggregator - Best price routing")

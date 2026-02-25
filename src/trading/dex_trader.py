@@ -419,20 +419,22 @@ class DEXTrader:
                 slippage_bps=int(slippage * 100)
             )
 
-            # Fallback: direct V2 router if KyberSwap failed
+            # Fallback: Uniswap V3 direct router if KyberSwap failed
             if not tx_hash and not is_sim:
-                self.logger.warning(f"[DEX] KyberSwap failed, trying direct V2 router...")
-                tx_data = await self._build_swap_tx(
-                    network=network,
-                    token_in=self.NATIVE_TOKEN_ADDRESS,
-                    token_out=token_address,
-                    amount_in=amount_native,
-                    slippage=slippage
-                )
-                if tx_data:
-                    tx_hash, amount_out_raw = await self._send_v3_swap(network, tx_data)
-                    if tx_hash:
-                        self.logger.info(f"[DEX] V2 fallback succeeded: {tx_hash}")
+                self.logger.warning(f"[DEX] KyberSwap failed, trying V3 direct router...")
+                weth = self.WRAPPED_NATIVE.get(network)
+                if weth:
+                    fb_hash = await self._send_v3_swap(
+                        network=network,
+                        token_in=weth,
+                        token_out=token_address,
+                        amount_in=amount_native,
+                        is_eth_swap=True
+                    )
+                    if fb_hash:
+                        tx_hash = fb_hash
+                        amount_out_raw = 0
+                        self.logger.info(f"[DEX] V3 fallback succeeded: {tx_hash}")
             
             # Get token decimals (most ERC20 = 18, but some differ)
             token_decimals = 18

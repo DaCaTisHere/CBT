@@ -41,6 +41,8 @@ class Orchestrator:
     Central orchestrator managing all trading strategies and system components
     """
     
+    _instance = None  # Singleton for healthcheck access
+
     def __init__(self):
         """Initialize orchestrator"""
         self.logger = logger
@@ -59,6 +61,9 @@ class Orchestrator:
         self.start_time: Optional[datetime] = None
         self.total_trades = 0
         self.total_pnl = 0.0
+        self.grid_trader = None
+        
+        Orchestrator._instance = self
         
         # Capital allocation (percentage per strategy)
         self.capital_allocation = {
@@ -810,18 +815,27 @@ class Orchestrator:
                 pool_detector.on_signal(on_pool_signal)
                 asyncio.create_task(pool_detector.start())
                 asyncio.create_task(sniper_monitor_loop())
-                asyncio.create_task(check_watchlist())  # Watchlist momentum checker
+                asyncio.create_task(check_watchlist())
                 
-                self.logger.info("[STRATEGY] 🎯 DETECT → WATCH → CONFIRM → BUY")
-                self.logger.info(f"[STRATEGY]   Momentum required: +{MOMENTUM_CONFIRM_PCT}% before entry")
-                self.logger.info(f"[STRATEGY]   Watchlist timeout: {WATCHLIST_MAX_AGE/60:.0f} min")
-                self.logger.info(f"[STRATEGY]   Min interval between buys: {BUY_MIN_INTERVAL/60:.0f} min")
-                self.logger.info("[STRATEGY]   Chains: BSC + Base | Max 3 positions")
-                self.logger.info("[AI] 🤖 AI MODULES ACTIVE:")
-                self.logger.info("[AI]   ✓ Honeypot Detector - Block scam tokens")
-                self.logger.info("[AI]   ✓ Rug Pull Analyzer - Detect unsafe contracts")
-                self.logger.info("[AI]   ✓ Sentiment Analyzer - Market mood analysis")
-                self.logger.info("[AI]   ✓ Smart Entry AI - Optimal entry timing")
+                # ============ GRID TRADING ENGINE (PRIMARY STRATEGY) ============
+                try:
+                    from src.trading.grid_trader import GridTrader
+                    grid_trader = GridTrader(dex_trader=dex_trader, safety_manager=safety)
+                    await grid_trader.initialize()
+                    asyncio.create_task(grid_trader.run())
+                    self.grid_trader = grid_trader
+                    self.logger.info("[GRID] ✅ Grid Trading Engine started (PRIMARY strategy)")
+                except Exception as e:
+                    self.logger.error(f"[GRID] Grid Trading init error: {e}")
+                    grid_trader = None
+                
+                self.logger.info("=" * 60)
+                self.logger.info("[STRATEGY] DUAL STRATEGY ACTIVE:")
+                self.logger.info("[STRATEGY]   1. GRID TRADING on ETH/USDC + BNB/USDT (primary)")
+                self.logger.info("[STRATEGY]   2. MOMENTUM DETECTION on new tokens (secondary)")
+                self.logger.info(f"[STRATEGY]   Momentum: +{MOMENTUM_CONFIRM_PCT}% + {CONFIRMS_NEEDED} confirms")
+                self.logger.info("[STRATEGY]   Chains: BSC + Base")
+                self.logger.info("=" * 60)
                 self.logger.info("[AI]   ✓ Position Sizer - Dynamic risk management")
                 self.logger.info("[AI]   ✓ DEX Aggregator - Best price routing")
                 self.logger.info("[AI]   ✓ Whale Tracker - Big money detection")

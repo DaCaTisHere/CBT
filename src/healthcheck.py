@@ -1009,6 +1009,18 @@ async def dex_status(request):
         }, status=500)
 
 
+async def grid_status(request):
+    """Grid Trading Engine status"""
+    try:
+        from src.core.orchestrator import Orchestrator
+        orch = Orchestrator._instance if hasattr(Orchestrator, '_instance') else None
+        if orch and hasattr(orch, 'grid_trader') and orch.grid_trader:
+            return web.json_response(orch.grid_trader.get_status())
+        return web.json_response({"status": "not_running", "message": "Grid trader not initialized"})
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
 async def start_healthcheck_server(port=8080):
     """Start healthcheck server on specified port"""
     app = web.Application()
@@ -1018,6 +1030,7 @@ async def start_healthcheck_server(port=8080):
     app.router.add_get('/dex', dex_status)
     app.router.add_get('/safety', safety_status)
     app.router.add_get('/safety/reset', safety_reset)
+    app.router.add_get('/grid', grid_status)
     app.router.add_get('/', index)
     
     runner = web.AppRunner(app)

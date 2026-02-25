@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     # ==========================================
     # BLOCKCHAIN RPCs
     # ==========================================
-    ETHEREUM_RPC_URL: str = Field(...)
+    ETHEREUM_RPC_URL: Optional[str] = None
     ETHEREUM_TESTNET_RPC_URL: Optional[str] = None
     
     SOLANA_RPC_URL: str = Field(default="https://api.mainnet-beta.solana.com")
@@ -94,7 +94,7 @@ class Settings(BaseSettings):
     # ==========================================
     # FEATURE FLAGS (Enable/Disable Modules)
     # ==========================================
-    ENABLE_SNIPER: bool = Field(default=True)
+    ENABLE_SNIPER: bool = Field(default=False)
     ENABLE_NEWS_TRADER: bool = Field(default=True)
     ENABLE_SENTIMENT: bool = Field(default=False)
     ENABLE_ML_PREDICTOR: bool = Field(default=False)
@@ -132,8 +132,7 @@ class Settings(BaseSettings):
     # MONITORING
     # ==========================================
     SENTRY_DSN: Optional[str] = None
-    TELEGRAM_BOT_TOKEN: Optional[str] = None
-    TELEGRAM_CHAT_ID: Optional[str] = None
+    # TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are defined in EXTERNAL APIs section above
     
     # ==========================================
     # TRADING MODES
@@ -183,4 +182,38 @@ class Settings(BaseSettings):
 
 # Global settings instance
 settings = Settings()
+
+# ============================================================
+# FORCE-READ critical trading mode from OS environment
+# This bypasses any pydantic parsing issues with bool values
+# ============================================================
+def _parse_bool_env(name: str, default: bool) -> bool:
+    """Explicitly parse bool from environment variable"""
+    raw = os.getenv(name, "").strip().lower()
+    if raw in ("false", "0", "no", "off"):
+        return False
+    elif raw in ("true", "1", "yes", "on"):
+        return True
+    return default
+
+# Debug: show what pydantic parsed vs what env says
+_sim_raw = os.getenv("SIMULATION_MODE", "NOT_SET")
+_sim_parsed = _parse_bool_env("SIMULATION_MODE", settings.SIMULATION_MODE)
+print(f"[CONFIG-DEBUG] SIMULATION_MODE: env='{_sim_raw}' -> pydantic={settings.SIMULATION_MODE} -> forced={_sim_parsed}", flush=True)
+
+if settings.SIMULATION_MODE != _sim_parsed:
+    print(f"[CONFIG-FIX] Correcting SIMULATION_MODE: {settings.SIMULATION_MODE} -> {_sim_parsed}", flush=True)
+    settings.SIMULATION_MODE = _sim_parsed
+
+_dry_parsed = _parse_bool_env("DRY_RUN", settings.DRY_RUN)
+if settings.DRY_RUN != _dry_parsed:
+    print(f"[CONFIG-FIX] Correcting DRY_RUN: {settings.DRY_RUN} -> {_dry_parsed}", flush=True)
+    settings.DRY_RUN = _dry_parsed
+
+_test_parsed = _parse_bool_env("USE_TESTNET", settings.USE_TESTNET)
+if settings.USE_TESTNET != _test_parsed:
+    print(f"[CONFIG-FIX] Correcting USE_TESTNET: {settings.USE_TESTNET} -> {_test_parsed}", flush=True)
+    settings.USE_TESTNET = _test_parsed
+
+print(f"[CONFIG-FINAL] SIMULATION_MODE={settings.SIMULATION_MODE} | DRY_RUN={settings.DRY_RUN} | USE_TESTNET={settings.USE_TESTNET}", flush=True)
 

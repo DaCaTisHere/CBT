@@ -111,7 +111,7 @@ class MomentumDetector:
     
     # BTC correlation settings
     BTC_TREND_THRESHOLD = 0.3      
-    REQUIRE_BTC_ALIGNMENT = True   # Only trade with BTC direction
+    REQUIRE_BTC_ALIGNMENT = False  # Disabled - trade even in bearish markets (sniper opportunities)
     
     # Cooldown settings
     TOKEN_COOLDOWN_HOURS = 4.0     # Reduced from 8h for more opportunities

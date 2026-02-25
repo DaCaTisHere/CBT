@@ -78,8 +78,8 @@ class GeckoTerminalClient:
         "optimism": "optimism"
     }
     
-    # Rate limiting
-    RATE_LIMIT_CALLS = 30
+    # Rate limiting - conservative to avoid Railway shared IP issues
+    RATE_LIMIT_CALLS = 10  # Conservative internal limit
     RATE_LIMIT_PERIOD = 60  # seconds
     
     def __init__(self):
@@ -87,13 +87,23 @@ class GeckoTerminalClient:
         self.session: Optional[aiohttp.ClientSession] = None
         self._call_times: List[datetime] = []
         self._cache: Dict[str, tuple] = {}  # (data, timestamp)
-        self._cache_ttl = 60  # seconds - increased to reduce API calls
+        self._cache_ttl = 60  # seconds - reduced for fresher data
+        self._backoff_until: Optional[datetime] = None
+        self._consecutive_429s = 0  # Only count 429 errors, not all errors
         
     async def initialize(self):
-        """Initialize the client"""
+        """Initialize the client with custom headers to avoid shared IP rate limits"""
+        import random
+        import string
+        # Unique identifier to avoid shared Railway IP rate limit collisions
+        bot_id = ''.join(random.choices(string.ascii_lowercase, k=8))
         self.session = aiohttp.ClientSession(
-            headers={"Accept": "application/json"},
-            timeout=aiohttp.ClientTimeout(total=10)
+            headers={
+                "Accept": "application/json",
+                "User-Agent": f"CryptobotUltimate/{bot_id} (Python/aiohttp)",
+                "Accept-Encoding": "gzip, deflate",
+            },
+            timeout=aiohttp.ClientTimeout(total=15)
         )
         self.logger.info("[GECKO] GeckoTerminal client initialized")
         
@@ -132,11 +142,20 @@ class GeckoTerminalClient:
         self._cache[key] = (data, datetime.utcnow())
         
     async def _get(self, endpoint: str) -> Optional[Dict]:
-        """Make GET request with rate limiting and caching"""
+        """Make GET request with rate limiting, caching, and smart backoff"""
         # Check cache first
         cached = self._get_cache(endpoint)
         if cached:
             return cached
+        
+        # Check if we're in backoff period
+        if self._backoff_until and datetime.utcnow() < self._backoff_until:
+            remaining = (self._backoff_until - datetime.utcnow()).total_seconds()
+            if remaining > 0:
+                return None
+            else:
+                # Backoff expired, reset
+                self._backoff_until = None
             
         await self._rate_limit()
         
@@ -144,16 +163,28 @@ class GeckoTerminalClient:
             url = f"{self.BASE_URL}{endpoint}"
             async with self.session.get(url) as response:
                 if response.status == 200:
+                    self._consecutive_429s = 0  # Reset on success
+                    self._backoff_until = None
                     data = await response.json()
                     self._set_cache(endpoint, data)
                     return data
                 elif response.status == 429:
-                    self.logger.warning("[GECKO] Rate limited - backing off")
-                    await asyncio.sleep(60)
+                    # Smart backoff: 20s first, then 40s, max 90s
+                    self._consecutive_429s += 1
+                    backoff_time = min(20 * (2 ** (self._consecutive_429s - 1)), 90)
+                    self._backoff_until = datetime.utcnow() + timedelta(seconds=backoff_time)
+                    self.logger.warning(f"[GECKO] Rate limited - backing off {backoff_time}s (429 #{self._consecutive_429s})")
+                    return None
+                elif response.status == 404:
+                    # Don't count 404 as error (wrong network ID etc)
+                    self.logger.debug(f"[GECKO] 404 for {endpoint}")
                     return None
                 else:
-                    self.logger.warning(f"[GECKO] API error: {response.status}")
+                    self.logger.warning(f"[GECKO] API error: {response.status} for {endpoint}")
                     return None
+        except asyncio.TimeoutError:
+            self.logger.debug(f"[GECKO] Timeout for {endpoint}")
+            return None
         except Exception as e:
             self.logger.error(f"[GECKO] Request error: {e}")
             return None

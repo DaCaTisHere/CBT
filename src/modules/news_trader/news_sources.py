@@ -87,7 +87,10 @@ class BinanceAnnouncementMonitor(NewsSource):
         Fetch latest announcements from Binance API
         """
         try:
-            self.logger.info("[Binance] 🔍 Fetching latest announcements from API...")
+            # Only log occasionally to reduce noise (every ~30th check = ~2.5 min)
+            self._fetch_count = getattr(self, '_fetch_count', 0) + 1
+            if self._fetch_count % 30 == 1:
+                self.logger.info("[Binance] 🔍 Monitoring for new announcements...")
             payload = {
                 "type": 1,
                 "catalogId": self.CATEGORY_NEW_LISTING,
@@ -225,33 +228,43 @@ class CoinbaseAnnouncementMonitor(NewsSource):
     
     async def _fetch_rss(self) -> List[Dict[str, Any]]:
         """
-        Fetch RSS feed from Coinbase blog
+        Fetch RSS feed from Coinbase blog with retry logic
         """
-        try:
-            async with self.session.get(
-                self.BLOG_RSS,
-                timeout=aiohttp.ClientTimeout(total=10)
-            ) as response:
-                if response.status == 200:
-                    content = await response.text()
+        max_retries = 3
+        retry_delay = 5
+        
+        for attempt in range(max_retries):
+            try:
+                async with self.session.get(
+                    self.BLOG_RSS,
+                    timeout=aiohttp.ClientTimeout(total=15)
+                ) as response:
+                    if response.status == 200:
+                        content = await response.text()
+                        
+                        # Parse RSS feed (synchronous)
+                        feed = await asyncio.to_thread(feedparser.parse, content)
+                        
+                        # Filter for listing-related entries
+                        entries = []
+                        for entry in feed.entries[:10]:  # Latest 10
+                            title = entry.get('title', '').lower()
+                            if any(keyword in title for keyword in ['listing', 'launch', 'support', 'available']):
+                                entries.append(entry)
+                        
+                        return entries
                     
-                    # Parse RSS feed (synchronous)
-                    feed = await asyncio.to_thread(feedparser.parse, content)
+                    return []
                     
-                    # Filter for listing-related entries
-                    entries = []
-                    for entry in feed.entries[:10]:  # Latest 10
-                        title = entry.get('title', '').lower()
-                        if any(keyword in title for keyword in ['listing', 'launch', 'support', 'available']):
-                            entries.append(entry)
-                    
-                    return entries
-                
-                return []
-                
-        except Exception as e:
-            self.logger.error(f"[{self.name}] RSS fetch failed: {e}")
-            return []
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    # Only log on final failure to reduce noise
+                    await asyncio.sleep(retry_delay * (attempt + 1))
+                else:
+                    self.logger.warning(f"[{self.name}] RSS fetch failed after {max_retries} retries: {e}")
+                    return []
+        
+        return []
     
     async def _process_entry(self, entry: Dict[str, Any]):
         """

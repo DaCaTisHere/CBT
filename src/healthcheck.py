@@ -4,9 +4,84 @@ import asyncio
 import logging
 import time
 import json
+import os
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+def get_trading_mode():
+    """Get current trading mode from environment"""
+    mode = os.getenv("TRADING_MODE", "SIMULATION").upper()
+    simulation = os.getenv("SIMULATION_MODE", "true").lower() == "true"
+    
+    if mode == "REAL" and not simulation:
+        return "REAL", "#00ff88"
+    elif mode == "DRY_RUN":
+        return "DRY RUN", "#00d4ff"
+    else:
+        return "SIMULATION", "#ffaa00"
+
+# Cache for wallet balances (avoid fetching every request)
+_wallet_cache = {"balances": {}, "total_usd": 0, "last_update": 0}
+
+def get_real_wallet_balance():
+    """Get real wallet balance from DEX Trader"""
+    global _wallet_cache
+    try:
+        # Cache for 60 seconds
+        if time.time() - _wallet_cache["last_update"] < 60 and _wallet_cache["total_usd"] > 0:
+            return _wallet_cache["balances"], _wallet_cache["total_usd"]
+        
+        # Try to get from DEX Trader stats
+        from src.trading.dex_trader import DEXTrader
+        import asyncio
+        
+        # Get cached stats from orchestrator if available
+        try:
+            from src.core.orchestrator import Orchestrator
+            # Try to read from a simple stats file
+            stats_file = "/tmp/wallet_stats.json"
+            if os.path.exists(stats_file):
+                with open(stats_file, 'r') as f:
+                    data = json.load(f)
+                    if time.time() - data.get("timestamp", 0) < 300:  # 5 min cache
+                        return data.get("balances", {}), data.get("total_usd", 0)
+        except:
+            pass
+        
+        # Fallback: try to read balances from web3 directly
+        try:
+            from web3 import Web3
+            from src.core.config import settings as _cfg
+            prices = {"eth": 2700, "bsc": 650, "base": 2700, "arbitrum": 2700}
+            rpcs = {
+                "BASE": ("base", getattr(_cfg, 'BASE_RPC_URL', None), "ETH"),
+                "BSC": ("bsc", getattr(_cfg, 'BSC_RPC_URL', None), "BNB"),
+                "ARBITRUM": ("arbitrum", getattr(_cfg, 'ARBITRUM_RPC_URL', None), "ETH"),
+            }
+            balances = {}
+            total_usd = 0
+            pk = _cfg.WALLET_PRIVATE_KEY
+            addr = Web3().eth.account.from_key(pk).address
+            for label, (net, rpc, sym) in rpcs.items():
+                if rpc:
+                    w3 = Web3(Web3.HTTPProvider(rpc))
+                    bal = w3.eth.get_balance(addr) / 1e18
+                    usd = bal * prices.get(net, 2700)
+                    balances[label] = {"symbol": sym, "balance": round(bal, 6), "usd": round(usd, 2)}
+                    total_usd += usd
+        except Exception:
+            balances = {}
+            total_usd = 0
+        
+        _wallet_cache["balances"] = balances
+        _wallet_cache["total_usd"] = total_usd
+        _wallet_cache["last_update"] = time.time()
+        
+        return balances, total_usd
+    except Exception as e:
+        print(f"Error getting wallet balance: {e}")
+        return {}, 0
 
 def get_trading_stats():
     """Get paper trading stats if available"""
@@ -96,14 +171,33 @@ async def status(request):
     uptime = time.time() - _start_time
     trading_stats = get_trading_stats()
     ml_info = get_ml_info()
+    mode_name, _ = get_trading_mode()
+    wallet_balances, wallet_total_usd = get_real_wallet_balance()
+    
+    # Debug: show actual settings value vs env var
+    try:
+        from src.core.config import settings as _s
+        _settings_sim = _s.SIMULATION_MODE
+    except:
+        _settings_sim = "import_error"
     
     data = {
         "status": "running",
         "uptime_seconds": int(uptime),
         "uptime_hours": round(uptime / 3600, 2),
-        "version": "0.1.0",
-        "mode": "simulation",
+        "version": "9.3-AUDIT-FIX",
+        "mode": mode_name.lower(),
+        "debug": {
+            "env_SIMULATION_MODE": os.getenv("SIMULATION_MODE", "NOT_SET"),
+            "settings_SIMULATION_MODE": str(_settings_sim),
+            "env_TRADING_MODE": os.getenv("TRADING_MODE", "NOT_SET"),
+            "env_DRY_RUN": os.getenv("DRY_RUN", "NOT_SET"),
+        },
         "modules": _status.get("modules", []),
+        "wallet": {
+            "total_usd": wallet_total_usd,
+            "balances": wallet_balances
+        },
         "paper_trading": trading_stats,
         "ml_model": ml_info
     }
@@ -114,9 +208,25 @@ async def index(request):
     uptime = time.time() - _start_time
     stats = get_trading_stats()
     ml_info = get_ml_info()
+    mode_name, mode_color = get_trading_mode()
+    
+    # Get real wallet balance if in REAL mode
+    wallet_balances, wallet_total_usd = get_real_wallet_balance()
+    is_real_mode = mode_name == "REAL"
     
     # Format trading stats
-    if stats:
+    if is_real_mode and wallet_total_usd > 0:
+        # In REAL mode, show actual wallet balance
+        portfolio_value = wallet_total_usd
+        total_pnl = 0  # Will track from first trade
+        total_pnl_pct = 0
+        total_trades = stats.get('total_trades', 0) if stats else 0
+        win_rate = stats.get('win_rate', 0) if stats else 0
+        winning = stats.get('winning_trades', 0) if stats else 0
+        losing = stats.get('losing_trades', 0) if stats else 0
+        positions = stats.get('positions', {}) if stats else {}
+        open_positions = stats.get('open_positions', 0) if stats else 0
+    elif stats:
         portfolio_value = stats.get('current_value', 10000)
         total_pnl = stats.get('total_pnl', 0)
         total_pnl_pct = stats.get('total_pnl_percent', 0)
@@ -618,7 +728,7 @@ async def index(request):
     <div class="container">
         <header>
             <div class="logo">CRYPTOBOT ULTIMATE</div>
-            <div class="subtitle">v8.0 - MULTI-SOURCE (50 Coins + GeckoTerminal DEX)</div>
+            <div class="subtitle">v9.3-AI - SNIPER MODE (BSC + Base + AI Security + KyberSwap)</div>
         </header>
         
         <div class="status-bar">
@@ -628,7 +738,7 @@ async def index(request):
             </div>
             <div class="status-pill">
                 <span style="color: #888;">Mode:</span>
-                <span style="color: #ffaa00;">SIMULATION</span>
+                <span style="color: {mode_color}; font-weight: 600;">{mode_name}</span>
             </div>
             <div class="status-pill">
                 <span style="color: #888;">Uptime:</span>
@@ -703,48 +813,46 @@ async def index(request):
         
         <div class="card">
             <div class="card-header">
-                <span class="card-title">SWING TRADE v8.0 - MULTI-SOURCE</span>
-                <span class="card-badge" style="background: #00ff8822; color: #00ff88;">OPTIMIZED</span>
+                <span class="card-title">SNIPER v9.0-AI - REAL TRADING</span>
+                <span class="card-badge" style="background: #ff444422; color: #ff4444;">AGGRESSIVE</span>
             </div>
             <div class="strategy-grid">
                 <div class="strategy-section">
-                    <div class="strategy-title">🎯 Entry (CEX - Binance)</div>
+                    <div class="strategy-title">🎯 GeckoTerminal Sniper</div>
                     <div class="filter-list">
-                        <div class="filter-item">50 WHITELISTED SYMBOLS</div>
-                        <div class="filter-item">24h pump: +5% to +30%</div>
-                        <div class="filter-item">Pullback: -3% to -12% from high</div>
-                        <div class="filter-item">RSI &lt; 50 (relaxed)</div>
-                        <div class="filter-item">Volume &gt; $500k</div>
+                        <div class="filter-item">FUNDED: BSC + Base (KyberSwap)</div>
+                        <div class="filter-item">New pools: $5k+ liquidity</div>
+                        <div class="filter-item">Buy ratio: &gt; 50%</div>
+                        <div class="filter-item">Min transactions: 20/24h</div>
+                        <div class="filter-item">Price change: +5% to +1000%</div>
                     </div>
                 </div>
                 <div class="strategy-section">
-                    <div class="strategy-title">🦎 GeckoTerminal DEX</div>
+                    <div class="strategy-title">🤖 AI Security Checks</div>
                     <div class="filter-list">
-                        <div class="filter-item">Networks: SOL, BASE, ETH</div>
-                        <div class="filter-item">New pools: $10k+ liquidity</div>
-                        <div class="filter-item">Trending: +10% to +500%</div>
-                        <div class="filter-item">Min transactions: 50/24h</div>
-                        <div class="filter-item">Buy ratio: &gt; 40%</div>
+                        <div class="filter-item">Honeypot detection (3 APIs)</div>
+                        <div class="filter-item">Rug pull analysis</div>
+                        <div class="filter-item">Liquidity lock check</div>
+                        <div class="filter-item">Contract verification</div>
+                        <div class="filter-item">Whale concentration</div>
                     </div>
                 </div>
                 <div class="strategy-section">
-                    <div class="strategy-title">🛡️ Risk Management</div>
+                    <div class="strategy-title">🚀 Quick Exit Strategy</div>
                     <div class="filter-list">
-                        <div class="filter-item">SL: 5% (ATR adaptive)</div>
-                        <div class="filter-item">TP1: +4% → sell 20%</div>
-                        <div class="filter-item">TP2: +7% → sell 30%</div>
-                        <div class="filter-item">TP3: +10% → full exit</div>
-                        <div class="filter-item">Trail: 3% @ +5%</div>
+                        <div class="filter-item">SL: -15% (tight)</div>
+                        <div class="filter-item">TP1: +20%</div>
+                        <div class="filter-item">TP2: +50%</div>
+                        <div class="filter-item">TP3: +100%</div>
+                        <div class="filter-item">Max hold: 24h</div>
                     </div>
                 </div>
                 <div class="strategy-section">
-                    <div class="strategy-title">⚡ Limits</div>
+                    <div class="strategy-title">💰 Your Wallet</div>
                     <div class="filter-list">
-                        <div class="filter-item">Max: 5 positions</div>
-                        <div class="filter-item">Hold time: up to 48h</div>
-                        <div class="filter-item">Cooldown: 4h/token</div>
-                        <div class="filter-item">BTC must be bullish</div>
-                        <div class="filter-item">Score minimum: 50/100</div>
+                        <div class="filter-item" style="color: #00ff88; font-weight: bold;">TOTAL: ${wallet_total_usd:.2f} USD</div>
+                        {''.join(f'<div class="filter-item">{label}: {info["balance"]:.4f} {info["symbol"]} (~${info["usd"]:.0f})</div>' for label, info in wallet_balances.items()) if wallet_balances else '<div class="filter-item">Loading...</div>'}
+                        <div class="filter-item">Mode: {mode_name}</div>
                     </div>
                 </div>
             </div>
@@ -753,39 +861,56 @@ async def index(request):
         <div class="card">
             <div class="card-header">
                 <span class="card-title">Active Modules</span>
+                <span class="card-badge" style="background: #00ff8822; color: #00ff88;">AI-POWERED</span>
             </div>
             <div class="modules-grid">
                 <div class="module-item">
                     <div class="module-icon"></div>
-                    <span>Momentum Detector (50 coins)</span>
+                    <span>🎯 Pool Detector (BSC + Base)</span>
                 </div>
                 <div class="module-item">
                     <div class="module-icon"></div>
-                    <span>GeckoTerminal DEX</span>
+                    <span>🤖 AI Trading Engine</span>
                 </div>
                 <div class="module-item">
                     <div class="module-icon"></div>
-                    <span>Paper Trader</span>
+                    <span>🛡️ Honeypot Detector</span>
                 </div>
                 <div class="module-item">
                     <div class="module-icon"></div>
-                    <span>Technical Analysis</span>
+                    <span>⚠️ Rug Pull Detector</span>
                 </div>
                 <div class="module-item">
                     <div class="module-icon"></div>
-                    <span>News Trader</span>
+                    <span>📊 Sentiment Analyzer</span>
                 </div>
                 <div class="module-item">
                     <div class="module-icon"></div>
-                    <span>ML Auto-Learner</span>
+                    <span>🎯 Smart Entry AI</span>
                 </div>
                 <div class="module-item">
                     <div class="module-icon"></div>
-                    <span>Risk Manager</span>
+                    <span>📏 Position Sizer</span>
                 </div>
                 <div class="module-item">
                     <div class="module-icon"></div>
-                    <span>DEX Trader (ready)</span>
+                    <span>🔄 DEX Aggregator</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"></div>
+                    <span>🐋 Whale Tracker</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"></div>
+                    <span>💰 DEX Trader (REAL)</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"></div>
+                    <span>📰 News Trader</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"></div>
+                    <span>🧠 ML Auto-Learner</span>
                 </div>
             </div>
         </div>
@@ -825,6 +950,29 @@ async def preflight(request):
             "error": str(e),
             "all_passed": False
         }, status=500)
+
+
+async def safety_status(request):
+    """Safety Manager status - shows simulation progress and unlock criteria"""
+    try:
+        from src.core.safety_manager import get_safety_manager
+        sm = get_safety_manager()
+        data = sm.get_status()
+        data["progress_bar"] = sm.get_progress_bar()
+        return web.json_response(data)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+async def safety_reset(request):
+    """Reset simulation stats for new strategy test"""
+    try:
+        from src.core.safety_manager import get_safety_manager
+        sm = get_safety_manager()
+        sm.reset_simulation()
+        return web.json_response({"status": "ok", "message": "Simulation stats reset"})
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
 
 
 async def dex_status(request):
@@ -868,6 +1016,8 @@ async def start_healthcheck_server(port=8080):
     app.router.add_get('/status', status)
     app.router.add_get('/preflight', preflight)
     app.router.add_get('/dex', dex_status)
+    app.router.add_get('/safety', safety_status)
+    app.router.add_get('/safety/reset', safety_reset)
     app.router.add_get('/', index)
     
     runner = web.AppRunner(app)

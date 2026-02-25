@@ -542,11 +542,12 @@ class Orchestrator:
             except Exception as e:
                 self.logger.warning(f"[MOMENTUM] Could not start momentum detector: {e}")
             
-            # ============ GECKOTERMINAL POOL DETECTOR ============
-            # Detects new pools and trending tokens across DEXes
+            # ============ GECKOTERMINAL POOL DETECTOR + AI TRADING ENGINE ============
+            # Detects new pools and trending tokens across DEXes with AI analysis
             try:
                 from src.modules.geckoterminal.pool_detector import PoolDetector, PoolSignal
                 from src.trading.dex_trader import DEXTrader
+                from src.modules.ai.trading_engine import create_ai_trading_engine, TradeDecision
                 
                 pool_detector = PoolDetector()
                 await pool_detector.initialize()
@@ -555,55 +556,263 @@ class Orchestrator:
                 dex_trader = DEXTrader()
                 dex_initialized = await dex_trader.initialize()
                 
+                # Initialize AI Trading Engine
+                try:
+                    _capital = paper_trader.portfolio.initial_capital
+                except Exception:
+                    _capital = 10000
+                ai_engine = create_ai_trading_engine(
+                    web3_providers=dex_trader.providers if dex_initialized else {},
+                    capital=_capital
+                )
+                self.logger.info("[AI] 🤖 AI Trading Engine initialized with all modules")
+                
+                # Initialize Safety Manager
+                from src.core.safety_manager import get_safety_manager
+                safety = get_safety_manager()
+                safety_status = safety.get_status()
+                self.logger.info(f"[SAFETY] Safety Manager initialized")
+                self.logger.info(f"[SAFETY] Mode: {'SIMULATION' if safety.is_simulation_mode() else 'REAL'}")
+                self.logger.info(f"[SAFETY] Sim trades: {safety_status['simulation']['trades']}/{safety.MIN_SIM_TRADES}")
+                self.logger.info(f"[SAFETY] Real trading unlocked: {safety_status['safety']['real_trading_unlocked']}")
+                self.logger.info(f"[SAFETY] Progress: {safety.get_progress_bar()}")
+                
                 if dex_initialized:
-                    self.logger.info("[DEX] DEX Trader ready for real trading")
+                    if safety.is_simulation_mode():
+                        self.logger.info("[DEX] DEX Trader ready (SIMULATION - no real money)")
+                    else:
+                        self.logger.info("[DEX] DEX Trader ready for REAL trading")
                 else:
-                    self.logger.info("[DEX] DEX Trader in simulation mode (wallet not configured)")
+                    self.logger.info("[DEX] DEX Trader not initialized")
+                
+                # Track funded chains
+                FUNDED_CHAINS = {"bsc", "base"}
+                
+                # ====== WATCHLIST SYSTEM ======
+                # Instead of buying immediately, tokens go to watchlist
+                # Only buy when momentum is CONFIRMED (price up + volume spike)
+                import time as _time
+                _watchlist = {}  # {token_address: {symbol, network, pool_address, detect_price, detect_time, score, liquidity, volume}}
+                _last_buy_time = [0]
+                BUY_MIN_INTERVAL = 600  # 10 min between buys
+                WATCHLIST_MAX_AGE = 7200  # Remove after 2h if no confirmation
+                WATCHLIST_MAX_SIZE = 20
+                MOMENTUM_CONFIRM_PCT = 8.0  # Need +8% price increase to confirm
+                
+                SCAM_EXACT_NAMES = {
+                    "DOGE", "DOGECOIN", "SHIB", "SHIBA", "BITCOIN", "BTC", "ETH",
+                    "ETHEREUM", "BNB", "SOLANA", "SOL", "XRP", "RIPPLE", "ADA", "CARDANO",
+                    "PEPE", "USDT", "USDC", "DAI", "WETH", "WBTC", "LINK", "CHAINLINK",
+                    "AVAX", "AVALANCHE", "MATIC", "POLYGON", "DOT", "POLKADOT",
+                    "UNI", "UNISWAP", "AAVE", "CRV", "CURVE", "SUSHI", "COMP",
+                    "TRUMP", "MAGA", "ELON", "ELONMUSK", "TEST", "SCAM", "RUG",
+                    "FAIR", "FAIRLAUNCH", "SAFEMOON", "SAFEMARS", "BABYDOGE",
+                }
+                SCAM_SUBSTRINGS = [
+                    "DOGE", "SHIB", "PEPE", "ELON", "TRUMP", "SAFE", "BABY",
+                    "MOON", "INU", "FLOKI", "WOJAK", "CHAD", "MEME",
+                    "FREE", "AIRDROP", "100X", "1000X", "PUMP",
+                ]
                 
                 async def on_pool_signal(signal: PoolSignal):
-                    """Handle new pool/trending signals from GeckoTerminal"""
+                    """Step 1: Detect tokens and add to WATCHLIST (don't buy yet)"""
                     try:
                         pool = signal.pool
                         
-                        # Skip if we already have max positions (CEX + DEX combined)
-                        total_positions = len(paper_trader.portfolio.positions) + len(dex_trader.positions)
-                        if total_positions >= 5:
+                        if pool.network not in FUNDED_CHAINS:
+                            return
+                        if pool.address in _watchlist or pool.address in dex_trader.sniper_positions:
+                            return
+                        if len(_watchlist) >= WATCHLIST_MAX_SIZE:
                             return
                         
-                        # Log the signal
-                        if signal.signal_type == "new_pool":
-                            self.logger.info(f"[GECKO] 🆕 New pool signal: {pool.base_token} on {pool.network}")
-                        else:
-                            self.logger.info(f"[GECKO] 🔥 Trending signal: {pool.base_token} on {pool.network}")
+                        token_upper = pool.base_token.upper()
+                        if token_upper in SCAM_EXACT_NAMES:
+                            return
+                        for substr in SCAM_SUBSTRINGS:
+                            if substr in token_upper:
+                                return
                         
-                        # Only trade on EVM-compatible networks for now
-                        if pool.network in ["eth", "bsc", "arbitrum", "base"]:
-                            self.logger.info(f"[GECKO]   Price: ${pool.price_usd:.8f} | Liq: ${pool.liquidity_usd:,.0f}")
-                            self.logger.info(f"[GECKO]   24h: {pool.price_change_24h:+.1f}% | Vol: ${pool.volume_24h:,.0f}")
-                            self.logger.info(f"[GECKO]   Score: {signal.score:.0f}/100 - {', '.join(signal.reasons)}")
-                            
-                            # Execute DEX trade if wallet is configured and score is high
-                            if dex_initialized and signal.score >= 70:
-                                trade = await dex_trader.buy(
-                                    network=pool.network,
-                                    token_address=pool.address,
-                                    amount_usd=100,  # $100 per trade
-                                    token_symbol=pool.base_token
-                                )
-                                if trade:
-                                    self.logger.info(f"[GECKO] ✅ DEX Trade executed: {pool.base_token}")
-                                    self.total_trades += 1
-                            elif signal.score >= 70:
-                                self.logger.info(f"[GECKO] ⚠️ Would trade {pool.base_token} but DEX not configured")
-                            
+                        # Quality filters
+                        if pool.liquidity_usd < 50000 or pool.volume_24h < 20000:
+                            return
+                        if signal.score < 60:
+                            return
+                        vol_liq_ratio = pool.volume_24h / max(pool.liquidity_usd, 1)
+                        if vol_liq_ratio < 0.3:
+                            return
+                        if pool.price_change_24h < -15:
+                            return
+                        
+                        # ADD TO WATCHLIST — don't buy yet!
+                        _watchlist[pool.address] = {
+                            "symbol": pool.base_token,
+                            "network": pool.network,
+                            "address": pool.address,
+                            "detect_price": pool.price_usd,
+                            "detect_time": _time.time(),
+                            "score": signal.score,
+                            "liquidity": pool.liquidity_usd,
+                            "volume": pool.volume_24h,
+                        }
+                        self.logger.info(f"[WATCH] 👁️ Added {pool.base_token} to watchlist @ ${pool.price_usd:.8f} (score:{signal.score:.0f} liq:${pool.liquidity_usd:,.0f} vol:${pool.volume_24h:,.0f})")
+                        self.logger.info(f"[WATCH] Watchlist: {len(_watchlist)} tokens | Waiting for +{MOMENTUM_CONFIRM_PCT}% momentum to buy")
+                        
                     except Exception as e:
-                        self.logger.error(f"[GECKO] Signal handler error: {e}")
+                        self.logger.error(f"[WATCH] Signal handler error: {e}")
+                
+                async def check_watchlist():
+                    """Step 2: Check watchlist tokens for CONFIRMED momentum before buying"""
+                    while self.is_running:
+                        try:
+                            await asyncio.sleep(60)  # Check every 60 seconds
+                            
+                            if not _watchlist:
+                                continue
+                            
+                            now = _time.time()
+                            to_remove = []
+                            
+                            for addr, token in list(_watchlist.items()):
+                                age = now - token["detect_time"]
+                                
+                                # Expire old entries
+                                if age > WATCHLIST_MAX_AGE:
+                                    self.logger.info(f"[WATCH] ⏰ Expired: {token['symbol']} (watched {age/60:.0f}min, no momentum)")
+                                    to_remove.append(addr)
+                                    continue
+                                
+                                # Already in position
+                                if addr in dex_trader.sniper_positions:
+                                    to_remove.append(addr)
+                                    continue
+                                
+                                # Rate limit buys
+                                if now - _last_buy_time[0] < BUY_MIN_INTERVAL:
+                                    continue
+                                
+                                # Max positions check
+                                if len(dex_trader.sniper_positions) >= 3:
+                                    continue
+                                
+                                # Get CURRENT price to check momentum
+                                current_price = await dex_trader._get_token_price(token["network"], addr)
+                                if not current_price or current_price <= 0:
+                                    continue
+                                
+                                price_change_pct = ((current_price - token["detect_price"]) / token["detect_price"]) * 100
+                                
+                                # Log periodic status
+                                if int(age) % 300 < 65:  # Log ~every 5 min
+                                    self.logger.info(f"[WATCH] 📊 {token['symbol']}: {price_change_pct:+.1f}% since detection ({age/60:.0f}min ago)")
+                                
+                                # ===== MOMENTUM CONFIRMED — BUY! =====
+                                if price_change_pct >= MOMENTUM_CONFIRM_PCT:
+                                    self.logger.info(f"[WATCH] 🚀 MOMENTUM CONFIRMED: {token['symbol']} is UP {price_change_pct:+.1f}% !")
+                                    self.logger.info(f"[WATCH]    Detect: ${token['detect_price']:.8f} → Now: ${current_price:.8f}")
+                                    
+                                    # AI analysis before buying
+                                    chain_map = {"eth": "ethereum", "bsc": "bsc", "arbitrum": "arbitrum", "base": "base"}
+                                    chain = chain_map.get(token["network"], token["network"])
+                                    try:
+                                        _ai_capital = paper_trader.portfolio.initial_capital
+                                    except Exception:
+                                        _ai_capital = 10000
+                                    
+                                    ai_result = await ai_engine.analyze_token(
+                                        token_address=addr,
+                                        token_symbol=token["symbol"],
+                                        chain=chain,
+                                        current_price=current_price,
+                                        liquidity_usd=token["liquidity"],
+                                        volume_24h=token["volume"],
+                                        capital=_ai_capital
+                                    )
+                                    
+                                    should_buy, reason = ai_engine.should_buy(ai_result)
+                                    if not should_buy:
+                                        self.logger.warning(f"[AI] ❌ {token['symbol']} momentum OK but AI blocked: {reason}")
+                                        to_remove.append(addr)
+                                        continue
+                                    
+                                    self.logger.info(f"[AI] ✅ {token['symbol']} APPROVED (confidence: {ai_result.confidence:.2f})")
+                                    
+                                    position_size = ai_result.recommended_amount_usd
+                                    if safety.is_simulation_mode():
+                                        position_size = min(position_size, 10.0)
+                                    elif dex_initialized:
+                                        _, available_usd = dex_trader.get_available_capital(token["network"])
+                                        position_size = min(position_size, available_usd * 0.7)
+                                        if position_size < 2:
+                                            continue
+                                    
+                                    trade = await dex_trader.sniper_buy(
+                                        network=token["network"],
+                                        token_address=addr,
+                                        amount_usd=position_size,
+                                        token_symbol=token["symbol"],
+                                        tp1_pct=ai_result.take_profit_targets[0],
+                                        tp2_pct=ai_result.take_profit_targets[1],
+                                        tp3_pct=ai_result.take_profit_targets[2],
+                                        sl_pct=ai_result.stop_loss_percent,
+                                        max_hold_hours=4
+                                    )
+                                    if trade:
+                                        safety.record_buy(
+                                            token=token["symbol"],
+                                            network=token["network"],
+                                            amount_usd=position_size,
+                                            price=trade.price_usd,
+                                            is_sim=safety.is_simulation_mode()
+                                        )
+                                        _last_buy_time[0] = now
+                                        self.logger.info(f"[TRADE] ✅ BOUGHT {token['symbol']} after +{price_change_pct:.1f}% momentum | {safety.get_progress_bar()}")
+                                        self.total_trades += 1
+                                    to_remove.append(addr)
+                                
+                                # Token dumping from detection price — remove
+                                elif price_change_pct < -15:
+                                    self.logger.info(f"[WATCH] 📉 Removed {token['symbol']}: dropped {price_change_pct:+.1f}% since detection")
+                                    to_remove.append(addr)
+                            
+                            for addr in to_remove:
+                                _watchlist.pop(addr, None)
+                            
+                        except asyncio.CancelledError:
+                            break
+                        except Exception as e:
+                            self.logger.error(f"[WATCH] Watchlist check error: {e}")
+                            await asyncio.sleep(10)
+                
+                # Task to periodically check sniper positions for TP/SL
+                async def sniper_monitor_loop():
+                    """Monitor sniper positions every 30 seconds"""
+                    while self.is_running:
+                        try:
+                            await dex_trader.check_sniper_positions()
+                            await asyncio.sleep(30)
+                        except Exception as e:
+                            self.logger.error(f"[SNIPER] Monitor error: {e}")
+                            await asyncio.sleep(30)
                 
                 pool_detector.on_signal(on_pool_signal)
                 asyncio.create_task(pool_detector.start())
-                self.logger.info("[GECKO] GeckoTerminal Pool Detector started")
-                self.logger.info("[GECKO]   Monitoring: Solana, Base, Ethereum")
-                self.logger.info("[GECKO]   Detecting: New pools + Trending tokens")
+                asyncio.create_task(sniper_monitor_loop())
+                asyncio.create_task(check_watchlist())  # Watchlist momentum checker
+                
+                self.logger.info("[STRATEGY] 🎯 DETECT → WATCH → CONFIRM → BUY")
+                self.logger.info(f"[STRATEGY]   Momentum required: +{MOMENTUM_CONFIRM_PCT}% before entry")
+                self.logger.info(f"[STRATEGY]   Watchlist timeout: {WATCHLIST_MAX_AGE/60:.0f} min")
+                self.logger.info(f"[STRATEGY]   Min interval between buys: {BUY_MIN_INTERVAL/60:.0f} min")
+                self.logger.info("[STRATEGY]   Chains: BSC + Base | Max 3 positions")
+                self.logger.info("[AI] 🤖 AI MODULES ACTIVE:")
+                self.logger.info("[AI]   ✓ Honeypot Detector - Block scam tokens")
+                self.logger.info("[AI]   ✓ Rug Pull Analyzer - Detect unsafe contracts")
+                self.logger.info("[AI]   ✓ Sentiment Analyzer - Market mood analysis")
+                self.logger.info("[AI]   ✓ Smart Entry AI - Optimal entry timing")
+                self.logger.info("[AI]   ✓ Position Sizer - Dynamic risk management")
+                self.logger.info("[AI]   ✓ DEX Aggregator - Best price routing")
+                self.logger.info("[AI]   ✓ Whale Tracker - Big money detection")
                 
             except Exception as e:
                 self.logger.warning(f"[GECKO] Could not start pool detector: {e}")

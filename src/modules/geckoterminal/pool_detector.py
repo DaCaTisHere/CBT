@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass
 
 from src.modules.geckoterminal.gecko_client import GeckoTerminalClient, Pool
+from src.modules.geckoterminal.dexscreener_client import DexScreenerClient
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -38,30 +39,53 @@ class PoolDetector:
     3. VOLUME SPIKE: Sudden liquidity increase
     """
     
-    # Chains to monitor (prioritized by opportunity)
-    # Reduced to 3 chains to avoid rate limits (30 calls/minute)
-    PRIORITY_CHAINS = ["solana", "base", "eth"]
+    # ONLY chains where wallet has actual funds for trading
+    # BSC: 0.08 BNB (~$53), Base: 0.027 ETH (~$56)
+    # Don't waste API calls on chains with 0 balance
+    ALL_CHAINS = ["bsc", "base"]
     
-    # Filters for new pools
-    MIN_LIQUIDITY_USD = 10000      # $10k minimum liquidity
-    MAX_LIQUIDITY_USD = 5000000    # $5M max (avoid whales)
-    MIN_VOLUME_24H = 5000          # $5k minimum volume
-    MIN_TRANSACTIONS_24H = 50      # At least 50 trades
-    MIN_BUY_RATIO = 0.4            # At least 40% buys
+    # SNIPER MODE - Aggressive filters for new tokens
+    # Lower thresholds to catch tokens early
+    MIN_LIQUIDITY_USD = 5000       # $5k minimum (catch early)
+    MAX_LIQUIDITY_USD = 2000000    # $2M max (avoid established tokens)
+    MIN_VOLUME_24H = 1000          # $1k minimum (very new tokens)
+    MIN_TRANSACTIONS_24H = 20      # At least 20 trades (new but active)
+    MIN_BUY_RATIO = 0.5            # At least 50% buys (bullish)
     
     # Filters for trending
-    MIN_PRICE_CHANGE_24H = 10      # At least +10% in 24h
-    MAX_PRICE_CHANGE_24H = 500     # Not too extreme (< 500%)
+    MIN_PRICE_CHANGE_24H = 5       # At least +5% in 24h (catch early momentum)
+    MAX_PRICE_CHANGE_24H = 1000    # Allow bigger pumps
+    
+    # Quick exit strategy for new tokens
+    NEW_TOKEN_TAKE_PROFIT_1 = 20   # First TP at +20%
+    NEW_TOKEN_TAKE_PROFIT_2 = 50   # Second TP at +50%
+    NEW_TOKEN_TAKE_PROFIT_3 = 100  # Final TP at +100%
+    NEW_TOKEN_STOP_LOSS = 15       # Tight stop at -15%
+    NEW_TOKEN_MAX_HOLD_HOURS = 24  # Max hold 24h for new tokens
+    
+    # Search terms to discover trending tokens on our chains
+    SEARCH_TERMS = [
+        "new", "launch", "fair", "meme", "pepe", "doge", "moon",
+        "ai", "gpt", "trump", "sol", "bnb", "base"
+    ]
     
     def __init__(self):
         self.logger = logger
-        self.client = GeckoTerminalClient()
+        self.client = GeckoTerminalClient()  # Fallback
+        self.dexscreener = DexScreenerClient()  # Primary source
         self.is_running = False
         
         # Tracking
         self.seen_pools: Dict[str, datetime] = {}  # pool_address -> first_seen
         self.signals: List[PoolSignal] = []
         self.signal_callbacks: List[Callable] = []
+        
+        # Chain rotation for GeckoTerminal fallback
+        self._chain_index = 0
+        self._chains_per_cycle = 1
+        
+        # Search term rotation
+        self._search_index = 0
         
         # Stats
         self.pools_scanned = 0
@@ -70,12 +94,14 @@ class PoolDetector:
     async def initialize(self):
         """Initialize the detector"""
         await self.client.initialize()
-        self.logger.info("[POOL] Pool Detector initialized")
+        await self.dexscreener.initialize()
+        self.logger.info("[POOL] Pool Detector initialized (DexScreener primary + GeckoTerminal fallback)")
         
     async def close(self):
         """Close the detector"""
         self.is_running = False
         await self.client.close()
+        await self.dexscreener.close()
         
     def on_signal(self, callback: Callable):
         """Register callback for new signals"""
@@ -95,41 +121,177 @@ class PoolDetector:
             except Exception as e:
                 self.logger.error(f"[POOL] Callback error: {e}")
                 
-    async def start(self):
-        """Start pool detection loop"""
-        self.is_running = True
-        self.logger.info("[POOL] Starting pool detection...")
-        self.logger.info(f"[POOL] Monitoring chains: {', '.join(self.PRIORITY_CHAINS)}")
+    def _clean_seen_pools(self):
+        """Remove old entries from seen_pools to allow re-evaluation"""
+        now = datetime.utcnow()
+        expired = [
+            addr for addr, seen_at in self.seen_pools.items()
+            if (now - seen_at) > timedelta(minutes=30)
+        ]
+        if expired:
+            for addr in expired:
+                del self.seen_pools[addr]
+            self.logger.info(f"[POOL] 🧹 Cleaned {len(expired)} old cache entries ({len(self.seen_pools)} remaining)")
+    
+    def _get_next_search_term(self) -> str:
+        """Rotate through search terms for discovery"""
+        term = self.SEARCH_TERMS[self._search_index % len(self.SEARCH_TERMS)]
+        self._search_index += 1
+        return term
+    
+    async def _process_pools(self, pools: List, source: str, signal_type: str = "new_pool", max_process: int = 10):
+        """Process a batch of pools: enrich, score, and emit signals"""
+        relevant = [p for p in pools if p.network in self.ALL_CHAINS]
+        if not relevant:
+            return 0
         
+        self.logger.info(f"[POOL] {source}: {len(pools)} total, {len(relevant)} on funded chains (BSC/Base)")
+        new_signals = 0
+        
+        for pool in relevant[:max_process]:
+            if pool.address in self.seen_pools:
+                continue
+            
+            # Enrich with full data
+            pool = await self.dexscreener.enrich_pool(pool)
+            await asyncio.sleep(0.5)
+            
+            # Cache with BOTH original and enriched address
+            self.seen_pools[pool.address] = datetime.utcnow()
+            self.pools_scanned += 1
+            
+            # Score based on signal type
+            if signal_type == "trending":
+                score, reasons = self._score_trending_pool(pool)
+                is_sniper = False
+                min_score = 60  # Lower for trending (was 70)
+            else:
+                score, reasons, is_sniper = self._score_new_pool(pool)
+                min_score = 40 if is_sniper else 55  # Lowered thresholds
+            
+            if score >= min_score:
+                actual_type = "sniper" if is_sniper else signal_type
+                signal = PoolSignal(
+                    pool=pool,
+                    signal_type=actual_type,
+                    score=score,
+                    reasons=reasons,
+                    timestamp=datetime.utcnow()
+                )
+                
+                emoji = {"sniper": "🎯", "new_pool": "🆕", "trending": "🔥"}.get(actual_type, "📡")
+                self.logger.info(f"[POOL] {emoji} {actual_type.upper()} on {pool.network.upper()}: {pool.base_token}")
+                self.logger.info(f"[POOL]    Price: ${pool.price_usd:.8f} | Liq: ${pool.liquidity_usd:,.0f} | Vol: ${pool.volume_24h:,.0f}")
+                self.logger.info(f"[POOL]    Score: {score:.0f}/100 | {', '.join(reasons[:3])}")
+                
+                await self._emit_signal(signal)
+                new_signals += 1
+            else:
+                if pool.liquidity_usd > 0:
+                    self.logger.debug(f"[POOL] ⏭️ Skip {pool.base_token}: score {score:.0f} < {min_score} (liq=${pool.liquidity_usd:,.0f})")
+        
+        return new_signals
+    
+    async def start(self):
+        """Start pool detection loop - AGGRESSIVE multi-source scanning"""
+        self.is_running = True
+        self.logger.info("[POOL] 🎯 SNIPER MODE v2 - Aggressive multi-source detection")
+        self.logger.info(f"[POOL] FUNDED chains only: {', '.join(self.ALL_CHAINS)}")
+        self.logger.info(f"[POOL] Sources: DexScreener profiles + boosts + top + search + GeckoTerminal fallback")
+        
+        # Short initial delay
+        self.logger.info("[POOL] Waiting 10s before first scan...")
+        await asyncio.sleep(10)
+        
+        cycle = 0
         while self.is_running:
             try:
-                for chain in self.PRIORITY_CHAINS:
-                    if not self.is_running:
-                        break
-                        
-                    # Scan new pools
+                cycle += 1
+                cycle_signals = 0
+                
+                # ====== CLEAN OLD CACHE ======
+                self._clean_seen_pools()
+                
+                # ====== SOURCE 1: DexScreener Latest Profiles ======
+                self.logger.info("[POOL] 🔍 Scanning DexScreener profiles...")
+                new_tokens = await self.dexscreener.get_latest_token_profiles()
+                if new_tokens:
+                    cycle_signals += await self._process_pools(new_tokens, "Profiles", "new_pool")
+                
+                await asyncio.sleep(2)
+                
+                # ====== SOURCE 2: DexScreener Latest Boosted ======
+                boosted = await self.dexscreener.get_latest_boosted_tokens()
+                if boosted:
+                    cycle_signals += await self._process_pools(boosted, "Boosted", "trending", max_process=8)
+                
+                await asyncio.sleep(2)
+                
+                # ====== SOURCE 3: DexScreener TOP Boosted (different set) ======
+                top_boosted = await self.dexscreener.get_top_boosted_tokens()
+                if top_boosted:
+                    cycle_signals += await self._process_pools(top_boosted, "Top Boosted", "trending", max_process=8)
+                
+                await asyncio.sleep(2)
+                
+                # ====== SOURCE 4: DexScreener Search (rotating terms) ======
+                # Every 3rd cycle, search for trending tokens on our chains
+                if cycle % 3 == 0:
+                    search_term = self._get_next_search_term()
+                    self.logger.info(f"[POOL] 🔎 Searching DexScreener for '{search_term}'...")
+                    search_results = await self.dexscreener.search_pairs_on_chain(
+                        search_term, self.ALL_CHAINS
+                    )
+                    if search_results:
+                        cycle_signals += await self._process_pools(
+                            search_results, f"Search '{search_term}'", "new_pool", max_process=5
+                        )
+                    await asyncio.sleep(2)
+                
+                # ====== SOURCE 5: GeckoTerminal fallback (1 chain per cycle) ======
+                chains_to_scan = self._get_next_chains()
+                for chain in chains_to_scan:
                     await self._scan_new_pools(chain)
-                    
-                    # Scan trending pools
+                    await asyncio.sleep(3)
                     await self._scan_trending_pools(chain)
-                    
-                    # Delay between chains (rate limit: 30 calls/minute)
-                    await asyncio.sleep(5)
-                    
-                # Wait before next scan cycle (60s to respect rate limits)
-                await asyncio.sleep(60)
+                
+                # Log cycle summary
+                self.logger.info(
+                    f"[POOL] Cycle #{cycle} done | "
+                    f"New signals: {cycle_signals} | "
+                    f"Total scanned: {self.pools_scanned} | "
+                    f"Total signals: {self.signals_generated} | "
+                    f"Cache: {len(self.seen_pools)}"
+                )
+                
+                # Dynamic wait: shorter if we're finding signals, longer if not
+                wait_time = 15 if cycle_signals > 0 else 25
+                await asyncio.sleep(wait_time)
                 
             except asyncio.CancelledError:
                 break
             except Exception as e:
                 self.logger.error(f"[POOL] Scan error: {e}")
                 await asyncio.sleep(10)
+    
+    def _get_next_chains(self) -> List[str]:
+        """Get next chains to scan (rotation for rate limit)"""
+        chains = []
+        for i in range(self._chains_per_cycle):
+            idx = (self._chain_index + i) % len(self.ALL_CHAINS)
+            chains.append(self.ALL_CHAINS[idx])
+        
+        # Advance rotation
+        self._chain_index = (self._chain_index + self._chains_per_cycle) % len(self.ALL_CHAINS)
+        return chains
                 
     async def _scan_new_pools(self, chain: str):
         """Scan for new pools on a chain"""
         try:
             pools = await self.client.get_new_pools(chain, limit=20)
             self.pools_scanned += len(pools)
+            if pools:
+                self.logger.info(f"[POOL] ✅ Got {len(pools)} new pools on {chain.upper()}")
             
             for pool in pools:
                 # Skip if already seen
@@ -140,21 +302,27 @@ class PoolDetector:
                 self.seen_pools[pool.address] = datetime.utcnow()
                 
                 # Score the pool
-                score, reasons = self._score_new_pool(pool)
+                score, reasons, is_sniper_opportunity = self._score_new_pool(pool)
                 
-                if score >= 60:
+                # Lower threshold (50) for sniper opportunities
+                min_score = 45 if is_sniper_opportunity else 60
+                
+                if score >= min_score:
                     signal = PoolSignal(
                         pool=pool,
-                        signal_type="new_pool",
+                        signal_type="sniper" if is_sniper_opportunity else "new_pool",
                         score=score,
                         reasons=reasons,
                         timestamp=datetime.utcnow()
                     )
                     
-                    self.logger.info(f"[POOL] 🆕 NEW POOL DETECTED on {chain.upper()}")
+                    emoji = "🎯" if is_sniper_opportunity else "🆕"
+                    self.logger.info(f"[POOL] {emoji} {'SNIPER OPPORTUNITY' if is_sniper_opportunity else 'NEW POOL'} on {chain.upper()}")
                     self.logger.info(f"[POOL]    {pool.base_token}/{pool.quote_token} on {pool.dex}")
                     self.logger.info(f"[POOL]    Price: ${pool.price_usd:.8f} | Liq: ${pool.liquidity_usd:,.0f}")
                     self.logger.info(f"[POOL]    Score: {score:.0f}/100 | {', '.join(reasons)}")
+                    if is_sniper_opportunity:
+                        self.logger.info(f"[POOL]    💨 Quick trade: TP +{self.NEW_TOKEN_TAKE_PROFIT_1}%/+{self.NEW_TOKEN_TAKE_PROFIT_2}% | SL -{self.NEW_TOKEN_STOP_LOSS}%")
                     
                     await self._emit_signal(signal)
                     
@@ -166,6 +334,8 @@ class PoolDetector:
         try:
             pools = await self.client.get_trending_pools(chain, limit=20)
             self.pools_scanned += len(pools)
+            if pools:
+                self.logger.info(f"[POOL] ✅ Got {len(pools)} trending pools on {chain.upper()}")
             
             for pool in pools:
                 # Score the pool
@@ -199,15 +369,16 @@ class PoolDetector:
         except Exception as e:
             self.logger.error(f"[POOL] Trending scan error on {chain}: {e}")
             
-    def _score_new_pool(self, pool: Pool) -> tuple[float, List[str]]:
+    def _score_new_pool(self, pool: Pool) -> tuple[float, List[str], bool]:
         """
-        Score a new pool for trading potential
+        Score a new pool for trading potential (SNIPER MODE)
         
         Returns:
-            (score 0-100, list of reasons)
+            (score 0-100, list of reasons, is_sniper_opportunity)
         """
         score = 0
         reasons = []
+        is_sniper = False
         
         # 1. Liquidity check (0-25 points)
         if pool.liquidity_usd >= self.MIN_LIQUIDITY_USD:
@@ -217,11 +388,15 @@ class PoolDetector:
             elif pool.liquidity_usd >= 50000:
                 score += 20
                 reasons.append("Good liquidity")
+            elif pool.liquidity_usd >= 20000:
+                score += 18
+                reasons.append("Decent liquidity")
             else:
                 score += 15
-                reasons.append("OK liquidity")
+                reasons.append("Early liquidity")
+                is_sniper = True  # Low liquidity = early entry opportunity
         else:
-            return 0, ["Liquidity too low"]
+            return 0, ["Liquidity too low"], False
             
         # 2. Volume check (0-20 points)
         if pool.volume_24h >= self.MIN_VOLUME_24H:
@@ -230,46 +405,69 @@ class PoolDetector:
                 reasons.append("High volume")
             elif pool.volume_24h >= 20000:
                 score += 15
+            elif pool.volume_24h >= 5000:
+                score += 12
+                is_sniper = True  # Lower volume = newer token
             else:
-                score += 10
+                score += 8
+                is_sniper = True
         else:
-            score -= 10
+            score += 5  # Still give some points for very new tokens
+            is_sniper = True
             
-        # 3. Transaction count (0-15 points)
+        # 3. Transaction count (0-20 points) - adjusted for sniper
         if pool.transactions_24h >= self.MIN_TRANSACTIONS_24H:
             if pool.transactions_24h >= 200:
-                score += 15
+                score += 20
                 reasons.append("Very active")
             elif pool.transactions_24h >= 100:
-                score += 10
+                score += 15
+            elif pool.transactions_24h >= 50:
+                score += 12
             else:
-                score += 5
+                score += 8
+                is_sniper = True  # Low tx = very new
+        else:
+            score += 5  # Give points for being very new
+            is_sniper = True
+            reasons.append("Very new token")
                 
-        # 4. Buy/Sell ratio (0-20 points)
+        # 4. Buy/Sell ratio (0-25 points) - most important for sniper
         total_trades = pool.buys_24h + pool.sells_24h
         if total_trades > 0:
             buy_ratio = pool.buys_24h / total_trades
-            if buy_ratio >= 0.6:
+            if buy_ratio >= 0.7:
+                score += 25
+                reasons.append("🔥 Strong buying (70%+)")
+                is_sniper = True  # Strong buying = sniper opportunity
+            elif buy_ratio >= 0.6:
                 score += 20
-                reasons.append("Strong buying pressure")
+                reasons.append("Good buying pressure")
             elif buy_ratio >= self.MIN_BUY_RATIO:
-                score += 10
+                score += 12
             else:
                 score -= 10
                 reasons.append("More sells than buys")
+                is_sniper = False  # Don't snipe if selling
                 
         # 5. Price action (0-20 points)
-        if 0 < pool.price_change_24h <= 100:
+        if 5 < pool.price_change_24h <= 50:
+            score += 20
+            reasons.append(f"🚀 +{pool.price_change_24h:.0f}% momentum")
+            is_sniper = True
+        elif 50 < pool.price_change_24h <= 200:
             score += 15
-            reasons.append(f"+{pool.price_change_24h:.0f}% 24h")
-        elif pool.price_change_24h > 100:
-            score += 10  # Too much pump can be risky
-            reasons.append("Large pump (caution)")
-        elif pool.price_change_24h < -20:
+            reasons.append(f"+{pool.price_change_24h:.0f}% (watch for dump)")
+        elif pool.price_change_24h > 200:
+            score += 8
+            reasons.append("Extreme pump (risky)")
+            is_sniper = False  # Too late for snipe
+        elif pool.price_change_24h < -10:
             score -= 15
             reasons.append("Dumping")
+            is_sniper = False
             
-        return max(0, min(100, score)), reasons
+        return max(0, min(100, score)), reasons, is_sniper
         
     def _score_trending_pool(self, pool: Pool) -> tuple[float, List[str]]:
         """
@@ -347,6 +545,6 @@ class PoolDetector:
         return {
             "pools_scanned": self.pools_scanned,
             "signals_generated": self.signals_generated,
-            "chains_monitored": len(self.PRIORITY_CHAINS),
+            "chains_monitored": len(self.ALL_CHAINS),
             "pools_tracked": len(self.seen_pools)
         }

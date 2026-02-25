@@ -72,12 +72,15 @@ def main(testnet: bool, simulation: bool, mode: str, duration: int):
     # Display configuration
     display_config()
     
-    # Confirm if production mode
-    if settings.is_production() and not settings.USE_TESTNET:
-        confirm = input("\n[WARN]  PRODUCTION MODE with REAL MONEY. Continue? (yes/no): ")
-        if confirm.lower() != 'yes':
-            logger.info("Aborted by user")
-            return
+    # Confirm if production mode (skip on Railway/Docker - no interactive input)
+    if settings.is_production() and not settings.USE_TESTNET and not os.getenv("RAILWAY_ENVIRONMENT"):
+        try:
+            confirm = input("\n[WARN]  PRODUCTION MODE with REAL MONEY. Continue? (yes/no): ")
+            if confirm.lower() != 'yes':
+                logger.info("Aborted by user")
+                return
+        except EOFError:
+            pass  # Non-interactive environment
     
     # Start orchestrator with autonomous systems
     try:
@@ -192,6 +195,10 @@ def print_banner():
 
 def display_config():
     """Display current configuration"""
+    import os
+    # Debug: show raw env variable vs parsed setting
+    raw_sim = os.getenv("SIMULATION_MODE", "NOT SET")
+    logger.info(f"[DEBUG] Raw SIMULATION_MODE env: '{raw_sim}' -> parsed: {settings.SIMULATION_MODE} (type: {type(settings.SIMULATION_MODE).__name__})")
     logger.info("[CONFIG] Configuration:")
     logger.info(f"   Environment: {settings.ENVIRONMENT.value}")
     logger.info(f"   Testnet: {settings.USE_TESTNET}")

@@ -208,7 +208,8 @@ async def test_connection() -> bool:
             row = result.fetchone()
             
             if row and row[0] == 1:
-                logger.info("[OK] Database connection test successful")
+                # Only log at debug level to avoid noise in production
+                logger.debug("[OK] Database connection healthy")
                 return True
             else:
                 logger.error("Database connection test failed")

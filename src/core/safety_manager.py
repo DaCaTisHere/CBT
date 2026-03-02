@@ -293,47 +293,57 @@ class SafetyManager:
     
     def _check_unlock_status(self):
         was_unlocked = self.stats.real_trading_unlocked
-        
-        # Grid trades unlock faster (higher inherent win rate)
-        grid_wr = (self.stats.grid_trades_won / max(self.stats.grid_trades_total, 1)) * 100
-        grid_criteria = (
-            self.stats.grid_trades_total >= self.MIN_GRID_TRADES_FOR_UNLOCK and
-            grid_wr >= self.MIN_GRID_WIN_RATE
-        )
-        
+
+        if self.stats.emergency_stop:
+            self.stats.real_trading_unlocked = False
+            self.stats.auto_switched_to_real = False
+            self.stats.unlock_reason = "EMERGENCY STOP - reverted to simulation"
+            return
+
+        # STRICT unlock: require BOTH overall performance AND positive PnL
         overall_criteria = (
             self.stats.sim_trades_total >= self.MIN_SIM_TRADES and
-            self.stats.sim_win_rate >= self.MIN_SIM_WIN_RATE
+            self.stats.sim_win_rate >= self.MIN_SIM_WIN_RATE and
+            self.stats.sim_total_pnl_usd > 0
         )
-        
-        criteria_met = (grid_criteria or overall_criteria) and not self.stats.emergency_stop
-        
+
+        # Grid-only shortcut: grid must be profitable AND momentum must not be
+        # actively losing (if momentum has trades, its WR must be >= 20%)
+        grid_wr = (self.stats.grid_trades_won / max(self.stats.grid_trades_total, 1)) * 100
+        mom_wr = (self.stats.momentum_trades_won / max(self.stats.momentum_trades_total, 1)) * 100
+        momentum_ok = (self.stats.momentum_trades_total == 0 or mom_wr >= 20.0)
+        grid_criteria = (
+            self.stats.grid_trades_total >= self.MIN_GRID_TRADES_FOR_UNLOCK and
+            grid_wr >= self.MIN_GRID_WIN_RATE and
+            self.stats.grid_total_pnl_usd > 0 and
+            momentum_ok
+        )
+
+        criteria_met = grid_criteria or overall_criteria
+
         if criteria_met:
             self.stats.real_trading_unlocked = True
             self.stats.unlock_reason = (
                 f"AUTO-UNLOCKED: {self.stats.sim_trades_total} trades, "
-                f"{self.stats.sim_win_rate:.1f}% win rate, "
-                f"PnL ${self.stats.sim_total_pnl_usd:+.2f}"
+                f"{self.stats.sim_win_rate:.1f}% WR, "
+                f"PnL ${self.stats.sim_total_pnl_usd:+.2f}, "
+                f"Grid {grid_wr:.0f}%/{self.stats.grid_trades_total}t, "
+                f"Mom {mom_wr:.0f}%/{self.stats.momentum_trades_total}t"
             )
             if not was_unlocked:
                 self.stats.auto_switched_to_real = True
                 logger.info("=" * 60)
                 logger.info(f"[SAFETY] *** AUTO-SWITCH TO REAL TRADING ***")
                 logger.info(f"[SAFETY] {self.stats.unlock_reason}")
-                logger.info(f"[SAFETY] Bot will now trade with REAL money")
                 logger.info(f"[SAFETY] Daily loss limit: ${self.MAX_DAILY_LOSS_USD}")
-                logger.info(f"[SAFETY] Max per trade: ${self.MAX_TRADE_USD}")
                 logger.info("=" * 60)
         else:
             remaining = max(0, self.MIN_SIM_TRADES - self.stats.sim_trades_total)
-            if self.stats.emergency_stop:
-                self.stats.unlock_reason = "EMERGENCY STOP - reverted to simulation"
-                self.stats.auto_switched_to_real = False
-            else:
-                self.stats.unlock_reason = (
-                    f"Need {remaining} more sim trades, "
-                    f"win rate {self.stats.sim_win_rate:.1f}%/{self.MIN_SIM_WIN_RATE}%"
-                )
+            self.stats.unlock_reason = (
+                f"Need {remaining} more trades, WR {self.stats.sim_win_rate:.1f}%/{self.MIN_SIM_WIN_RATE}%, "
+                f"PnL ${self.stats.sim_total_pnl_usd:+.2f} (must be >$0), "
+                f"Mom WR {mom_wr:.0f}% (need >=20%)"
+            )
             self.stats.real_trading_unlocked = False
     
     # ==================== STATUS & REPORTING ====================

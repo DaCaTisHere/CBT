@@ -622,14 +622,14 @@ class Orchestrator:
                 _watchlist = {}
                 _watchlist_lock = asyncio.Lock()
                 _last_buy_time = [0]
-                BUY_MIN_INTERVAL = 600
-                WATCHLIST_MAX_AGE = 7200
+                BUY_MIN_INTERVAL = 900  # 15 min between buys (was 10)
+                WATCHLIST_MAX_AGE = 3600  # 1h max age (was 2h)
                 WATCHLIST_MAX_SIZE = 50  # Increased from 20 for more opportunities
-                MOMENTUM_CONFIRM_PCT = 15.0
-                CONFIRMS_NEEDED = 3
-                HIGH_CONFIRM_THRESHOLD = 8  # With 8+ confirms, lower momentum threshold
-                HIGH_CONFIRM_MOMENTUM_PCT = 10.0  # Only need +10% with 8+ confirms
-                FAST_TRACK_PCT = 25.0
+                MOMENTUM_CONFIRM_PCT = 20.0  # Was 15%, need stronger momentum
+                CONFIRMS_NEEDED = 5  # Was 3, need more confirmation
+                HIGH_CONFIRM_THRESHOLD = 12  # Was 8, much more patient
+                HIGH_CONFIRM_MOMENTUM_PCT = 15.0  # Was 10%, need real strength
+                FAST_TRACK_PCT = 40.0  # Was 25%, only truly explosive moves
                 CONFIRM_DIP_TOLERANCE = 3.0
                 
                 SCAM_EXACT_NAMES = {
@@ -666,15 +666,15 @@ class Orchestrator:
                             if substr in token_upper:
                                 return
                         
-                        # Quality filters — strict to avoid low-quality tokens
-                        if pool.liquidity_usd < 100000 or pool.volume_24h < 50000:
+                        # Quality filters — VERY strict to avoid losses
+                        if pool.liquidity_usd < 200000 or pool.volume_24h < 100000:
                             return
-                        if signal.score < 60:
+                        if signal.score < 65:
                             return
                         vol_liq_ratio = pool.volume_24h / max(pool.liquidity_usd, 1)
-                        if vol_liq_ratio < 0.3:
+                        if vol_liq_ratio < 0.5:
                             return
-                        if pool.price_change_24h < -15:
+                        if pool.price_change_24h < -10:
                             return
                         
                         # ADD TO WATCHLIST — don't buy yet!
@@ -743,7 +743,7 @@ class Orchestrator:
                                 if now - _last_buy_time[0] < BUY_MIN_INTERVAL:
                                     continue
                                 
-                                if len(dex_trader.sniper_positions) >= 3:
+                                if len(dex_trader.sniper_positions) >= 2:
                                     continue
                                 
                                 current_price = price_map.get(addr)
@@ -825,11 +825,11 @@ class Orchestrator:
                                         token_address=addr,
                                         amount_usd=position_size,
                                         token_symbol=token["symbol"],
-                                        tp1_pct=15.0,
-                                        tp2_pct=30.0,
-                                        tp3_pct=60.0,
-                                        sl_pct=8.0,  # Tight 8% trailing stop
-                                        max_hold_hours=3
+                                        tp1_pct=10.0,  # Take profit earlier
+                                        tp2_pct=20.0,
+                                        tp3_pct=40.0,
+                                        sl_pct=5.0,  # Tighter trailing stop (was 8%)
+                                        max_hold_hours=1  # Max 1h hold (was 3h)
                                     )
                                     if trade:
                                         safety.record_buy(
@@ -900,7 +900,7 @@ class Orchestrator:
                 self.logger.info("[STRATEGY] DUAL STRATEGY ACTIVE:")
                 self.logger.info("[STRATEGY]   1. REGIME-ADAPTIVE GRID on ETH/USDC + BNB/USDT (80% capital)")
                 self.logger.info("[STRATEGY]   2. MOMENTUM DETECTION on new tokens (20% capital)")
-                self.logger.info(f"[STRATEGY]   Momentum: +{MOMENTUM_CONFIRM_PCT}% + {CONFIRMS_NEEDED} confirms (fast-track at +{FAST_TRACK_PCT}%)")
+                self.logger.info(f"[STRATEGY]   Momentum: +{MOMENTUM_CONFIRM_PCT}% + {CONFIRMS_NEEDED} confirms (fast-track at +{FAST_TRACK_PCT}%) | SL 5% | MaxHold 1h")
                 self.logger.info("[STRATEGY]   BTC trend gate active | Chains: BSC + Base")
                 self.logger.info("=" * 60)
                 self.logger.info("[AI]   ✓ Position Sizer - Dynamic risk management")

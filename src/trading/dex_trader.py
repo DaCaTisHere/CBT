@@ -1489,15 +1489,20 @@ class DEXTrader:
                 
                 should_close = False
                 close_reason = ""
-                
-                if current_price <= pos["sl_price"]:
-                    close_reason = f"🛑 TRAILING STOP ({pnl_pct:+.1f}%)"
+
+                HARD_STOP_LOSS_PCT = -12.0  # Absolute max loss regardless of trailing SL
+
+                if pnl_pct <= HARD_STOP_LOSS_PCT:
+                    close_reason = f"HARD STOP-LOSS ({pnl_pct:+.1f}% <= {HARD_STOP_LOSS_PCT}%)"
+                    should_close = True
+                elif current_price <= pos["sl_price"]:
+                    close_reason = f"TRAILING STOP ({pnl_pct:+.1f}%)"
                     should_close = True
                 elif datetime.utcnow() >= pos["max_hold_until"]:
-                    close_reason = f"⏰ MAX HOLD ({pnl_pct:+.1f}%)"
+                    close_reason = f"MAX HOLD ({pnl_pct:+.1f}%)"
                     should_close = True
                 elif not pos["tp3_hit"] and current_price >= pos["tp3_price"]:
-                    close_reason = f"💰💰💰 TP3 ({pnl_pct:+.1f}%)"
+                    close_reason = f"TP3 ({pnl_pct:+.1f}%)"
                     should_close = True
                 
                 if should_close:

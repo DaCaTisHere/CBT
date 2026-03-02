@@ -26,3 +26,4 @@ supabase>=2.10.0
 
 # Web3 for blockchain interactions
 web3==6.11.3
+eth-account>=0.10.0

@@ -53,7 +53,7 @@ def get_real_wallet_balance():
         try:
             from web3 import Web3
             from src.core.config import settings as _cfg
-            prices = {"eth": 2700, "bsc": 650, "base": 2700, "arbitrum": 2700}
+            prices = {"eth": 2050, "bsc": 635, "base": 2050, "arbitrum": 2050}
             rpcs = {
                 "BASE": ("base", getattr(_cfg, 'BASE_RPC_URL', None), "ETH"),
                 "BSC": ("bsc", getattr(_cfg, 'BSC_RPC_URL', None), "BNB"),
@@ -67,7 +67,7 @@ def get_real_wallet_balance():
                 if rpc:
                     w3 = Web3(Web3.HTTPProvider(rpc))
                     bal = w3.eth.get_balance(addr) / 1e18
-                    usd = bal * prices.get(net, 2700)
+                    usd = bal * prices.get(net, 2050)
                     balances[label] = {"symbol": sym, "balance": round(bal, 6), "usd": round(usd, 2)}
                     total_usd += usd
         except Exception:

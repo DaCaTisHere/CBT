@@ -602,16 +602,25 @@ class Orchestrator:
                         now = _time.time()
                         if now - _btc_price_cache["ts"] < 120:
                             return _btc_price_cache.get("dumping", False)
-                        from src.modules.geckoterminal.gecko_client import GeckoTerminalClient
-                        client = GeckoTerminalClient()
-                        await client.initialize()
-                        try:
-                            btc_price = await client.get_token_price("eth", "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599")
-                            _btc_price_cache["price"] = btc_price
-                            _btc_price_cache["ts"] = now
-                            return False
-                        finally:
-                            await client.close()
+                        import aiohttp
+                        async with aiohttp.ClientSession() as session:
+                            async with session.get("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=2", timeout=5) as resp:
+                                if resp.status == 200:
+                                    data = await resp.json()
+                                    if len(data) >= 2:
+                                        prev_close = float(data[0][4])
+                                        curr_close = float(data[1][4])
+                                        change_pct = ((curr_close - prev_close) / prev_close) * 100
+                                        is_dumping = change_pct < -3.0
+                                        _btc_price_cache["price"] = curr_close
+                                        _btc_price_cache["ts"] = now
+                                        _btc_price_cache["dumping"] = is_dumping
+                                        if is_dumping:
+                                            self.logger.warning(f"[BTC] BTC dumping {change_pct:+.1f}% in 1h — blocking momentum buys")
+                                        return is_dumping
+                        _btc_price_cache["ts"] = now
+                        _btc_price_cache["dumping"] = False
+                        return False
                     except Exception:
                         return False
                 
@@ -869,14 +878,14 @@ class Orchestrator:
                 
                 # Task to periodically check sniper positions for TP/SL
                 async def sniper_monitor_loop():
-                    """Monitor sniper positions every 30 seconds"""
+                    """Monitor sniper positions every 15 seconds for fast SL reaction"""
                     while self.is_running:
                         try:
                             await dex_trader.check_sniper_positions()
-                            await asyncio.sleep(30)
+                            await asyncio.sleep(15)
                         except Exception as e:
                             self.logger.error(f"[SNIPER] Monitor error: {e}")
-                            await asyncio.sleep(30)
+                            await asyncio.sleep(15)
                 
                 pool_detector.on_signal(on_pool_signal)
                 asyncio.create_task(pool_detector.start())
@@ -995,12 +1004,24 @@ class Orchestrator:
                     self.logger.error(f"[ERROR] {name} health check error: {e}")
     
     async def _update_metrics(self):
-        """Update system metrics"""
+        """Update system metrics and dashboard status"""
         if self.start_time:
             uptime = (datetime.utcnow() - self.start_time).total_seconds()
-            # Log metrics periodically
-            if int(uptime) % 300 == 0:  # Every 5 minutes
+            if int(uptime) % 300 == 0:
                 self.logger.info(f"[INFO] Uptime: {uptime/3600:.2f}h | Trades: {self.total_trades} | PnL: ${self.total_pnl:.2f}")
+
+        # Update healthcheck dashboard with active modules
+        try:
+            from src.healthcheck import update_status
+            active_modules = []
+            for name, module in self.modules.items():
+                if module is not None:
+                    active_modules.append(name)
+            if hasattr(self, 'grid_trader') and self.grid_trader:
+                active_modules.append("grid_trader")
+            update_status(active_modules)
+        except Exception:
+            pass
     
     def _setup_signal_handlers(self):
         """Setup handlers for graceful shutdown"""

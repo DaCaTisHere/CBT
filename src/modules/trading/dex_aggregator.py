@@ -95,10 +95,10 @@ class DEXAggregator:
     
     # Native token prices (USD)
     NATIVE_PRICES = {
-        "ethereum": 1900,
+        "ethereum": 2050,
         "bsc": 600,
-        "arbitrum": 1900,
-        "base": 1900,
+        "arbitrum": 2050,
+        "base": 2050,
         "polygon": 0.5,
     }
     

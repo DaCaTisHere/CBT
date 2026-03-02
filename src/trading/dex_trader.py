@@ -269,8 +269,8 @@ class DEXTrader:
             if w3:
                 balance = w3.eth.get_balance(wallet["address"])
                 wallet["native_balance"] = Decimal(balance) / Decimal(10**18)
-        except:
-            pass
+        except Exception as e:
+            self.logger.debug(f"[DEX] Balance check error for {network}: {e}")
         
         native_balance = wallet.get("native_balance", Decimal("0"))
         
@@ -335,12 +335,38 @@ class DEXTrader:
     
     # Default native token prices for USD conversion
     DEFAULT_NATIVE_PRICES = {
-        "eth": 2700, "bsc": 650, "base": 2700,
-        "arbitrum": 2700, "polygon": 1, "avax": 35,
+        "eth": 2050, "bsc": 635, "base": 2050,
+        "arbitrum": 2050, "polygon": 0.35, "avax": 22,
     }
-    
+    _live_native_prices: dict = {}
+    _live_prices_updated: float = 0
+
+    async def _refresh_native_prices(self):
+        """Fetch live native token prices from Binance."""
+        import time as _t
+        now = _t.time()
+        if now - self._live_prices_updated < 300:
+            return
+        try:
+            import aiohttp
+            symbols = {"ETHUSDT": ["eth", "base", "arbitrum"], "BNBUSDT": ["bsc"], "MATICUSDT": ["polygon"]}
+            async with aiohttp.ClientSession() as session:
+                for sym, networks in symbols.items():
+                    async with session.get(f"https://api.binance.com/api/v3/ticker/price?symbol={sym}", timeout=5) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            price = float(data["price"])
+                            for net in networks:
+                                self._live_native_prices[net] = price
+            self._live_prices_updated = now
+            self.logger.debug(f"[DEX] Native prices updated: {self._live_native_prices}")
+        except Exception as e:
+            self.logger.debug(f"[DEX] Price refresh error: {e}")
+
     def _get_native_price_usd(self, network: str) -> float:
-        """Get estimated native token price in USD"""
+        """Get native token price in USD (live or fallback)."""
+        if network in self._live_native_prices:
+            return self._live_native_prices[network]
         return self.DEFAULT_NATIVE_PRICES.get(network, 2000)
     
     async def buy(
@@ -395,7 +421,8 @@ class DEXTrader:
         if slippage > self.MAX_SLIPPAGE:
             slippage = self.MAX_SLIPPAGE
         
-        # Convert USD amount to native token amount (ETH/BNB)
+        # Refresh live prices before trading
+        await self._refresh_native_prices()
         native_price = self._get_native_price_usd(network)
         amount_native = Decimal(str(amount_usd)) / Decimal(str(native_price))
         
@@ -1462,7 +1489,11 @@ class DEXTrader:
                 if not current_price:
                     pos["_price_fail_count"] = pos.get("_price_fail_count", 0) + 1
                     if pos["_price_fail_count"] > 10:
-                        self.logger.warning(f"[SNIPER] No price data for {pos.get('symbol', '?')} after 10 tries, closing")
+                        symbol = pos.get("symbol", token_address[:10])
+                        self.logger.warning(f"[SNIPER] No price for {symbol} after 10 tries — recording as total loss")
+                        entry_price = pos.get("entry_price", 0)
+                        remaining_usd = float(pos.get("amount_remaining", pos.get("amount", 0))) * entry_price if entry_price > 0 else 0
+                        self.safety.record_sell(symbol, pos["network"], remaining_usd, -100.0, -remaining_usd, self.safety.is_simulation_mode())
                         positions_to_close.append(token_address)
                     continue
                 pos["_price_fail_count"] = 0
@@ -1516,7 +1547,8 @@ class DEXTrader:
                         pos["_sell_retries"] = pos.get("_sell_retries", 0) + 1
                         self.logger.error(f"[SNIPER] Sell failed for {symbol} (attempt {pos['_sell_retries']}): {sell_err}")
                         if pos["_sell_retries"] >= 3:
-                            self.logger.error(f"[SNIPER] Max retries reached for {symbol}, removing position")
+                            self.logger.error(f"[SNIPER] Max retries for {symbol} — recording as total loss")
+                            self.safety.record_sell(symbol, pos["network"], remaining_usd, -100.0, -remaining_usd, self.safety.is_simulation_mode())
                             positions_to_close.append(token_address)
                         continue
                     pnl_usd = remaining_usd * (pnl_pct / 100)

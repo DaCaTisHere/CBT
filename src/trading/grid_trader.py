@@ -28,6 +28,10 @@ logger = get_logger(__name__)
 
 GAS_COST_USD = {"base": 0.02, "bsc": 0.10, "eth": 3.0, "arbitrum": 0.05}
 
+# Each trade's net profit must exceed gas * this factor, otherwise skip the sell.
+# Prevents gas-negative micro-trades that erode capital.
+MIN_PROFIT_GAS_MULT = 3
+
 
 class MarketRegime(Enum):
     BULL = "bull"
@@ -37,10 +41,10 @@ class MarketRegime(Enum):
 
 
 REGIME_PARAMS = {
-    MarketRegime.BULL:          {"spacing_pct": 2.0, "num_grids": 10, "amount_mult": 1.0, "range_pct": 12.0},
-    MarketRegime.BULL_VOLATILE: {"spacing_pct": 3.0, "num_grids": 8,  "amount_mult": 0.7, "range_pct": 15.0},
-    MarketRegime.RANGE:         {"spacing_pct": 1.0, "num_grids": 15, "amount_mult": 1.2, "range_pct": 8.0},
-    MarketRegime.BEAR:          {"spacing_pct": 2.0, "num_grids": 10, "amount_mult": 0.5, "range_pct": 12.0},
+    MarketRegime.BULL:          {"spacing_pct": 2.5, "num_grids": 8,  "amount_mult": 1.0, "range_pct": 12.0},
+    MarketRegime.BULL_VOLATILE: {"spacing_pct": 3.5, "num_grids": 6,  "amount_mult": 0.7, "range_pct": 15.0},
+    MarketRegime.RANGE:         {"spacing_pct": 1.5, "num_grids": 10, "amount_mult": 1.2, "range_pct": 10.0},
+    MarketRegime.BEAR:          {"spacing_pct": 2.5, "num_grids": 8,  "amount_mult": 0.4, "range_pct": 12.0},
 }
 
 HYSTERESIS_PCT = 10.0  # 10% band to prevent regime whipsawing
@@ -74,7 +78,7 @@ class GridPairConfig:
     base_symbol: str
     quote_symbol: str
     pool_address: str = ""  # For OHLCV history
-    base_amount_per_grid_usd: float = 10.0
+    base_amount_per_grid_usd: float = 20.0
     price_range_pct: float = 10.0
 
 
@@ -92,7 +96,7 @@ class GridTrader:
             base_symbol="ETH",
             quote_symbol="USDC",
             pool_address="0x96d4b53a38337a5733179751781178a2613306063c511b78cd02684739288c0a",
-            base_amount_per_grid_usd=10.0,
+            base_amount_per_grid_usd=20.0,
             price_range_pct=10.0,
         ),
         "bsc_bnb": GridPairConfig(
@@ -102,7 +106,7 @@ class GridTrader:
             base_symbol="BNB",
             quote_symbol="USDT",
             pool_address="0x16b9a82891338f9ba80e2d6970fdda79d1eb0dae",
-            base_amount_per_grid_usd=10.0,
+            base_amount_per_grid_usd=20.0,
             price_range_pct=10.0,
         ),
     }
@@ -335,6 +339,16 @@ class GridTrader:
                         if new_regime != old_regime:
                             self._current_regime[pair_id] = new_regime
                             self._rebalance_grid(pair_id, current_price, config, new_regime)
+                            if self.telegram and hasattr(self.telegram, 'notify_regime_change'):
+                                try:
+                                    await self.telegram.notify_regime_change(
+                                        pair=f"{config.base_symbol}/{config.quote_symbol}",
+                                        old_regime=old_regime.value,
+                                        new_regime=new_regime.value,
+                                        price=current_price,
+                                    )
+                                except Exception:
+                                    pass
 
                     # Rebalance if price drifted too far from center
                     deviation = abs(current_price - center) / center * 100
@@ -418,7 +432,14 @@ class GridTrader:
         total_gas = buy_order.get("gas_cost", 0) + gas
 
         profit_pct = ((current_price - buy_price) / buy_price) * 100
-        profit_usd = amount_usd * (profit_pct / 100) - total_gas  # Subtract gas
+        profit_usd = amount_usd * (profit_pct / 100) - total_gas
+
+        min_net_profit = gas * MIN_PROFIT_GAS_MULT
+        if profit_usd < min_net_profit:
+            self.logger.debug(
+                f"[GRID] SKIP SELL {config.base_symbol} @ ${current_price:,.2f} — "
+                f"net ${profit_usd:+.3f} < min ${min_net_profit:.3f} (waiting for better exit)")
+            return
 
         self.logger.info(f"[GRID] SELL {config.base_symbol} @ ${current_price:,.2f} (bought @ ${buy_price:,.2f})")
 
@@ -536,32 +557,42 @@ class GridTrader:
         uptime_h = (time.time() - self.start_time) / 3600
         win_rate = (self.wins / max(self.total_cycles, 1)) * 100
 
+        total_gas_spent = 0.0
         pairs_status = {}
         for pair_id, config in self.GRID_PAIRS.items():
             active = len(self.active_buys.get(pair_id, []))
-            cycles = len(self.completed_cycles.get(pair_id, []))
-            pnl = sum(c.profit_usd for c in self.completed_cycles.get(pair_id, []))
+            cycles_list = self.completed_cycles.get(pair_id, [])
+            cycles = len(cycles_list)
+            pnl = sum(c.profit_usd for c in cycles_list)
             cp = self._last_prices.get(pair_id, 0)
             center = self.center_prices.get(pair_id, 0)
             regime = self._current_regime.get(pair_id, MarketRegime.RANGE)
+            gas_per_trade = GAS_COST_USD.get(config.network, 0.1)
+            pair_gas = gas_per_trade * 2 * cycles  # buy + sell per cycle
+            total_gas_spent += pair_gas
             unrealized = sum(
                 b["amount_usd"] * ((cp - b["buy_price"]) / b["buy_price"])
                 for b in self.active_buys.get(pair_id, [])
             ) if cp > 0 else 0
 
+            rp = REGIME_PARAMS.get(regime, REGIME_PARAMS[MarketRegime.RANGE])
             pairs_status[pair_id] = {
                 "pair": f"{config.base_symbol}/{config.quote_symbol}",
                 "network": config.network.upper(),
                 "regime": regime.value,
+                "spacing_pct": f"{rp['spacing_pct']}%",
                 "center_price": f"${center:,.2f}",
                 "current_price": f"${cp:,.2f}",
                 "active_buys": active,
                 "unrealized_pnl": f"${unrealized:+.2f}",
                 "completed_cycles": cycles,
                 "realized_pnl": f"${pnl:+.2f}",
+                "est_gas_spent": f"${pair_gas:.2f}",
                 "grid_levels": len(self.grids.get(pair_id, [])),
+                "amount_per_grid": f"${config.base_amount_per_grid_usd * rp['amount_mult']:.0f}",
             }
 
+        profit_per_day = self.total_profit_usd / max(uptime_h / 24, 0.01)
         return {
             "strategy": "REGIME-ADAPTIVE GRID",
             "uptime": f"{uptime_h:.1f}h",
@@ -570,6 +601,10 @@ class GridTrader:
             "losses": self.losses,
             "win_rate": f"{win_rate:.1f}%",
             "total_pnl": f"${self.total_profit_usd:+.2f}",
+            "est_total_gas": f"${total_gas_spent:.2f}",
+            "net_profit": f"${self.total_profit_usd:+.2f}",
+            "profit_per_day": f"${profit_per_day:+.2f}/day",
+            "min_profit_threshold": f"gas × {MIN_PROFIT_GAS_MULT}",
             "pairs": pairs_status,
         }
 
@@ -595,6 +630,9 @@ class GridTrader:
         bt_cycles = 0
         bt_profit = 0.0
         bt_wins = 0
+        bt_skipped = 0
+        total_gas_2x = gas * 2
+        min_net = gas * MIN_PROFIT_GAS_MULT
 
         for i in range(1, len(history)):
             old_p, new_p = history[i - 1], history[i]
@@ -605,17 +643,23 @@ class GridTrader:
 
             for sl in sell_levels:
                 if old_p < sl <= new_p and bt_buys:
-                    bp = bt_buys.pop(0)
+                    bp = bt_buys[0]
                     pnl_pct = ((new_p - bp) / bp) * 100
-                    pnl_usd = amount * (pnl_pct / 100) - gas * 2
+                    pnl_usd = amount * (pnl_pct / 100) - total_gas_2x
+                    if pnl_usd < min_net:
+                        bt_skipped += 1
+                        continue
+                    bt_buys.pop(0)
                     bt_profit += pnl_usd
                     bt_cycles += 1
                     if pnl_usd > 0:
                         bt_wins += 1
 
         wr = (bt_wins / max(bt_cycles, 1)) * 100
+        avg_profit = bt_profit / max(bt_cycles, 1)
         self.logger.info(f"[GRID] BACKTEST {config.base_symbol}: {bt_cycles} cycles, "
-                         f"P&L: ${bt_profit:+.2f}, WR: {wr:.0f}%, regime: {regime.value}")
+                         f"P&L: ${bt_profit:+.2f}, WR: {wr:.0f}%, skipped: {bt_skipped}, "
+                         f"avg: ${avg_profit:+.3f}/cycle, regime: {regime.value}")
 
         return {
             "pair": f"{config.base_symbol}/{config.quote_symbol}",
@@ -625,7 +669,8 @@ class GridTrader:
             "wins": bt_wins,
             "win_rate": f"{wr:.1f}%",
             "profit_usd": f"${bt_profit:+.2f}",
-            "avg_profit_per_cycle": f"${bt_profit / max(bt_cycles, 1):+.2f}",
+            "avg_profit_per_cycle": f"${avg_profit:+.2f}",
+            "skipped_unprofitable": bt_skipped,
             "open_positions_at_end": len(bt_buys),
         }
 

@@ -825,8 +825,8 @@ class DEXTrader:
             try:
                 balance = w3.eth.get_balance(wallet["address"])
                 wallet["native_balance"] = Decimal(balance) / Decimal(10**18)
-            except:
-                pass
+            except Exception as e:
+                self.logger.debug(f"[DEX] Balance refresh failed on {network}: {e}")
             
             native_balance = wallet.get("native_balance", Decimal("0"))
             
@@ -1332,8 +1332,8 @@ class DEXTrader:
                     receipt = w3.eth.get_transaction_receipt(tx_hash)
                     if receipt:
                         return receipt["status"] == 1
-                except:
-                    pass
+                except Exception as e:
+                    self.logger.debug(f"[DEX] Receipt not yet available: {e}")
                 await asyncio.sleep(3)
             
             return False
@@ -1521,7 +1521,7 @@ class DEXTrader:
                 should_close = False
                 close_reason = ""
 
-                HARD_STOP_LOSS_PCT = -12.0  # Absolute max loss regardless of trailing SL
+                HARD_STOP_LOSS_PCT = -8.0  # Tightened from -12% (avg loss was -23.5%)
 
                 if pnl_pct <= HARD_STOP_LOSS_PCT:
                     close_reason = f"HARD STOP-LOSS ({pnl_pct:+.1f}% <= {HARD_STOP_LOSS_PCT}%)"
@@ -1532,6 +1532,11 @@ class DEXTrader:
                 elif datetime.utcnow() >= pos["max_hold_until"]:
                     close_reason = f"MAX HOLD ({pnl_pct:+.1f}%)"
                     should_close = True
+                elif pnl_pct < -2.0:
+                    hold_minutes = (datetime.utcnow() - pos["entry_time"]).total_seconds() / 60
+                    if hold_minutes >= 20:
+                        close_reason = f"TIME+LOSS EXIT ({pnl_pct:+.1f}% after {hold_minutes:.0f}min)"
+                        should_close = True
                 elif not pos["tp3_hit"] and current_price >= pos["tp3_price"]:
                     close_reason = f"TP3 ({pnl_pct:+.1f}%)"
                     should_close = True

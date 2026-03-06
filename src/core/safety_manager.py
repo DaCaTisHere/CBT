@@ -94,7 +94,30 @@ class SafetyManager:
     def __init__(self):
         self.stats = SafetyStats()
         self.trade_history: List[TradeRecord] = []
+        self._notifier = None
         self._load_stats()
+
+    def set_notifier(self, callback):
+        """Register an async callback for critical safety events.
+
+        The callback receives (event_type: str, data: dict).
+        Event types: 'mode_change', 'emergency_stop', 'emergency_unlock'.
+        """
+        self._notifier = callback
+
+    def _fire_notifier(self, event_type: str, data: dict):
+        """Schedule the notifier callback without blocking."""
+        if self._notifier is None:
+            return
+        try:
+            import asyncio
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(self._notifier(event_type, data))
+            else:
+                loop.run_until_complete(self._notifier(event_type, data))
+        except Exception as e:
+            logger.debug(f"[SAFETY] Notifier fire error: {e}")
     
     def _load_stats(self):
         try:
@@ -135,6 +158,7 @@ class SafetyManager:
                 self.stats.auto_switched_to_real = False
                 self.stats.real_trading_unlocked = False
                 self._save_stats()
+                self._fire_notifier("emergency_unlock", {})
     
     # ==================== PRE-TRADE GATE ====================
     
@@ -161,7 +185,9 @@ class SafetyManager:
         if self.stats.daily_pnl_usd < -self.MAX_DAILY_LOSS_USD:
             self.stats.emergency_stop = True
             self._save_stats()
-            return False, f"DAILY LOSS LIMIT: ${self.stats.daily_pnl_usd:.2f} (max -${self.MAX_DAILY_LOSS_USD})"
+            reason = f"DAILY LOSS LIMIT: ${self.stats.daily_pnl_usd:.2f} (max -${self.MAX_DAILY_LOSS_USD})"
+            self._fire_notifier("emergency_stop", {"reason": reason})
+            return False, reason
         
         # Real win rate check (after enough real trades)
         if self.stats.real_trades_total >= self.REAL_MIN_TRADES_FOR_CHECK:
@@ -169,7 +195,9 @@ class SafetyManager:
             if real_wr < self.REAL_MIN_WIN_RATE:
                 self.stats.emergency_stop = True
                 self._save_stats()
-                return False, f"Real win rate too low: {real_wr:.1f}% < {self.REAL_MIN_WIN_RATE}%"
+                reason = f"Real win rate too low: {real_wr:.1f}% < {self.REAL_MIN_WIN_RATE}%"
+                self._fire_notifier("emergency_stop", {"reason": reason})
+                return False, reason
         
         # Trade amount sanity
         if amount_usd > self.MAX_TRADE_USD:
@@ -337,6 +365,11 @@ class SafetyManager:
                 logger.info(f"[SAFETY] {self.stats.unlock_reason}")
                 logger.info(f"[SAFETY] Daily loss limit: ${self.MAX_DAILY_LOSS_USD}")
                 logger.info("=" * 60)
+                self._fire_notifier("mode_change", {
+                    "old_mode": "SIMULATION",
+                    "new_mode": "REAL",
+                    "reason": self.stats.unlock_reason,
+                })
         else:
             remaining = max(0, self.MIN_SIM_TRADES - self.stats.sim_trades_total)
             self.stats.unlock_reason = (
@@ -344,6 +377,12 @@ class SafetyManager:
                 f"PnL ${self.stats.sim_total_pnl_usd:+.2f} (must be >$0), "
                 f"Mom WR {mom_wr:.0f}% (need >=20%)"
             )
+            if was_unlocked:
+                self._fire_notifier("mode_change", {
+                    "old_mode": "REAL",
+                    "new_mode": "SIMULATION",
+                    "reason": self.stats.unlock_reason,
+                })
             self.stats.real_trading_unlocked = False
     
     # ==================== STATUS & REPORTING ====================

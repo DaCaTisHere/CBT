@@ -6,6 +6,30 @@ Sends real-time notifications for:
 - Daily PnL reports
 - Error alerts
 - Momentum signals
+- Safety mode changes
+- Grid regime changes
+
+============================================================
+  HOW TO SET UP TELEGRAM NOTIFICATIONS
+============================================================
+
+  1. Open Telegram and search for @BotFather
+  2. Send /newbot and follow the prompts to create your bot
+  3. BotFather will give you a token like:
+        123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+  4. To get your chat_id:
+     - Search for @userinfobot on Telegram and start it
+     - It will reply with your numeric chat_id
+     - Alternatively, send a message to your bot, then visit:
+       https://api.telegram.org/bot<TOKEN>/getUpdates
+       and look for "chat":{"id": YOUR_CHAT_ID}
+  5. Set these two environment variables on Railway:
+        TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+        TELEGRAM_CHAT_ID=your_numeric_chat_id
+
+  Once set, the bot will send real-time alerts for trades,
+  mode switches, regime changes, and critical errors.
+============================================================
 """
 
 import asyncio
@@ -280,6 +304,96 @@ class TelegramBot:
     
     # ==================== ALERTS ====================
     
+    # ==================== SAFETY & MONITORING NOTIFICATIONS ====================
+
+    async def notify_mode_change(self, old_mode: str, new_mode: str, reason: str = ""):
+        """Notify when safety mode changes (SIMULATION <-> REAL)"""
+        emoji = "🔄" if new_mode == "REAL" else "⚠️"
+        message = f"""
+{emoji} <b>MODE CHANGE</b>
+
+<b>From:</b> {old_mode}
+<b>To:</b> {new_mode}
+<b>Reason:</b> {reason or 'Auto-switch'}
+
+<i>{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</i>
+"""
+        await self.send_message(message.strip())
+
+    async def notify_emergency_stop(self, reason: str):
+        """Notify when emergency stop triggers"""
+        message = f"""
+🚨 <b>EMERGENCY STOP</b>
+
+<b>Reason:</b> {reason}
+Trading is PAUSED until next daily reset.
+
+<i>{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</i>
+"""
+        await self.send_message(message.strip(), silent=False)
+
+    async def notify_emergency_unlock(self):
+        """Notify when emergency stop is cleared"""
+        message = f"""
+✅ <b>EMERGENCY CLEARED</b>
+
+Daily reset completed. Bot re-entering SIMULATION mode.
+
+<i>{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</i>
+"""
+        await self.send_message(message.strip())
+
+    async def notify_watchlist_add(self, symbol: str, change_pct: float, liquidity: float, score: float):
+        """Notify when a momentum token is added to watchlist"""
+        message = f"""
+👁️ <b>WATCHLIST</b>
+
+<b>Token:</b> {symbol}
+<b>24h Change:</b> +{change_pct:.1f}%
+<b>Liquidity:</b> ${liquidity:,.0f}
+<b>Score:</b> {score:.0f}/100
+
+Monitoring for momentum confirmation...
+
+<i>{datetime.utcnow().strftime('%H:%M:%S')} UTC</i>
+"""
+        await self.send_message(message.strip(), silent=True)
+
+    async def notify_ai_block(self, symbol: str, reason: str, change_pct: float):
+        """Notify when AI blocks a momentum buy"""
+        message = f"""
+🤖❌ <b>AI BLOCKED BUY</b>
+
+<b>Token:</b> {symbol}
+<b>Momentum:</b> +{change_pct:.1f}%
+<b>Reason:</b> {reason}
+
+Token removed from watchlist.
+
+<i>{datetime.utcnow().strftime('%H:%M:%S')} UTC</i>
+"""
+        await self.send_message(message.strip(), silent=True)
+
+    async def notify_regime_change(self, pair: str, old_regime: str, new_regime: str, price: float):
+        """Notify when grid trader detects a regime change"""
+        regime_emojis = {"bull": "📈", "bull_volatile": "🌪️", "range": "↔️", "bear": "📉"}
+        emoji = regime_emojis.get(new_regime, "📊")
+        message = f"""
+{emoji} <b>REGIME CHANGE</b>
+
+<b>Pair:</b> {pair}
+<b>From:</b> {old_regime.upper()}
+<b>To:</b> {new_regime.upper()}
+<b>Price:</b> ${price:,.2f}
+
+Grid rebalanced to new regime parameters.
+
+<i>{datetime.utcnow().strftime('%H:%M:%S')} UTC</i>
+"""
+        await self.send_message(message.strip(), silent=True)
+
+    # ==================== ALERTS ====================
+
     async def alert_error(self, error_type: str, message: str):
         """Send error alert"""
         alert = f"""

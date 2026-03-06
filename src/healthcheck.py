@@ -5,9 +5,37 @@ import logging
 import time
 import json
 import os
+from collections import deque
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+# Ring buffer for the last 50 log entries exposed via /logs
+_log_buffer: deque = deque(maxlen=50)
+
+
+class _DashboardLogHandler(logging.Handler):
+    """Captures log records into the ring buffer for the /logs endpoint."""
+    def emit(self, record):
+        try:
+            entry = {
+                "ts": datetime.utcfromtimestamp(record.created).strftime("%Y-%m-%d %H:%M:%S"),
+                "level": record.levelname,
+                "name": record.name,
+                "msg": self.format(record),
+            }
+            _log_buffer.append(entry)
+        except Exception:
+            pass
+
+
+def install_log_handler():
+    """Attach the dashboard handler to the root logger so all modules are captured."""
+    handler = _DashboardLogHandler()
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    logging.getLogger().addHandler(handler)
+
 
 def get_trading_mode():
     """Get current trading mode from environment"""
@@ -36,20 +64,7 @@ def get_real_wallet_balance():
         from src.trading.dex_trader import DEXTrader
         import asyncio
         
-        # Get cached stats from orchestrator if available
-        try:
-            from src.core.orchestrator import Orchestrator
-            # Try to read from a simple stats file
-            stats_file = "/tmp/wallet_stats.json"
-            if os.path.exists(stats_file):
-                with open(stats_file, 'r') as f:
-                    data = json.load(f)
-                    if time.time() - data.get("timestamp", 0) < 300:  # 5 min cache
-                        return data.get("balances", {}), data.get("total_usd", 0)
-        except:
-            pass
-        
-        # Fallback: try to read balances from web3 directly
+        # Read balances from web3 directly
         try:
             from web3 import Web3
             from src.core.config import settings as _cfg
@@ -119,15 +134,22 @@ def get_trading_stats():
 
 
 def get_momentum_stats():
-    """Get momentum detector stats if available"""
+    """Get momentum detector stats from the orchestrator's watchlist if available"""
     try:
-        from src.modules.momentum_detector import MomentumDetector
-        # Get last signals from momentum detector
+        from src.core.orchestrator import Orchestrator
+        orch = Orchestrator._instance if hasattr(Orchestrator, '_instance') else None
+        if orch and hasattr(orch, 'momentum_detector') and orch.momentum_detector:
+            detector = orch.momentum_detector
+            return {
+                'btc_trend': getattr(detector, 'btc_trend', 'neutral'),
+                'last_signals': getattr(detector, 'last_signals', [])[-10:],
+            }
         return {
             'btc_trend': 'neutral',
             'last_signals': []
         }
-    except:
+    except Exception as e:
+        logger.debug(f"Momentum stats unavailable: {e}")
         return None
 
 def get_ml_info():
@@ -178,7 +200,8 @@ async def status(request):
     try:
         from src.core.config import settings as _s
         _settings_sim = _s.SIMULATION_MODE
-    except:
+    except Exception as e:
+        logger.debug(f"Could not read SIMULATION_MODE from settings: {e}")
         _settings_sim = "import_error"
     
     data = {
@@ -262,7 +285,8 @@ async def index(request):
             # Parse win_rate from ML (e.g., "40.9%" -> 40.9)
             try:
                 win_rate = float(ml_win_rate.replace('%', ''))
-            except:
+            except Exception as e:
+                logger.debug(f"Failed to parse ML win rate '{ml_win_rate}': {e}")
                 win_rate = 0
             # Calculate wins/losses from ML data
             winning = int(total_trades * (win_rate / 100))
@@ -1036,8 +1060,75 @@ async def grid_backtest(request):
         return web.json_response({"error": str(e)}, status=500)
 
 
+async def logs_endpoint(request):
+    """Return the last 50 log entries as JSON."""
+    return web.json_response(list(_log_buffer))
+
+
+async def positions_endpoint(request):
+    """Return current sniper (DEX) positions with live PnL."""
+    result = {"sniper_positions": [], "paper_positions": []}
+    try:
+        from src.trading.dex_trader import DEXTrader
+        from src.core.orchestrator import Orchestrator
+        orch = Orchestrator._instance if hasattr(Orchestrator, '_instance') else None
+
+        # Sniper / DEX positions
+        if orch and hasattr(orch, 'momentum_detector'):
+            try:
+                dex = None
+                for attr in ("dex_trader",):
+                    if hasattr(orch, attr):
+                        dex = getattr(orch, attr)
+                if dex is None:
+                    dex = DEXTrader()
+                for addr, pos in getattr(dex, "sniper_positions", {}).items():
+                    entry = pos.get("buy_price", pos.get("price_usd", 0))
+                    current = pos.get("current_price", entry)
+                    pnl_pct = ((current - entry) / entry * 100) if entry > 0 else 0
+                    result["sniper_positions"].append({
+                        "token": pos.get("token_symbol", "?"),
+                        "network": pos.get("network", "?"),
+                        "entry_price": entry,
+                        "current_price": current,
+                        "amount_usd": pos.get("amount_usd", 0),
+                        "pnl_pct": round(pnl_pct, 2),
+                        "age_minutes": round(
+                            (time.time() - pos.get("buy_time", time.time())) / 60, 1
+                        ),
+                    })
+            except Exception as e:
+                result["sniper_error"] = str(e)
+
+        # Paper trading positions
+        try:
+            from src.trading.paper_trader import get_paper_trader
+            pt = get_paper_trader()
+            for symbol, p in pt.portfolio.positions.items():
+                current = pt.price_cache.get(symbol, p.entry_price)
+                pnl_pct = ((current - p.entry_price) / p.entry_price * 100) if p.entry_price > 0 else 0
+                result["paper_positions"].append({
+                    "symbol": symbol,
+                    "entry_price": p.entry_price,
+                    "current_price": current,
+                    "value": p.value,
+                    "pnl_pct": round(pnl_pct, 2),
+                    "stop_loss": p.stop_loss,
+                    "take_profit": p.take_profit,
+                })
+        except Exception as e:
+            result["paper_error"] = str(e)
+
+    except Exception as e:
+        result["error"] = str(e)
+
+    return web.json_response(result)
+
+
 async def start_healthcheck_server(port=8080):
     """Start healthcheck server on specified port"""
+    install_log_handler()
+
     app = web.Application()
     app.router.add_get('/health', health)
     app.router.add_get('/status', status)
@@ -1047,6 +1138,8 @@ async def start_healthcheck_server(port=8080):
     app.router.add_get('/safety/reset', safety_reset)
     app.router.add_get('/grid', grid_status)
     app.router.add_get('/backtest', grid_backtest)
+    app.router.add_get('/logs', logs_endpoint)
+    app.router.add_get('/positions', positions_endpoint)
     app.router.add_get('/', index)
     
     runner = web.AppRunner(app)

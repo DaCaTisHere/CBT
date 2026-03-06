@@ -253,6 +253,7 @@ class Orchestrator:
                     await self.telegram.notify_bot_started()
                     self.logger.info("[TELEGRAM] Notifications enabled")
             except Exception as e:
+                self.telegram = None
                 self.logger.warning(f"[TELEGRAM] Could not init: {e}")
             
             # Start WebSocket for real-time prices
@@ -290,8 +291,8 @@ class Orchestrator:
                         from src.trading.training_simulator import start_training
                         asyncio.create_task(start_training(interval_seconds=30))
                         self.logger.info("[TRAIN] Fallback to simple training simulator")
-                    except:
-                        pass
+                    except Exception as e:
+                        self.logger.debug(f"[TRAIN] Fallback training also failed: {e}")
             
             # Start Momentum Detector for active trading opportunities
             try:
@@ -457,8 +458,8 @@ class Orchestrator:
                                             f"BTC: {'✓ Aligné' if signal.btc_correlation > 0 else '✗ Contre'}\n"
                                             f"SL: {dynamic_sl*100:.1f}%"
                                         )
-                                except:
-                                    pass
+                                except Exception as e:
+                                    self.logger.debug(f"[TELEGRAM] Buy notification failed: {e}")
                             else:
                                 self.logger.warning(f"[TRADE] ❌ Échec achat {signal.symbol}")
                         else:
@@ -581,6 +582,21 @@ class Orchestrator:
                 self.logger.info(f"[SAFETY] Sim trades: {safety_status['simulation']['trades']}/{safety.MIN_SIM_TRADES}")
                 self.logger.info(f"[SAFETY] Real trading unlocked: {safety_status['safety']['real_trading_unlocked']}")
                 self.logger.info(f"[SAFETY] Progress: {safety.get_progress_bar()}")
+
+                # Wire safety events to Telegram notifications
+                if hasattr(self, 'telegram') and self.telegram and self.telegram.is_enabled:
+                    async def _safety_notifier(event_type: str, data: dict):
+                        try:
+                            if event_type == "mode_change":
+                                await self.telegram.notify_mode_change(
+                                    data["old_mode"], data["new_mode"], data.get("reason", ""))
+                            elif event_type == "emergency_stop":
+                                await self.telegram.notify_emergency_stop(data["reason"])
+                            elif event_type == "emergency_unlock":
+                                await self.telegram.notify_emergency_unlock()
+                        except Exception as e:
+                            self.logger.debug(f"[TELEGRAM] Safety notifier error: {e}")
+                    safety.set_notifier(_safety_notifier)
                 
                 if dex_initialized:
                     if safety.is_simulation_mode():
@@ -631,15 +647,20 @@ class Orchestrator:
                 _watchlist = {}
                 _watchlist_lock = asyncio.Lock()
                 _last_buy_time = [0]
-                BUY_MIN_INTERVAL = 900  # 15 min between buys (was 10)
-                WATCHLIST_MAX_AGE = 3600  # 1h max age (was 2h)
-                WATCHLIST_MAX_SIZE = 50  # Increased from 20 for more opportunities
-                MOMENTUM_CONFIRM_PCT = 20.0  # Was 15%, need stronger momentum
-                CONFIRMS_NEEDED = 5  # Was 3, need more confirmation
-                HIGH_CONFIRM_THRESHOLD = 12  # Was 8, much more patient
-                HIGH_CONFIRM_MOMENTUM_PCT = 15.0  # Was 10%, need real strength
-                FAST_TRACK_PCT = 40.0  # Was 25%, only truly explosive moves
-                CONFIRM_DIP_TOLERANCE = 3.0
+                BUY_MIN_INTERVAL = 900  # 15 min between buys
+                WATCHLIST_MAX_AGE = 1800  # 30 min max (micro-caps dump fast, was 1h)
+                WATCHLIST_MAX_SIZE = 30  # Quality over quantity (was 50)
+                MOMENTUM_CONFIRM_PCT = 12.0  # Buy earlier with stricter quality (was 20% = buying tops)
+                CONFIRMS_NEEDED = 6  # More patience before entry (was 5)
+                HIGH_CONFIRM_THRESHOLD = 15  # Very patient for lower momentum (was 12)
+                HIGH_CONFIRM_MOMENTUM_PCT = 8.0  # Allow lower pct with many confirms (was 15%)
+                FAST_TRACK_PCT = 60.0  # Almost never trigger — buying tops is suicide (was 40%)
+                CONFIRM_DIP_TOLERANCE = 2.0  # Stricter dip tolerance (was 3%)
+                MAX_VOLATILITY_PCT = 40.0  # Reject tokens with >40% price range during watch
+                MIN_MARKET_CAP_PROXY = 1_000_000  # $1M min estimated market cap
+                CREATOR_COOLDOWN_SECONDS = 3600  # 1h cooldown per pair/creator
+                _creator_cooldowns = {}
+                _price_fail_tokens = set()
                 
                 SCAM_EXACT_NAMES = {
                     "DOGE", "DOGECOIN", "SHIB", "SHIBA", "BITCOIN", "BTC", "ETH",
@@ -654,6 +675,8 @@ class Orchestrator:
                     "DOGE", "SHIB", "PEPE", "ELON", "TRUMP", "SAFE", "BABY",
                     "MOON", "INU", "FLOKI", "WOJAK", "CHAD", "MEME",
                     "FREE", "AIRDROP", "100X", "1000X", "PUMP",
+                    "LAUNCH", "REWARD", "REFLEC", "REBASE", "ELASTIC",
+                    "PONZI", "RUGPULL", "GIVEAWAY", "PRESALE",
                 ]
                 
                 async def on_pool_signal(signal: PoolSignal):
@@ -675,16 +698,25 @@ class Orchestrator:
                             if substr in token_upper:
                                 return
                         
-                        # Quality filters — VERY strict to avoid losses
-                        if pool.liquidity_usd < 200000 or pool.volume_24h < 100000:
+                        # Quality filters — ULTRA strict (8.1% win rate → must be conservative)
+                        if pool.liquidity_usd < 500_000 or pool.volume_24h < 300_000:
                             return
-                        if signal.score < 65:
+                        if signal.score < 70:
                             return
                         vol_liq_ratio = pool.volume_24h / max(pool.liquidity_usd, 1)
-                        if vol_liq_ratio < 0.5:
+                        if vol_liq_ratio < 1.0:
                             return
-                        if pool.price_change_24h < -10:
+                        if pool.price_change_24h < -5:
                             return
+                        est_mcap = pool.liquidity_usd * 2
+                        if est_mcap < MIN_MARKET_CAP_PROXY:
+                            return
+                        
+                        # Check creator/pair cooldown to avoid repeated rug-pulls
+                        pair_key = getattr(pool, 'quote_token', pool.base_token)
+                        if pair_key in _creator_cooldowns:
+                            if _time.time() - _creator_cooldowns[pair_key] < CREATOR_COOLDOWN_SECONDS:
+                                return
                         
                         # ADD TO WATCHLIST — don't buy yet!
                         _watchlist[pool.address] = {
@@ -698,10 +730,24 @@ class Orchestrator:
                             "volume": pool.volume_24h,
                             "confirm_count": 0,
                             "last_price": pool.price_usd,
+                            "price_history": [pool.price_usd],
+                            "peak_price": pool.price_usd,
+                            "pair_key": pair_key,
                         }
                         self.logger.info(f"[WATCH] 👁️ Added {pool.base_token} to watchlist @ ${pool.price_usd:.8f} (score:{signal.score:.0f} liq:${pool.liquidity_usd:,.0f} vol:${pool.volume_24h:,.0f})")
                         self.logger.info(f"[WATCH] Watchlist: {len(_watchlist)} tokens | Waiting for +{MOMENTUM_CONFIRM_PCT}% momentum to buy")
-                        
+
+                        try:
+                            if hasattr(self, 'telegram') and self.telegram and self.telegram.is_enabled:
+                                await self.telegram.notify_watchlist_add(
+                                    symbol=pool.base_token,
+                                    change_pct=pool.price_change_24h,
+                                    liquidity=pool.liquidity_usd,
+                                    score=signal.score,
+                                )
+                        except Exception:
+                            pass
+
                     except Exception as e:
                         self.logger.error(f"[WATCH] Signal handler error: {e}")
                 
@@ -761,14 +807,36 @@ class Orchestrator:
                                 
                                 price_change_pct = ((current_price - token["detect_price"]) / token["detect_price"]) * 100
                                 
-                                # Only reset confirms on significant dip (not noise)
-                                if current_price >= token["last_price"]:
+                                # Track price history for volatility analysis
+                                token.setdefault("price_history", []).append(current_price)
+                                if current_price > token.get("peak_price", token["detect_price"]):
+                                    token["peak_price"] = current_price
+                                
+                                # Volatility check: reject tokens with wild price swings (pump-dump pattern)
+                                if len(token["price_history"]) >= 3:
+                                    ph = token["price_history"]
+                                    min_p, max_p = min(ph), max(ph)
+                                    if min_p > 0:
+                                        volatility = ((max_p - min_p) / min_p) * 100
+                                        if volatility > MAX_VOLATILITY_PCT:
+                                            self.logger.info(f"[WATCH] 🚫 Removed {token['symbol']}: volatility {volatility:.0f}% > {MAX_VOLATILITY_PCT}% (pump-dump)")
+                                            to_remove.append(addr)
+                                            continue
+                                
+                                # FIX: Confirm logic — price must be ABOVE detect_price AND increasing
+                                # Old logic counted confirms even when price was below detect_price
+                                above_detect = current_price > token["detect_price"]
+                                increasing = current_price >= token["last_price"]
+                                
+                                if above_detect and increasing:
                                     token["confirm_count"] = token.get("confirm_count", 0) + 1
+                                elif not above_detect:
+                                    token["confirm_count"] = 0
                                 else:
                                     dip_pct = ((token["last_price"] - current_price) / token["last_price"]) * 100
                                     if dip_pct > CONFIRM_DIP_TOLERANCE:
-                                        token["confirm_count"] = 0
-                                    # else: keep confirm_count — minor fluctuation
+                                        token["confirm_count"] = max(0, token["confirm_count"] - 2)
+                                
                                 token["last_price"] = current_price
                                 
                                 self.logger.info(f"[WATCH] {token['symbol']}: {price_change_pct:+.1f}% ({age/60:.0f}min) | confirms: {token['confirm_count']}/{CONFIRMS_NEEDED}")
@@ -814,6 +882,15 @@ class Orchestrator:
                                     should_buy, reason = ai_engine.should_buy(ai_result)
                                     if not should_buy:
                                         self.logger.warning(f"[AI] ❌ {token['symbol']} momentum OK but AI blocked: {reason}")
+                                        try:
+                                            if hasattr(self, 'telegram') and self.telegram and self.telegram.is_enabled:
+                                                await self.telegram.notify_ai_block(
+                                                    symbol=token['symbol'],
+                                                    reason=reason,
+                                                    change_pct=price_change_pct,
+                                                )
+                                        except Exception:
+                                            pass
                                         to_remove.append(addr)
                                         continue
                                     
@@ -834,11 +911,11 @@ class Orchestrator:
                                         token_address=addr,
                                         amount_usd=position_size,
                                         token_symbol=token["symbol"],
-                                        tp1_pct=10.0,  # Take profit earlier
-                                        tp2_pct=20.0,
-                                        tp3_pct=40.0,
-                                        sl_pct=5.0,  # Tighter trailing stop (was 8%)
-                                        max_hold_hours=1  # Max 1h hold (was 3h)
+                                        tp1_pct=8.0,
+                                        tp2_pct=15.0,
+                                        tp3_pct=30.0,
+                                        sl_pct=4.0,
+                                        max_hold_hours=1
                                     )
                                     if trade:
                                         safety.record_buy(
@@ -849,6 +926,7 @@ class Orchestrator:
                                             is_sim=safety.is_simulation_mode()
                                         )
                                         _last_buy_time[0] = now
+                                        _creator_cooldowns[token.get("pair_key", "")] = now
                                         self.logger.info(f"[TRADE] BOUGHT {token['symbol']} after +{price_change_pct:.1f}% momentum | {safety.get_progress_bar()}")
                                         self.total_trades += 1
                                         try:
@@ -861,8 +939,8 @@ class Orchestrator:
                                             pass
                                     to_remove.append(addr)
                                 
-                                # Token dumping from detection price — remove
-                                elif price_change_pct < -15:
+                                # Token dumping from detection price — remove early
+                                elif price_change_pct < -10:
                                     self.logger.info(f"[WATCH] 📉 Removed {token['symbol']}: dropped {price_change_pct:+.1f}% since detection")
                                     to_remove.append(addr)
                             
@@ -909,7 +987,7 @@ class Orchestrator:
                 self.logger.info("[STRATEGY] DUAL STRATEGY ACTIVE:")
                 self.logger.info("[STRATEGY]   1. REGIME-ADAPTIVE GRID on ETH/USDC + BNB/USDT (80% capital)")
                 self.logger.info("[STRATEGY]   2. MOMENTUM DETECTION on new tokens (20% capital)")
-                self.logger.info(f"[STRATEGY]   Momentum: +{MOMENTUM_CONFIRM_PCT}% + {CONFIRMS_NEEDED} confirms (fast-track at +{FAST_TRACK_PCT}%) | SL 5% | MaxHold 1h")
+                self.logger.info(f"[STRATEGY]   Momentum: +{MOMENTUM_CONFIRM_PCT}% + {CONFIRMS_NEEDED} confirms (fast-track at +{FAST_TRACK_PCT}%) | SL 4% trail | Hard SL 8% | MaxHold 1h")
                 self.logger.info("[STRATEGY]   BTC trend gate active | Chains: BSC + Base")
                 self.logger.info("=" * 60)
                 self.logger.info("[AI]   ✓ Position Sizer - Dynamic risk management")

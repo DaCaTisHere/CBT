@@ -5,7 +5,7 @@ Loads from environment variables and .env file
 
 from pydantic_settings import BaseSettings
 from pydantic import Field, validator
-from typing import Optional, List
+from typing import Optional
 from enum import Enum
 import os
 
@@ -47,15 +47,11 @@ class Settings(BaseSettings):
     ETHEREUM_RPC_URL: Optional[str] = None
     ETHEREUM_TESTNET_RPC_URL: Optional[str] = None
     
-    SOLANA_RPC_URL: str = Field(default="https://api.mainnet-beta.solana.com")
-    SOLANA_TESTNET_RPC_URL: str = Field(default="https://api.devnet.solana.com")
-    
     BSC_RPC_URL: str = Field(default="https://bsc-dataseed.binance.org/")
     BSC_TESTNET_RPC_URL: str = Field(default="https://data-seed-prebsc-1-s1.binance.org:8545/")
     
     ARBITRUM_RPC_URL: Optional[str] = None
     BASE_RPC_URL: Optional[str] = None
-    POLYGON_RPC_URL: Optional[str] = None
     
     # ==========================================
     # EXCHANGE APIs
@@ -66,21 +62,15 @@ class Settings(BaseSettings):
     COINBASE_API_KEY: Optional[str] = None
     COINBASE_SECRET: Optional[str] = None
     
-    KRAKEN_API_KEY: Optional[str] = None
-    KRAKEN_SECRET: Optional[str] = None
-    
     # ==========================================
     # WALLET (CRITICAL - NEVER COMMIT!)
     # ==========================================
     WALLET_PRIVATE_KEY: str = Field(...)
-    WALLET_ADDRESS: Optional[str] = None
     
     # ==========================================
     # DATABASE
     # ==========================================
-    DATABASE_URL: str = Field(default="sqlite+aiosqlite:///./cryptobot.db")  # Async SQLite for Railway
-    REDIS_URL: Optional[str] = Field(default=None)  # Optional for Railway
-    RABBITMQ_URL: Optional[str] = Field(default=None)  # Optional for Railway
+    DATABASE_URL: str = Field(default="sqlite+aiosqlite:///./cryptobot.db")
     
     # ==========================================
     # RISK MANAGEMENT
@@ -105,8 +95,7 @@ class Settings(BaseSettings):
     # News Trader sources (sub-features)
     ENABLE_BINANCE_NEWS: bool = Field(default=True)
     ENABLE_COINBASE_NEWS: bool = Field(default=True)
-    ENABLE_KRAKEN_NEWS: bool = Field(default=False)
-    ENABLE_TWITTER_NEWS: bool = Field(default=False)  # Requires API keys
+    ENABLE_TWITTER_NEWS: bool = Field(default=False)
     
     # ==========================================
     # EXTERNAL APIs (Optional)
@@ -125,14 +114,24 @@ class Settings(BaseSettings):
     TELEGRAM_CHAT_ID: Optional[str] = None
     
     LUNARCRUSH_API_KEY: Optional[str] = None
-    SANTIMENT_API_KEY: Optional[str] = None
-    NANSEN_API_KEY: Optional[str] = None
     
     # ==========================================
-    # MONITORING
+    # OPENAI / AI OPTIMIZER
     # ==========================================
-    SENTRY_DSN: Optional[str] = None
-    # TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are defined in EXTERNAL APIs section above
+    OPENAI_API_KEY: Optional[str] = None
+    ENABLE_AI_OPTIMIZER: bool = Field(default=False)
+    AI_AUTO_APPLY_SUGGESTIONS: bool = Field(default=False)
+    
+    # ==========================================
+    # SUPABASE (Analytics & Storage)
+    # ==========================================
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
+    
+    # ==========================================
+    # ALERTS & WEBHOOKS
+    # ==========================================
+    WEBHOOK_URL: Optional[str] = None
     
     # ==========================================
     # TRADING MODES
@@ -140,13 +139,6 @@ class Settings(BaseSettings):
     USE_TESTNET: bool = Field(default=True)
     SIMULATION_MODE: bool = Field(default=False)
     DRY_RUN: bool = Field(default=False)
-    
-    # ==========================================
-    # PERFORMANCE
-    # ==========================================
-    MAX_WORKERS: int = Field(default=4, ge=1)
-    ENABLE_CACHING: bool = Field(default=True)
-    CACHE_TTL_SECONDS: int = Field(default=60)
     
     model_config = {
         "env_file": ".env",

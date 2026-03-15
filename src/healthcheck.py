@@ -40,10 +40,18 @@ def install_log_handler():
 
 
 def get_trading_mode():
-    """Get current trading mode from environment"""
+    """Get current trading mode, checking safety manager for auto-unlock status"""
+    try:
+        from src.core.safety_manager import get_safety_manager
+        sm = get_safety_manager()
+        if not sm.is_simulation_mode():
+            return "REAL", "#00ff88"
+    except Exception:
+        pass
+
     mode = os.getenv("TRADING_MODE", "SIMULATION").upper()
     simulation = os.getenv("SIMULATION_MODE", "true").lower() == "true"
-    
+
     if mode == "REAL" and not simulation:
         return "REAL", "#00ff88"
     elif mode == "DRY_RUN":
@@ -833,16 +841,16 @@ async def index(request):
         
         <div class="card">
             <div class="card-header">
-                <span class="card-title">Progression vers mode REEL</span>
-                <span class="card-badge" style="background: #ffaa0022; color: #ffaa00;">
-                    {stats.get('needed_for_unlock', 20)} trades restants
+                <span class="card-title">{"MODE RÉEL ACTIF" if stats.get('is_unlocked') else "Progression vers mode REEL"}</span>
+                <span class="card-badge" style="background: {"#00ff8822; color: #00ff88;" if stats.get('is_unlocked') else "#ffaa0022; color: #ffaa00;"}>
+                    {"UNLOCKED" if stats.get('is_unlocked') else f"{stats.get('needed_for_unlock', 20)} trades restants"}
                 </span>
             </div>
-            <div style="background: rgba(255,255,255,0.05); border-radius: 10px; height: 30px; overflow: hidden; margin-bottom: 15px;">
-                <div style="background: linear-gradient(90deg, #00d4ff, #00ff88); height: 100%; width: {min(100, (total_trades / 20) * 100):.0f}%; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 700; color: #000;">
+            {"" if stats.get('is_unlocked') else f'''<div style="background: rgba(255,255,255,0.05); border-radius: 10px; height: 30px; overflow: hidden; margin-bottom: 15px;">
+                <div style="background: linear-gradient(90deg, #00d4ff, #00ff88); height: 100%; width: {min(100, (total_trades / 20) * 100):.0f}%; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: JetBrains Mono, monospace; font-size: 0.8rem; font-weight: 700; color: #000;">
                     {total_trades}/20
                 </div>
-            </div>
+            </div>'''}
             <div class="ml-stats">
                 <div class="ml-stat">
                     <div class="ml-stat-value">{stats.get('mom_trades', 0)}</div>

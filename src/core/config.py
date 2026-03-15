@@ -137,7 +137,7 @@ class Settings(BaseSettings):
     # TRADING MODES
     # ==========================================
     USE_TESTNET: bool = Field(default=True)
-    SIMULATION_MODE: bool = Field(default=False)
+    SIMULATION_MODE: bool = Field(default=True)
     DRY_RUN: bool = Field(default=False)
     
     model_config = {

@@ -648,6 +648,7 @@ class DEXTrader:
             return None
     
     _gecko_client = None
+    _dexscreener_client = None
 
     async def _get_token_price(self, network: str, token_address: str) -> Optional[float]:
         """Get token price via GeckoTerminal (cached client) with DexScreener fallback"""
@@ -665,7 +666,7 @@ class DEXTrader:
         # DexScreener fallback: more reliable for newly listed tokens
         try:
             from src.modules.geckoterminal.dexscreener_client import DexScreenerClient
-            if not hasattr(DEXTrader, '_dexscreener_client') or DEXTrader._dexscreener_client is None:
+            if DEXTrader._dexscreener_client is None:
                 DEXTrader._dexscreener_client = DexScreenerClient()
                 await DEXTrader._dexscreener_client.initialize()
             pairs = await DEXTrader._dexscreener_client.get_token_pairs(token_address)
@@ -1560,10 +1561,11 @@ class DEXTrader:
                             self.logger.warning(f"[SNIPER] No price for {symbol} after 10 tries — using last known * 0.7 = ${current_price:.10f}")
                             pos["_price_fail_count"] = 0
                         else:
-                            self.logger.warning(f"[SNIPER] No price for {symbol} after 10 tries — recording as total loss")
+                            self.logger.warning(f"[SNIPER] No price for {symbol} after 10 tries — recording as stop-loss exit")
                             entry_price = pos.get("entry_price", 0)
                             remaining_usd = float(pos.get("amount_remaining", pos.get("amount", 0))) * entry_price if entry_price > 0 else 0
-                            self.safety.record_sell(symbol, pos["network"], remaining_usd, -100.0, -remaining_usd, self.safety.is_simulation_mode())
+                            sl_pct = pos.get("trailing_pct", 20.0)
+                            self.safety.record_sell(symbol, pos["network"], remaining_usd, -sl_pct, -(remaining_usd * sl_pct / 100), self.safety.is_simulation_mode())
                             positions_to_close.append(token_address)
                             continue
                     if not current_price:
@@ -1639,16 +1641,18 @@ class DEXTrader:
                             pos["_sell_retries"] = pos.get("_sell_retries", 0) + 1
                             self.logger.error(f"[SNIPER] Sell returned None for {symbol} (attempt {pos['_sell_retries']})")
                             if pos["_sell_retries"] >= 3:
-                                self.logger.error(f"[SNIPER] Max retries for {symbol} — recording as total loss")
-                                self.safety.record_sell(symbol, pos["network"], remaining_usd, -100.0, -remaining_usd, self.safety.is_simulation_mode())
+                                self.logger.error(f"[SNIPER] Max retries for {symbol} — recording as stop-loss exit")
+                                sl_pct = pos.get("trailing_pct", 20.0)
+                                self.safety.record_sell(symbol, pos["network"], remaining_usd, -sl_pct, -(remaining_usd * sl_pct / 100), self.safety.is_simulation_mode())
                                 positions_to_close.append(token_address)
                             continue
                     except Exception as sell_err:
                         pos["_sell_retries"] = pos.get("_sell_retries", 0) + 1
                         self.logger.error(f"[SNIPER] Sell failed for {symbol} (attempt {pos['_sell_retries']}): {sell_err}")
                         if pos["_sell_retries"] >= 3:
-                            self.logger.error(f"[SNIPER] Max retries for {symbol} — recording as total loss")
-                            self.safety.record_sell(symbol, pos["network"], remaining_usd, -100.0, -remaining_usd, self.safety.is_simulation_mode())
+                            self.logger.error(f"[SNIPER] Max retries for {symbol} — recording as stop-loss exit")
+                            sl_pct = pos.get("trailing_pct", 20.0)
+                            self.safety.record_sell(symbol, pos["network"], remaining_usd, -sl_pct, -(remaining_usd * sl_pct / 100), self.safety.is_simulation_mode())
                             positions_to_close.append(token_address)
                         continue
                     pnl_usd = remaining_usd * (pnl_pct / 100)

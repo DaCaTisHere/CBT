@@ -97,7 +97,7 @@ def get_real_wallet_balance():
         
         return balances, total_usd
     except Exception as e:
-        print(f"Error getting wallet balance: {e}")
+        logger.error(f"Error getting wallet balance: {e}")
         return {}, 0
 
 def get_trading_stats():
@@ -185,7 +185,7 @@ def get_trading_stats():
             'unlock_reason': safety_info.get("unlock_reason", ""),
         }
     except Exception as e:
-        print(f"Error getting stats: {e}")
+        logger.error(f"Error getting stats: {e}")
         return None
 
 
@@ -228,7 +228,7 @@ def get_ml_info():
                 "signal_success": stats.get("signal_success_rates", {})
             }
     except Exception as e:
-        print(f"Error getting ML info: {e}")
+        logger.error(f"Error getting ML info: {e}")
     return None
 
 # Global state
@@ -1045,12 +1045,19 @@ async def dex_status(request):
     """DEX Trader status"""
     try:
         from src.trading.dex_trader import DEXTrader
-        
-        trader = DEXTrader()
-        initialized = await trader.initialize()
-        
-        if initialized:
-            stats = trader.get_stats()
+        from src.core.orchestrator import Orchestrator
+
+        trader = None
+        orch = Orchestrator._instance
+        if orch:
+            for attr in ("dex_trader",):
+                if hasattr(orch, attr):
+                    trader = getattr(orch, attr)
+        if trader is None:
+            return web.json_response({"status": "no_dex_trader", "message": "DEX Trader not initialized"})
+
+        stats = trader.get_stats()
+        if stats:
             return web.json_response({
                 "status": "ready",
                 "networks": stats.get("networks_connected", []),
@@ -1123,7 +1130,7 @@ async def positions_endpoint(request):
                     if hasattr(orch, attr):
                         dex = getattr(orch, attr)
                 if dex is None:
-                    dex = DEXTrader()
+                    dex = None
                 for addr, pos in getattr(dex, "sniper_positions", {}).items():
                     entry = pos.get("buy_price", pos.get("price_usd", 0))
                     current = pos.get("current_price", entry)

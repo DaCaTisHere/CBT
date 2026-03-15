@@ -110,6 +110,7 @@ class SafetyManager:
         self._consecutive_losses = 0
         self._cooldown_until = 0.0
         self._load_stats()
+        self.recalculate_pnl()
 
     def set_notifier(self, callback):
         """Register an async callback for critical safety events.
@@ -391,6 +392,16 @@ class SafetyManager:
 
         criteria_met = grid_criteria or overall_criteria
 
+        logger.info(
+            f"[SAFETY] Unlock check: trades={self.stats.sim_trades_total}/{self.MIN_SIM_TRADES} "
+            f"WR={self.stats.sim_win_rate:.1f}%/{self.MIN_SIM_WIN_RATE}% "
+            f"PnL=${self.stats.sim_total_pnl_usd:+.2f}(need>$0) | "
+            f"Grid:{self.stats.grid_trades_total}t/{self.MIN_GRID_TRADES_FOR_UNLOCK} "
+            f"GWR={grid_wr:.0f}%/{self.MIN_GRID_WIN_RATE}% "
+            f"MomWR={mom_wr:.0f}%/20% | "
+            f"overall={overall_criteria} grid_path={grid_criteria} => {'UNLOCK' if criteria_met else 'LOCKED'}"
+        )
+
         if criteria_met:
             self.stats.real_trading_unlocked = True
             self.stats.unlock_reason = (
@@ -485,6 +496,63 @@ class SafetyManager:
         bar = "█" * int(pct / 5) + "░" * (20 - int(pct / 5))
         return f"[{bar}] {done}/{total} trades ({pct:.0f}%) | WR: {self.stats.sim_win_rate:.1f}%"
     
+    def recalculate_pnl(self):
+        """Recalculate PnL from trade history, capping losses at -20% to fix past -100% bugs."""
+        MAX_LOSS_CAP_PCT = -20.0
+        sim_pnl = 0.0
+        grid_pnl = 0.0
+        mom_pnl = 0.0
+        sim_total = 0
+        sim_won = 0
+        sim_lost = 0
+        grid_total = 0
+        grid_won = 0
+        mom_total = 0
+        mom_won = 0
+
+        for t in self.trade_history:
+            if t.action != "sell" or not t.is_simulation:
+                continue
+            capped_pct = max(t.pnl_percent, MAX_LOSS_CAP_PCT)
+            capped_usd = t.amount_usd * (capped_pct / 100) if t.amount_usd > 0 else t.pnl_usd
+            if capped_pct != t.pnl_percent:
+                logger.info(f"[SAFETY] Recalc: {t.token} capped {t.pnl_percent:+.1f}% → {capped_pct:+.1f}%")
+
+            sim_total += 1
+            won = capped_pct > 0
+            if won:
+                sim_won += 1
+            else:
+                sim_lost += 1
+            sim_pnl += capped_usd
+
+            is_grid = t.token.startswith("GRID_")
+            if is_grid:
+                grid_total += 1
+                if won:
+                    grid_won += 1
+                grid_pnl += capped_usd
+            else:
+                mom_total += 1
+                if won:
+                    mom_won += 1
+                mom_pnl += capped_usd
+
+        self.stats.sim_trades_total = sim_total
+        self.stats.sim_trades_won = sim_won
+        self.stats.sim_trades_lost = sim_lost
+        self.stats.sim_total_pnl_usd = sim_pnl
+        self.stats.grid_trades_total = grid_total
+        self.stats.grid_trades_won = grid_won
+        self.stats.grid_total_pnl_usd = grid_pnl
+        self.stats.momentum_trades_total = mom_total
+        self.stats.momentum_trades_won = mom_won
+        self.stats.momentum_total_pnl_usd = mom_pnl
+        self._recalc_sim_stats()
+        self._check_unlock_status()
+        self._save_stats()
+        logger.info(f"[SAFETY] PnL recalculated: {sim_total}t WR={self.stats.sim_win_rate:.1f}% PnL=${sim_pnl:+.2f}")
+
     def reset_simulation(self):
         """Reset simulation stats to start fresh (e.g. after strategy change)"""
         logger.info("[SAFETY] Resetting simulation stats for new strategy test")

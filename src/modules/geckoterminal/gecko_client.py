@@ -334,7 +334,7 @@ class GeckoTerminalClient:
         try:
             attrs = data.get("data", {}).get("attributes", {})
             return float(attrs.get("price_usd", 0) or 0)
-        except:
+        except Exception:
             return None
             
     # ==================== SEARCH ====================

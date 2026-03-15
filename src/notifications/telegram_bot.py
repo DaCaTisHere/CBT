@@ -120,6 +120,10 @@ class TelegramBot:
             self.logger.debug(f"[TELEGRAM] Would send: {text[:50]}...")
             return False
         
+        if not self.session:
+            self.logger.warning("[TELEGRAM] Session not initialized")
+            return False
+        
         try:
             url = f"{self.API_BASE}{self.token}/sendMessage"
             payload = {

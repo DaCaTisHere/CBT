@@ -151,12 +151,13 @@ class PoolDetector:
             if pool.address in self.seen_pools:
                 continue
             
-            # Enrich with full data
+            original_address = pool.address
             pool = await self.dexscreener.enrich_pool(pool)
             await asyncio.sleep(0.5)
             
-            # Cache with BOTH original and enriched address
-            self.seen_pools[pool.address] = datetime.utcnow()
+            self.seen_pools[original_address] = datetime.utcnow()
+            if pool.address != original_address:
+                self.seen_pools[pool.address] = datetime.utcnow()
             self.pools_scanned += 1
             
             # Score based on signal type

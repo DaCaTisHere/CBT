@@ -95,7 +95,7 @@ class GridTrader:
             quote_token="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
             base_symbol="ETH",
             quote_symbol="USDC",
-            pool_address="0x96d4b53a38337a5733179751781178a2613306063c511b78cd02684739288c0a",
+            pool_address="0xd0b53D9277642d899DF5C87A3966A349A798F224",
             base_amount_per_grid_usd=20.0,
             price_range_pct=10.0,
         ),
@@ -257,7 +257,8 @@ class GridTrader:
         recent = history[-60:] if len(history) >= 60 else history
         old_price = recent[0]
         new_price = recent[-1]
-        momentum_pct = ((new_price - old_price) / old_price) * 100
+        raw_momentum = ((new_price - old_price) / old_price) * 100
+        momentum_pct = max(-100.0, min(raw_momentum, 200.0))
 
         # ATR-like volatility: average of absolute % changes
         changes = [abs(recent[i] - recent[i - 1]) / recent[i - 1] * 100 for i in range(1, len(recent))]
@@ -517,7 +518,7 @@ class GridTrader:
                                         amount_usd=amount_usd, buy_price=buy_price, sell_price=current_price,
                                         pnl_pct=profit_pct, is_sim=True)
         else:
-            if self.dex_trader:
+            if self.dex_trader and buy_price > 0:
                 try:
                     token_amount = amount_usd / buy_price
                     trade = await self.dex_trader.sell(
@@ -539,11 +540,21 @@ class GridTrader:
 
     async def _emergency_close(self, pair_id: str, config: GridPairConfig, current_price: float):
         """Close all active buys at current price (emergency stop-loss)."""
+        is_sim = self.safety.is_simulation_mode() if self.safety else True
         for buy_order in list(self.active_buys.get(pair_id, [])):
             buy_price = buy_order["buy_price"]
             amount_usd = buy_order["amount_usd"]
             pnl_pct = ((current_price - buy_price) / buy_price) * 100
             pnl_usd = amount_usd * (pnl_pct / 100)
+
+            if not is_sim and self.dex_trader and buy_price > 0:
+                try:
+                    token_amount = amount_usd / buy_price
+                    await self.dex_trader.sell(
+                        network=config.network, token_address=config.base_token,
+                        amount_tokens=token_amount, token_symbol=config.base_symbol)
+                except Exception as e:
+                    self.logger.error(f"[GRID] Emergency real sell error: {e}")
 
             self.total_cycles += 1
             self.total_profit_usd += pnl_usd
@@ -555,7 +566,7 @@ class GridTrader:
             if self.safety:
                 self.safety.record_sell(token=f"GRID_{config.base_symbol}", network=config.network,
                                         amount_usd=amount_usd, buy_price=buy_price, sell_price=current_price,
-                                        pnl_pct=pnl_pct, is_sim=self.safety.is_simulation_mode())
+                                        pnl_pct=pnl_pct, is_sim=is_sim)
 
             self.logger.warning(f"[GRID] EMERGENCY SELL {config.base_symbol} @ ${current_price:,.2f} | P&L: ${pnl_usd:+.2f}")
 
@@ -719,10 +730,10 @@ class GridTrader:
             "open_positions_at_end": len(bt_buys),
         }
 
-    def stop(self):
+    async def stop(self):
         self.is_running = False
         if self._gecko_client:
             try:
-                asyncio.get_event_loop().create_task(self._gecko_client.close())
+                await self._gecko_client.close()
             except Exception:
                 pass

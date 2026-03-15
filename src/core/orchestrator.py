@@ -444,10 +444,7 @@ class Orchestrator:
                                 # Update last trade time (enforce minimum interval)
                                 self._last_trade_time = datetime.utcnow()
                                 
-                                # Set cooldown for this token
                                 self.momentum_detector.set_token_cooldown(signal.symbol)
-                                
-                                pass
                             else:
                                 self.logger.warning(f"[TRADE] ❌ Échec achat {signal.symbol}")
                         else:
@@ -594,6 +591,7 @@ class Orchestrator:
                 else:
                     self.logger.info("[DEX] DEX Trader not initialized")
                 
+                import time as _time
                 FUNDED_CHAINS = {"bsc", "base"}
                 CAPITAL_ALLOCATION_MOMENTUM = 0.20  # 20% of capital for momentum
                 _ai_cache = {}  # {token_addr: (timestamp, result)}
@@ -628,10 +626,6 @@ class Orchestrator:
                     except Exception:
                         return False
                 
-                # ====== WATCHLIST SYSTEM ======
-                # Instead of buying immediately, tokens go to watchlist
-                # Only buy when momentum is CONFIRMED (price up + volume spike)
-                import time as _time
                 _watchlist = {}
                 _watchlist_lock = asyncio.Lock()
                 _last_buy_time = [0]

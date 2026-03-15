@@ -447,19 +447,7 @@ class Orchestrator:
                                 # Set cooldown for this token
                                 self.momentum_detector.set_token_cooldown(signal.symbol)
                                 
-                                # Notification Telegram
-                                try:
-                                    if hasattr(self, 'telegram') and self.telegram.is_enabled:
-                                        await self.telegram.send_message(
-                                            f"🟢 *ACHAT* {signal.symbol}\n"
-                                            f"Prix: ${signal.price:.6f}\n"
-                                            f"Score: {signal.score:.0f}/100\n"
-                                            f"MACD: {signal.macd_signal} | EMA: {signal.ema_trend}\n"
-                                            f"BTC: {'✓ Aligné' if signal.btc_correlation > 0 else '✗ Contre'}\n"
-                                            f"SL: {dynamic_sl*100:.1f}%"
-                                        )
-                                except Exception as e:
-                                    self.logger.debug(f"[TELEGRAM] Buy notification failed: {e}")
+                                pass
                             else:
                                 self.logger.warning(f"[TRADE] ❌ Échec achat {signal.symbol}")
                         else:
@@ -647,35 +635,33 @@ class Orchestrator:
                 _watchlist = {}
                 _watchlist_lock = asyncio.Lock()
                 _last_buy_time = [0]
-                BUY_MIN_INTERVAL = 900  # 15 min between buys
-                WATCHLIST_MAX_AGE = 1800  # 30 min max (micro-caps dump fast, was 1h)
-                WATCHLIST_MAX_SIZE = 30  # Quality over quantity (was 50)
-                MOMENTUM_CONFIRM_PCT = 12.0  # Buy earlier with stricter quality (was 20% = buying tops)
-                CONFIRMS_NEEDED = 6  # More patience before entry (was 5)
-                HIGH_CONFIRM_THRESHOLD = 15  # Very patient for lower momentum (was 12)
-                HIGH_CONFIRM_MOMENTUM_PCT = 8.0  # Allow lower pct with many confirms (was 15%)
-                FAST_TRACK_PCT = 60.0  # Almost never trigger — buying tops is suicide (was 40%)
-                CONFIRM_DIP_TOLERANCE = 2.0  # Stricter dip tolerance (was 3%)
-                MAX_VOLATILITY_PCT = 40.0  # Reject tokens with >40% price range during watch
-                MIN_MARKET_CAP_PROXY = 1_000_000  # $1M min estimated market cap
+                BUY_MIN_INTERVAL = 120  # 2 min between buys (fast for new tokens)
+                WATCHLIST_MAX_AGE = 1800  # 30 min max
+                WATCHLIST_MAX_SIZE = 50  # More tokens to watch = more opportunities
+                MOMENTUM_CONFIRM_PCT = 8.0  # Enter earlier on confirmed momentum
+                CONFIRMS_NEEDED = 3  # Fast entry (3 checks = ~90s of confirmation)
+                HIGH_CONFIRM_THRESHOLD = 8  # Patient path with lower momentum
+                HIGH_CONFIRM_MOMENTUM_PCT = 5.0  # Allow 5%+ with many confirms
+                FAST_TRACK_PCT = 50.0  # Fast track if +50% surge
+                CONFIRM_DIP_TOLERANCE = 3.0  # Allow small dips during confirmation
+                MAX_VOLATILITY_PCT = 80.0  # New tokens are volatile, allow it
+                MIN_MARKET_CAP_PROXY = 50_000  # $50k min estimated market cap (real mode)
                 CREATOR_COOLDOWN_SECONDS = 3600  # 1h cooldown per pair/creator
                 _creator_cooldowns = {}
                 _price_fail_tokens = set()
                 
                 SCAM_EXACT_NAMES = {
-                    "DOGE", "DOGECOIN", "SHIB", "SHIBA", "BITCOIN", "BTC", "ETH",
-                    "ETHEREUM", "BNB", "SOLANA", "SOL", "XRP", "RIPPLE", "ADA", "CARDANO",
-                    "PEPE", "USDT", "USDC", "DAI", "WETH", "WBTC", "LINK", "CHAINLINK",
-                    "AVAX", "AVALANCHE", "MATIC", "POLYGON", "DOT", "POLKADOT",
-                    "UNI", "UNISWAP", "AAVE", "CRV", "CURVE", "SUSHI", "COMP",
-                    "TRUMP", "MAGA", "ELON", "ELONMUSK", "TEST", "SCAM", "RUG",
-                    "FAIR", "FAIRLAUNCH", "SAFEMOON", "SAFEMARS", "BABYDOGE",
+                    "BITCOIN", "BTC", "ETH", "ETHEREUM", "BNB", "SOLANA", "SOL",
+                    "XRP", "RIPPLE", "ADA", "CARDANO", "USDT", "USDC", "DAI",
+                    "WETH", "WBTC", "LINK", "CHAINLINK", "AVAX", "AVALANCHE",
+                    "MATIC", "POLYGON", "DOT", "POLKADOT", "UNI", "UNISWAP",
+                    "AAVE", "CRV", "CURVE", "SUSHI", "COMP",
+                    "TEST", "SCAM", "RUG", "FAIRLAUNCH", "SAFEMOON", "SAFEMARS",
                 }
                 SCAM_SUBSTRINGS = [
-                    "DOGE", "SHIB", "PEPE", "ELON", "TRUMP", "SAFE", "BABY",
-                    "MOON", "INU", "FLOKI", "WOJAK", "CHAD", "MEME",
-                    "FREE", "AIRDROP", "100X", "1000X", "PUMP",
-                    "LAUNCH", "REWARD", "REFLEC", "REBASE", "ELASTIC",
+                    "ELON", "ELONMUSK", "TRUMP", "MAGA",
+                    "FREE", "AIRDROP", "100X", "1000X",
+                    "REWARD", "REFLEC", "REBASE", "ELASTIC",
                     "PONZI", "RUGPULL", "GIVEAWAY", "PRESALE",
                 ]
                 
@@ -683,37 +669,55 @@ class Orchestrator:
                     """Step 1: Detect tokens and add to WATCHLIST (don't buy yet)"""
                     try:
                         pool = signal.pool
+                        is_sim = safety.is_simulation_mode()
                         
                         if pool.network not in FUNDED_CHAINS:
+                            self.logger.debug(f"[FILTER] {pool.base_token} rejected: network {pool.network} not funded")
                             return
                         if pool.address in _watchlist or pool.address in dex_trader.sniper_positions:
                             return
                         if len(_watchlist) >= WATCHLIST_MAX_SIZE:
+                            self.logger.debug(f"[FILTER] {pool.base_token} rejected: watchlist full ({len(_watchlist)})")
                             return
                         
                         token_upper = pool.base_token.upper()
                         if token_upper in SCAM_EXACT_NAMES:
+                            self.logger.debug(f"[FILTER] {pool.base_token} rejected: scam exact name")
                             return
                         for substr in SCAM_SUBSTRINGS:
                             if substr in token_upper:
+                                self.logger.debug(f"[FILTER] {pool.base_token} rejected: scam substring '{substr}'")
                                 return
                         
-                        # Quality filters — ULTRA strict (8.1% win rate → must be conservative)
-                        if pool.liquidity_usd < 500_000 or pool.volume_24h < 300_000:
+                        min_liq = 10_000 if is_sim else 15_000
+                        min_vol = 5_000 if is_sim else 10_000
+                        min_score = 30 if is_sim else 45
+                        min_vlr = 0.1 if is_sim else 0.3
+                        min_mcap = 20_000 if is_sim else 50_000
+                        
+                        if pool.liquidity_usd < min_liq:
+                            self.logger.info(f"[FILTER] {pool.base_token} rejected: liq ${pool.liquidity_usd:,.0f} < ${min_liq:,.0f}")
                             return
-                        if signal.score < 70:
+                        if pool.volume_24h < min_vol:
+                            self.logger.info(f"[FILTER] {pool.base_token} rejected: vol ${pool.volume_24h:,.0f} < ${min_vol:,.0f}")
+                            return
+                        if signal.score < min_score:
+                            self.logger.info(f"[FILTER] {pool.base_token} rejected: score {signal.score:.0f} < {min_score}")
                             return
                         vol_liq_ratio = pool.volume_24h / max(pool.liquidity_usd, 1)
-                        if vol_liq_ratio < 1.0:
+                        if vol_liq_ratio < min_vlr:
+                            self.logger.info(f"[FILTER] {pool.base_token} rejected: vol/liq {vol_liq_ratio:.2f} < {min_vlr}")
                             return
                         if pool.price_change_24h < -5:
+                            self.logger.info(f"[FILTER] {pool.base_token} rejected: price change {pool.price_change_24h:.1f}%")
                             return
                         est_mcap = pool.liquidity_usd * 2
-                        if est_mcap < MIN_MARKET_CAP_PROXY:
+                        if est_mcap < min_mcap:
+                            self.logger.info(f"[FILTER] {pool.base_token} rejected: est mcap ${est_mcap:,.0f} < ${min_mcap:,.0f}")
                             return
                         
                         # Check creator/pair cooldown to avoid repeated rug-pulls
-                        pair_key = getattr(pool, 'quote_token', pool.base_token)
+                        pair_key = pool.address
                         if pair_key in _creator_cooldowns:
                             if _time.time() - _creator_cooldowns[pair_key] < CREATOR_COOLDOWN_SECONDS:
                                 return
@@ -755,7 +759,7 @@ class Orchestrator:
                     """Check watchlist with parallel price fetches and improved confirmation."""
                     while self.is_running:
                         try:
-                            await asyncio.sleep(90)
+                            await asyncio.sleep(30)
                             
                             async with _watchlist_lock:
                                 if not _watchlist:
@@ -798,7 +802,13 @@ class Orchestrator:
                                 if now - _last_buy_time[0] < BUY_MIN_INTERVAL:
                                     continue
                                 
-                                if len(dex_trader.sniper_positions) >= 2:
+                                # Consecutive loss cooldown
+                                in_cooldown, cd_remaining = safety.is_in_cooldown()
+                                if in_cooldown:
+                                    self.logger.info(f"[WATCH] ⏸️ Cooldown active ({cd_remaining/60:.0f}min), skipping {token['symbol']}")
+                                    continue
+                                
+                                if len(dex_trader.sniper_positions) >= 5:
                                     continue
                                 
                                 current_price = price_map.get(addr)
@@ -896,26 +906,34 @@ class Orchestrator:
                                     
                                     self.logger.info(f"[AI] ✅ {token['symbol']} APPROVED (confidence: {ai_result.confidence:.2f})")
                                     
-                                    position_size = ai_result.recommended_amount_usd
+                                    # Risk-based position sizing: risk 1% of capital per trade
+                                    # Size = (capital * risk%) / stop_loss%
+                                    RISK_PER_TRADE_PCT = 2.0
+                                    sl_pct_val = 20.0  # matching the sniper_buy sl_pct
                                     if safety.is_simulation_mode():
-                                        position_size = min(position_size, 10.0)
+                                        capital = paper_trader.portfolio.initial_capital if hasattr(paper_trader, 'portfolio') else 10000
+                                        position_size = (capital * RISK_PER_TRADE_PCT / 100) / (sl_pct_val / 100)
+                                        position_size = min(position_size, 50.0)  # cap at $50 in sim
                                     elif dex_initialized:
                                         _, available_usd = dex_trader.get_available_capital(token["network"])
                                         momentum_budget = available_usd * CAPITAL_ALLOCATION_MOMENTUM
-                                        position_size = min(position_size, momentum_budget * 0.5)
+                                        risk_sized = (available_usd * RISK_PER_TRADE_PCT / 100) / (sl_pct_val / 100)
+                                        position_size = min(risk_sized, momentum_budget * 0.5, safety.MAX_TRADE_USD)
                                         if position_size < 2:
                                             continue
+                                    else:
+                                        position_size = ai_result.recommended_amount_usd
                                     
                                     trade = await dex_trader.sniper_buy(
                                         network=token["network"],
                                         token_address=addr,
                                         amount_usd=position_size,
                                         token_symbol=token["symbol"],
-                                        tp1_pct=8.0,
-                                        tp2_pct=15.0,
-                                        tp3_pct=30.0,
-                                        sl_pct=4.0,
-                                        max_hold_hours=1
+                                        tp1_pct=30.0,
+                                        tp2_pct=75.0,
+                                        tp3_pct=150.0,
+                                        sl_pct=20.0,
+                                        max_hold_hours=0.5
                                     )
                                     if trade:
                                         safety.record_buy(
@@ -956,14 +974,16 @@ class Orchestrator:
                 
                 # Task to periodically check sniper positions for TP/SL
                 async def sniper_monitor_loop():
-                    """Monitor sniper positions every 15 seconds for fast SL reaction"""
+                    """Monitor sniper positions every 10 seconds for fast SL reaction on new tokens"""
+                    _loop_count = 0
                     while self.is_running:
                         try:
+                            _loop_count += 1
                             await dex_trader.check_sniper_positions()
-                            await asyncio.sleep(15)
+                            await asyncio.sleep(10)
                         except Exception as e:
                             self.logger.error(f"[SNIPER] Monitor error: {e}")
-                            await asyncio.sleep(15)
+                            await asyncio.sleep(10)
                 
                 pool_detector.on_signal(on_pool_signal)
                 asyncio.create_task(pool_detector.start())
@@ -986,9 +1006,9 @@ class Orchestrator:
                 self.logger.info("=" * 60)
                 self.logger.info("[STRATEGY] DUAL STRATEGY ACTIVE:")
                 self.logger.info("[STRATEGY]   1. REGIME-ADAPTIVE GRID on ETH/USDC + BNB/USDT (80% capital)")
-                self.logger.info("[STRATEGY]   2. MOMENTUM DETECTION on new tokens (20% capital)")
-                self.logger.info(f"[STRATEGY]   Momentum: +{MOMENTUM_CONFIRM_PCT}% + {CONFIRMS_NEEDED} confirms (fast-track at +{FAST_TRACK_PCT}%) | SL 4% trail | Hard SL 8% | MaxHold 1h")
-                self.logger.info("[STRATEGY]   BTC trend gate active | Chains: BSC + Base")
+                self.logger.info("[STRATEGY]   2. NEW TOKEN SNIPER on BSC + Base (20% capital)")
+                self.logger.info(f"[STRATEGY]   Sniper: +{MOMENTUM_CONFIRM_PCT}% + {CONFIRMS_NEEDED} confirms | TP 30/75/150% | SL 20% | MaxHold 30min")
+                self.logger.info(f"[STRATEGY]   Max {5} positions | Check every 30s | BTC trend gate | Min liq $10k")
                 self.logger.info("=" * 60)
                 self.logger.info("[AI]   ✓ Position Sizer - Dynamic risk management")
                 self.logger.info("[AI]   ✓ DEX Aggregator - Best price routing")
@@ -1043,27 +1063,43 @@ class Orchestrator:
                 await asyncio.sleep(5)
 
     async def _send_telegram_report(self):
-        """Send periodic performance report via Telegram."""
+        if not hasattr(self, 'telegram') or not self.telegram or not self.telegram.is_enabled:
+            return
         try:
-            if not (hasattr(self, 'telegram') and self.telegram and self.telegram.is_enabled):
-                return
             from src.core.safety_manager import get_safety_manager
             safety = get_safety_manager()
             status = safety.get_status()
+            sim = status["simulation"]
+            grid = status["grid"]
+            mom = status["momentum"]
+            mode = status["safety"]["current_mode"]
+
+            uptime_h = 0
+            if self.start_time:
+                uptime_h = (datetime.utcnow() - self.start_time).total_seconds() / 3600
+
             grid_info = ""
-            if hasattr(self, 'grid_trader') and self.grid_trader:
+            if self.grid_trader:
                 gs = self.grid_trader.get_status()
-                grid_info = f"\nGrid: {gs['total_cycles']} cycles, {gs['total_pnl']}, WR {gs['win_rate']}"
-            msg = (f"<b>BOT REPORT</b>\n\n"
-                   f"Mode: {status['safety']['current_mode']}\n"
-                   f"Sim trades: {status['simulation']['trades']} (WR {status['simulation']['win_rate']})\n"
-                   f"Grid: {status['grid']['trades']}t, WR {status['grid']['win_rate']}, PnL {status['grid']['pnl']}\n"
-                   f"Momentum: {status['momentum']['trades']}t, WR {status['momentum']['win_rate']}, PnL {status['momentum']['pnl']}\n"
-                   f"Total PnL: {status['simulation']['total_pnl']}"
-                   f"{grid_info}")
-            await self.telegram.send_message(msg, silent=True)
+                grid_info = (
+                    f"\n\n📊 <b>Grid Trading</b>\n"
+                    f"Cycles: {gs['total_cycles']} | WR: {gs['win_rate']} | P&L: {gs['total_pnl']}\n"
+                    f"Rate: {gs.get('profit_per_day', 'N/A')}"
+                )
+
+            msg = (
+                f"📈 <b>Rapport Cryptobot</b>\n\n"
+                f"⏱ Uptime: {uptime_h:.1f}h | Mode: <b>{mode}</b>\n"
+                f"💹 Trades: {self.total_trades}\n\n"
+                f"🧪 <b>Simulation</b>\n"
+                f"Trades: {sim['trades']} | WR: {sim['win_rate']} | P&L: {sim['total_pnl']}\n"
+                f"Grid: {grid['trades']}t WR {grid['win_rate']} | Mom: {mom['trades']}t WR {mom['win_rate']}"
+                f"{grid_info}\n\n"
+                f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+            )
+            await self.telegram.send_message(msg)
         except Exception as e:
-            self.logger.debug(f"[TELEGRAM] Report error: {e}")
+            self.logger.warning(f"[TELEGRAM] Report error: {e}")
     
     async def _health_check(self):
         """Perform health check on all components"""

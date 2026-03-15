@@ -88,31 +88,10 @@ class AutonomousManager:
             return False
     
     async def _init_supabase_logger(self) -> Optional[SupabaseLogger]:
-        """Initialise Supabase Logger"""
-        try:
-            supabase_url = os.getenv('SUPABASE_URL')
-            supabase_key = os.getenv('SUPABASE_KEY')
-            
-            if not supabase_url or not supabase_key:
-                self.logger.warning("⚠️ Supabase credentials not found, logger disabled")
-                self.systems_status['supabase'] = False
-                return None
-            
-            logger = SupabaseLogger(
-                supabase_url=supabase_url,
-                supabase_key=supabase_key,
-                batch_size=50,
-                flush_interval=30
-            )
-            
-            self.systems_status['supabase'] = True
-            self.logger.info("✅ Supabase Logger ready")
-            return logger
-        
-        except Exception as e:
-            self.logger.error(f"❌ Supabase Logger init failed: {e}")
-            self.systems_status['supabase'] = False
-            return None
+        """Initialise Supabase Logger - disabled (required tables not created)"""
+        self.logger.info("[SUPABASE] Logger disabled - tables not provisioned")
+        self.systems_status['supabase'] = False
+        return None
     
     async def _init_smart_alerts(self) -> Optional[SmartAlerts]:
         """Initialise Smart Alerts"""

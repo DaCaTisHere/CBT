@@ -144,303 +144,181 @@ class TelegramBot:
             self.errors += 1
             return False
     
-    # ==================== TRADE NOTIFICATIONS ====================
+    # ==================== NOTIFICATIONS (FR) ====================
     
-    async def notify_trade_opened(
-        self,
-        symbol: str,
-        side: str,
-        price: float,
-        amount: float,
-        reason: str = ""
-    ):
-        """Notify when a trade is opened"""
+    async def notify_trade_opened(self, symbol: str, side: str, price: float,
+                                   amount: float, reason: str = ""):
         emoji = "🟢" if side.upper() == "BUY" else "🔴"
-        
-        message = f"""
-{emoji} <b>TRADE OPENED</b>
+        msg = (
+            f"{emoji} <b>{side.upper()} {symbol}</b>\n\n"
+            f"💰 Montant: ${amount:.2f}\n"
+            f"📊 Prix: ${price:.8f}\n"
+            f"📝 Raison: {reason}\n\n"
+            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+        )
+        await self.send_message(msg)
 
-<b>Symbol:</b> {symbol}
-<b>Side:</b> {side.upper()}
-<b>Price:</b> ${price:.6f}
-<b>Amount:</b> ${amount:.2f}
-<b>Reason:</b> {reason}
-
-<i>{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</i>
-"""
-        await self.send_message(message.strip())
-    
-    async def notify_trade_closed(
-        self,
-        symbol: str,
-        entry_price: float,
-        exit_price: float,
-        pnl: float,
-        pnl_pct: float,
-        reason: str = ""
-    ):
-        """Notify when a trade is closed"""
+    async def notify_trade_closed(self, symbol: str, entry_price: float,
+                                   exit_price: float, pnl: float,
+                                   pnl_pct: float, reason: str = ""):
         emoji = "✅" if pnl >= 0 else "❌"
-        pnl_sign = "+" if pnl >= 0 else ""
-        
-        message = f"""
-{emoji} <b>TRADE CLOSED</b>
-
-<b>Symbol:</b> {symbol}
-<b>Entry:</b> ${entry_price:.6f}
-<b>Exit:</b> ${exit_price:.6f}
-<b>PnL:</b> {pnl_sign}${pnl:.2f} ({pnl_sign}{pnl_pct:.2f}%)
-<b>Reason:</b> {reason}
-
-<i>{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</i>
-"""
-        await self.send_message(message.strip())
+        pnl_emoji = "📈" if pnl >= 0 else "📉"
+        msg = (
+            f"{emoji} <b>CLOSE {symbol}</b>\n\n"
+            f"Entry: ${entry_price:.8f}\n"
+            f"Exit: ${exit_price:.8f}\n"
+            f"{pnl_emoji} P&L: ${pnl:+.2f} ({pnl_pct:+.1f}%)\n"
+            f"📝 {reason}\n\n"
+            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+        )
+        await self.send_message(msg)
     
-    # ==================== SIGNAL NOTIFICATIONS ====================
+    async def notify_momentum_signal(self, symbol: str, signal_type: str,
+                                      change_pct: float, volume: float, score: float):
+        msg = (
+            f"⚡ <b>Signal Momentum: {symbol}</b>\n\n"
+            f"Type: {signal_type}\n"
+            f"24h: {change_pct:+.1f}% | Vol: ${volume/1e6:.1f}M\n"
+            f"Score: {score:.0f}/100\n\n"
+            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+        )
+        await self.send_message(msg, silent=True)
+
+    async def notify_listing_detected(self, symbol: str, exchange: str, title: str):
+        msg = (
+            f"🆕 <b>Nouveau listing detecte</b>\n\n"
+            f"Token: {symbol}\n"
+            f"Exchange: {exchange}\n"
+            f"Info: {title}\n\n"
+            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+        )
+        await self.send_message(msg)
     
-    async def notify_momentum_signal(
-        self,
-        symbol: str,
-        signal_type: str,
-        change_pct: float,
-        volume: float,
-        score: float
-    ):
-        """Notify about a momentum signal"""
-        message = f"""
-📊 <b>MOMENTUM SIGNAL</b>
-
-<b>Symbol:</b> {symbol}
-<b>Type:</b> {signal_type}
-<b>Change:</b> +{change_pct:.2f}%
-<b>Volume:</b> ${volume:,.0f}
-<b>Score:</b> {score:.0f}/100
-
-<i>{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</i>
-"""
-        await self.send_message(message.strip(), silent=True)
+    async def send_daily_report(self, portfolio_value: float, daily_pnl: float,
+                                daily_pnl_pct: float, total_pnl: float,
+                                total_pnl_pct: float, trades_today: int,
+                                win_rate: float, open_positions: int):
+        emoji = "📈" if daily_pnl >= 0 else "📉"
+        msg = (
+            f"{emoji} <b>Rapport du jour</b>\n\n"
+            f"💼 Portfolio: ${portfolio_value:.2f}\n"
+            f"Jour: ${daily_pnl:+.2f} ({daily_pnl_pct:+.1f}%)\n"
+            f"Total: ${total_pnl:+.2f} ({total_pnl_pct:+.1f}%)\n\n"
+            f"Trades: {trades_today} | WR: {win_rate:.1f}%\n"
+            f"Positions: {open_positions}\n\n"
+            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+        )
+        await self.send_message(msg)
     
-    async def notify_listing_detected(
-        self,
-        symbol: str,
-        exchange: str,
-        title: str
-    ):
-        """Notify about a new listing detection"""
-        message = f"""
-🔔 <b>NEW LISTING DETECTED</b>
-
-<b>Symbol:</b> {symbol}
-<b>Exchange:</b> {exchange}
-<b>Title:</b> {title[:100]}
-
-<i>{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</i>
-"""
-        await self.send_message(message.strip())
-    
-    # ==================== REPORTS ====================
-    
-    async def send_daily_report(
-        self,
-        portfolio_value: float,
-        daily_pnl: float,
-        daily_pnl_pct: float,
-        total_pnl: float,
-        total_pnl_pct: float,
-        trades_today: int,
-        win_rate: float,
-        open_positions: int
-    ):
-        """Send daily performance report"""
-        pnl_emoji = "📈" if daily_pnl >= 0 else "📉"
-        daily_sign = "+" if daily_pnl >= 0 else ""
-        total_sign = "+" if total_pnl >= 0 else ""
-        
-        message = f"""
-{pnl_emoji} <b>DAILY REPORT</b>
-
-💰 <b>Portfolio:</b> ${portfolio_value:,.2f}
-
-📊 <b>Today:</b>
-   PnL: {daily_sign}${daily_pnl:.2f} ({daily_sign}{daily_pnl_pct:.2f}%)
-   Trades: {trades_today}
-
-📈 <b>Total:</b>
-   PnL: {total_sign}${total_pnl:.2f} ({total_sign}{total_pnl_pct:.2f}%)
-   Win Rate: {win_rate:.1f}%
-
-📍 <b>Open Positions:</b> {open_positions}
-
-<i>{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</i>
-"""
-        await self.send_message(message.strip())
-    
-    async def send_position_update(
-        self,
-        positions: List[Dict[str, Any]]
-    ):
-        """Send current positions summary"""
+    async def send_position_update(self, positions: List[Dict[str, Any]]):
         if not positions:
-            message = "📍 <b>POSITIONS</b>\n\nNo open positions"
-        else:
-            pos_lines = []
-            for pos in positions[:10]:  # Max 10 positions
-                symbol = pos.get('symbol', 'Unknown')
-                entry = pos.get('entry_price', 0)
-                current = pos.get('current_price', entry)
-                pnl_pct = ((current - entry) / entry * 100) if entry > 0 else 0
-                emoji = "🟢" if pnl_pct >= 0 else "🔴"
-                pos_lines.append(f"{emoji} {symbol}: ${current:.4f} ({pnl_pct:+.2f}%)")
-            
-            message = f"""
-📍 <b>OPEN POSITIONS ({len(positions)})</b>
-
-{chr(10).join(pos_lines)}
-
-<i>{datetime.utcnow().strftime('%H:%M:%S')} UTC</i>
-"""
-        
-        await self.send_message(message.strip(), silent=True)
-    
-    # ==================== ALERTS ====================
-    
-    # ==================== SAFETY & MONITORING NOTIFICATIONS ====================
+            return
+        lines = ["📋 <b>Positions ouvertes</b>\n"]
+        for p in positions[:10]:
+            pnl = p.get("pnl_pct", 0)
+            emoji = "🟢" if pnl >= 0 else "🔴"
+            lines.append(f"{emoji} {p.get('symbol', '?')}: {pnl:+.1f}% | ${p.get('value', 0):.2f}")
+        lines.append(f"\n<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>")
+        await self.send_message("\n".join(lines), silent=True)
 
     async def notify_mode_change(self, old_mode: str, new_mode: str, reason: str = ""):
-        """Notify when safety mode changes (SIMULATION <-> REAL)"""
-        emoji = "🔄" if new_mode == "REAL" else "⚠️"
-        message = f"""
-{emoji} <b>MODE CHANGE</b>
-
-<b>From:</b> {old_mode}
-<b>To:</b> {new_mode}
-<b>Reason:</b> {reason or 'Auto-switch'}
-
-<i>{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</i>
-"""
-        await self.send_message(message.strip())
+        if new_mode.upper() == "REAL":
+            message = (
+                f"🚀🚀🚀 <b>BOT PRET POUR LE TRADING REEL !</b>\n\n"
+                f"Le bot a termine sa phase de simulation avec succes.\n"
+                f"Il est maintenant en mode <b>REEL</b>.\n\n"
+                f"<b>Raison:</b> {reason or 'Criteres de simulation atteints'}\n\n"
+                f"⚠️ Assure-toi d'avoir approvisionne le wallet avec des fonds.\n\n"
+                f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+            )
+        else:
+            message = (
+                f"⚠️ <b>Retour en SIMULATION</b>\n\n"
+                f"Mode: {old_mode} → {new_mode}\n"
+                f"Raison: {reason or 'Criteres non remplis'}\n\n"
+                f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+            )
+        await self.send_message(message, silent=False)
 
     async def notify_emergency_stop(self, reason: str):
-        """Notify when emergency stop triggers"""
-        message = f"""
-🚨 <b>EMERGENCY STOP</b>
-
-<b>Reason:</b> {reason}
-Trading is PAUSED until next daily reset.
-
-<i>{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</i>
-"""
-        await self.send_message(message.strip(), silent=False)
+        msg = (
+            f"🚨🚨 <b>ARRET D'URGENCE</b>\n\n"
+            f"Le bot a ete arrete automatiquement.\n"
+            f"<b>Raison:</b> {reason}\n\n"
+            f"Le bot repassera en simulation au prochain cycle.\n\n"
+            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+        )
+        await self.send_message(msg, silent=False)
 
     async def notify_emergency_unlock(self):
-        """Notify when emergency stop is cleared"""
-        message = f"""
-✅ <b>EMERGENCY CLEARED</b>
-
-Daily reset completed. Bot re-entering SIMULATION mode.
-
-<i>{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</i>
-"""
-        await self.send_message(message.strip())
+        msg = (
+            f"🔓 <b>Arret d'urgence leve</b>\n\n"
+            f"Nouveau jour, le bot reprend en mode simulation.\n\n"
+            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+        )
+        await self.send_message(msg)
 
     async def notify_watchlist_add(self, symbol: str, change_pct: float, liquidity: float, score: float):
-        """Notify when a momentum token is added to watchlist"""
-        message = f"""
-👁️ <b>WATCHLIST</b>
-
-<b>Token:</b> {symbol}
-<b>24h Change:</b> +{change_pct:.1f}%
-<b>Liquidity:</b> ${liquidity:,.0f}
-<b>Score:</b> {score:.0f}/100
-
-Monitoring for momentum confirmation...
-
-<i>{datetime.utcnow().strftime('%H:%M:%S')} UTC</i>
-"""
-        await self.send_message(message.strip(), silent=True)
+        msg = (
+            f"👁️ <b>Watchlist: {symbol}</b>\n\n"
+            f"24h: {change_pct:+.1f}% | Liq: ${liquidity:,.0f}\n"
+            f"Score: {score:.0f}/100\n"
+            f"En attente de confirmation momentum...\n\n"
+            f"<i>{datetime.utcnow().strftime('%H:%M')} UTC</i>"
+        )
+        await self.send_message(msg, silent=True)
 
     async def notify_ai_block(self, symbol: str, reason: str, change_pct: float):
-        """Notify when AI blocks a momentum buy"""
-        message = f"""
-🤖❌ <b>AI BLOCKED BUY</b>
-
-<b>Token:</b> {symbol}
-<b>Momentum:</b> +{change_pct:.1f}%
-<b>Reason:</b> {reason}
-
-Token removed from watchlist.
-
-<i>{datetime.utcnow().strftime('%H:%M:%S')} UTC</i>
-"""
-        await self.send_message(message.strip(), silent=True)
+        msg = (
+            f"🤖❌ <b>AI Block: {symbol}</b>\n\n"
+            f"Momentum: {change_pct:+.1f}% mais bloque par l'IA\n"
+            f"Raison: {reason}\n\n"
+            f"<i>{datetime.utcnow().strftime('%H:%M')} UTC</i>"
+        )
+        await self.send_message(msg, silent=True)
 
     async def notify_regime_change(self, pair: str, old_regime: str, new_regime: str, price: float):
-        """Notify when grid trader detects a regime change"""
-        regime_emojis = {"bull": "📈", "bull_volatile": "🌪️", "range": "↔️", "bear": "📉"}
+        regime_emojis = {"bull": "🐂", "bull_volatile": "🐂⚡", "range": "↔️", "bear": "🐻"}
         emoji = regime_emojis.get(new_regime, "📊")
-        message = f"""
-{emoji} <b>REGIME CHANGE</b>
-
-<b>Pair:</b> {pair}
-<b>From:</b> {old_regime.upper()}
-<b>To:</b> {new_regime.upper()}
-<b>Price:</b> ${price:,.2f}
-
-Grid rebalanced to new regime parameters.
-
-<i>{datetime.utcnow().strftime('%H:%M:%S')} UTC</i>
-"""
-        await self.send_message(message.strip(), silent=True)
-
-    # ==================== ALERTS ====================
+        msg = (
+            f"{emoji} <b>Regime: {pair}</b>\n\n"
+            f"{old_regime.upper()} → <b>{new_regime.upper()}</b>\n"
+            f"Prix: ${price:,.2f}\n\n"
+            f"<i>{datetime.utcnow().strftime('%H:%M')} UTC</i>"
+        )
+        await self.send_message(msg, silent=True)
 
     async def alert_error(self, error_type: str, message: str):
-        """Send error alert"""
-        alert = f"""
-⚠️ <b>ERROR ALERT</b>
-
-<b>Type:</b> {error_type}
-<b>Message:</b> {message}
-
-<i>{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</i>
-"""
-        await self.send_message(alert.strip())
+        msg = (
+            f"⚠️ <b>Erreur: {error_type}</b>\n\n"
+            f"{message}\n\n"
+            f"<i>{datetime.utcnow().strftime('%H:%M')} UTC</i>"
+        )
+        await self.send_message(msg, silent=True)
     
     async def alert_critical(self, message: str):
-        """Send critical alert (with notification sound)"""
-        alert = f"""
-🚨 <b>CRITICAL ALERT</b>
+        msg = (
+            f"🚨 <b>CRITIQUE</b>\n\n"
+            f"{message}\n\n"
+            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+        )
+        await self.send_message(msg, silent=False)
 
-{message}
-
-<i>{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</i>
-"""
-        await self.send_message(alert.strip(), silent=False)
-    
     async def notify_bot_started(self):
-        """Notify that the bot has started"""
-        message = """
-🚀 <b>CRYPTOBOT STARTED</b>
+        msg = (
+            f"🤖 <b>Cryptobot demarre</b>\n\n"
+            f"Le bot est en ligne et operationnel.\n\n"
+            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+        )
+        await self.send_message(msg)
 
-The trading bot is now online and monitoring markets.
-
-Mode: SIMULATION
-Capital: $10,000 (virtual)
-
-<i>Good luck!</i>
-"""
-        await self.send_message(message.strip())
-    
     async def notify_bot_stopped(self, reason: str = "Manual"):
-        """Notify that the bot has stopped"""
-        message = f"""
-🛑 <b>CRYPTOBOT STOPPED</b>
-
-Reason: {reason}
-
-<i>{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</i>
-"""
-        await self.send_message(message.strip())
+        msg = (
+            f"🛑 <b>Cryptobot arrete</b>\n\n"
+            f"Raison: {reason}\n\n"
+            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+        )
+        await self.send_message(msg)
     
     # ==================== CLEANUP ====================
     

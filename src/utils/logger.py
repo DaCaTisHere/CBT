@@ -13,6 +13,24 @@ from structlog.typing import FilteringBoundLogger
 from src.core.config import settings
 
 
+_dashboard_buffer = None
+
+def set_dashboard_buffer(buf):
+    global _dashboard_buffer
+    _dashboard_buffer = buf
+
+def _dashboard_bridge(logger, method_name, event_dict):
+    """Structlog processor that copies log entries to the dashboard ring buffer."""
+    if _dashboard_buffer is not None:
+        from datetime import datetime
+        _dashboard_buffer.append({
+            "ts": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+            "level": event_dict.get("level", method_name).upper(),
+            "name": event_dict.get("logger", ""),
+            "msg": event_dict.get("event", ""),
+        })
+    return event_dict
+
 def setup_logging():
     """
     Setup structured logging with structlog
@@ -28,12 +46,13 @@ def setup_logging():
         level=getattr(logging, settings.LOG_LEVEL.value),
     )
     
-    # Configure structlog
+    # Configure structlog with dashboard buffer bridge
     structlog.configure(
         processors=[
             structlog.contextvars.merge_contextvars,
             structlog.processors.add_log_level,
             structlog.processors.TimeStamper(fmt="iso"),
+            _dashboard_bridge,
             structlog.dev.ConsoleRenderer() if settings.ENVIRONMENT.value == "development"
             else structlog.processors.JSONRenderer(),
         ],
@@ -42,7 +61,7 @@ def setup_logging():
         ),
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(),
-        cache_logger_on_first_use=True,
+        cache_logger_on_first_use=False,
     )
 
 

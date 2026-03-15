@@ -56,17 +56,16 @@ class PoolDetector:
     MIN_PRICE_CHANGE_24H = 5       # At least +5% in 24h (catch early momentum)
     MAX_PRICE_CHANGE_24H = 1000    # Allow bigger pumps
     
-    # Quick exit strategy for new tokens
-    NEW_TOKEN_TAKE_PROFIT_1 = 20   # First TP at +20%
-    NEW_TOKEN_TAKE_PROFIT_2 = 50   # Second TP at +50%
-    NEW_TOKEN_TAKE_PROFIT_3 = 100  # Final TP at +100%
-    NEW_TOKEN_STOP_LOSS = 15       # Tight stop at -15%
-    NEW_TOKEN_MAX_HOLD_HOURS = 24  # Max hold 24h for new tokens
+    NEW_TOKEN_TAKE_PROFIT_1 = 30
+    NEW_TOKEN_TAKE_PROFIT_2 = 75
+    NEW_TOKEN_TAKE_PROFIT_3 = 150
+    NEW_TOKEN_STOP_LOSS = 20
+    NEW_TOKEN_MAX_HOLD_HOURS = 0.5
     
-    # Search terms to discover trending tokens on our chains
     SEARCH_TERMS = [
         "new", "launch", "fair", "meme", "pepe", "doge", "moon",
-        "ai", "gpt", "trump", "sol", "bnb", "base"
+        "ai", "gpt", "sol", "bnb", "base", "cat", "frog",
+        "pump", "gem", "alpha", "dao", "defi", "nft",
     ]
     
     def __init__(self):
@@ -348,7 +347,7 @@ class PoolDetector:
                     if datetime.utcnow() - last_signal < timedelta(hours=1):
                         continue
                         
-                if score >= 70:
+                if score >= 50:
                     self.seen_pools[cache_key] = datetime.utcnow()
                     
                     signal = PoolSignal(
@@ -479,8 +478,7 @@ class PoolDetector:
         score = 0
         reasons = []
         
-        # 1. Must have minimum liquidity
-        if pool.liquidity_usd < 50000:
+        if pool.liquidity_usd < 10000:
             return 0, ["Low liquidity"]
             
         # 2. Price change score (0-30 points)

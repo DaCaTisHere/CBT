@@ -276,6 +276,7 @@ class DexScreenerClient:
                     market_cap_usd=float(pair.get("marketCap", 0) or 0),
                     buys_24h=int(pair.get("txns", {}).get("h24", {}).get("buys", 0) or 0),
                     sells_24h=int(pair.get("txns", {}).get("h24", {}).get("sells", 0) or 0),
+                    transactions_24h=int(pair.get("txns", {}).get("h24", {}).get("buys", 0) or 0) + int(pair.get("txns", {}).get("h24", {}).get("sells", 0) or 0),
                 ))
             except Exception:
                 continue

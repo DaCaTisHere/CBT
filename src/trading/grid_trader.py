@@ -30,7 +30,7 @@ GAS_COST_USD = {"base": 0.02, "bsc": 0.10, "eth": 3.0, "arbitrum": 0.05}
 
 # Each trade's net profit must exceed gas * this factor, otherwise skip the sell.
 # Prevents gas-negative micro-trades that erode capital.
-MIN_PROFIT_GAS_MULT = 3
+MIN_PROFIT_GAS_MULT = 2
 
 
 class MarketRegime(Enum):
@@ -41,10 +41,10 @@ class MarketRegime(Enum):
 
 
 REGIME_PARAMS = {
-    MarketRegime.BULL:          {"spacing_pct": 2.5, "num_grids": 8,  "amount_mult": 1.0, "range_pct": 12.0},
-    MarketRegime.BULL_VOLATILE: {"spacing_pct": 3.5, "num_grids": 6,  "amount_mult": 0.7, "range_pct": 15.0},
-    MarketRegime.RANGE:         {"spacing_pct": 1.5, "num_grids": 10, "amount_mult": 1.2, "range_pct": 10.0},
-    MarketRegime.BEAR:          {"spacing_pct": 2.5, "num_grids": 8,  "amount_mult": 0.4, "range_pct": 12.0},
+    MarketRegime.BULL:          {"spacing_pct": 2.0, "num_grids": 10, "amount_mult": 1.0, "range_pct": 12.0},
+    MarketRegime.BULL_VOLATILE: {"spacing_pct": 3.0, "num_grids": 8,  "amount_mult": 0.7, "range_pct": 15.0},
+    MarketRegime.RANGE:         {"spacing_pct": 0.8, "num_grids": 15, "amount_mult": 1.2, "range_pct": 10.0},
+    MarketRegime.BEAR:          {"spacing_pct": 2.0, "num_grids": 10, "amount_mult": 0.4, "range_pct": 12.0},
 }
 
 HYSTERESIS_PCT = 10.0  # 10% band to prevent regime whipsawing
@@ -215,10 +215,23 @@ class GridTrader:
 
         self.logger.info(f"[GRID] Ready on {len(self.grids)} pairs")
 
+    def _min_profitable_spacing_pct(self, config: GridPairConfig, amount_usd: float) -> float:
+        """Minimum spacing % for a single-spacing cycle to cover gas + profit gate."""
+        gas = GAS_COST_USD.get(config.network, 0.1)
+        total_gas = gas * 2
+        min_net = gas * MIN_PROFIT_GAS_MULT
+        return (total_gas + min_net) / max(amount_usd, 1) * 100
+
     def _build_grid(self, pair_id: str, center: float, config: GridPairConfig,
                     spacing_pct: float, num_grids: int, amount_usd: float, range_pct: float):
+        min_spacing_pct = self._min_profitable_spacing_pct(config, amount_usd)
+        effective_spacing_pct = max(spacing_pct, min_spacing_pct)
+        if effective_spacing_pct > spacing_pct:
+            self.logger.info(f"[GRID] Spacing bumped {spacing_pct:.2f}% → {effective_spacing_pct:.2f}% "
+                             f"(gas floor for {config.network})")
+
         levels = []
-        spacing = spacing_pct / 100.0
+        spacing = effective_spacing_pct / 100.0
         low_bound = center * (1 - range_pct / 100)
         high_bound = center * (1 + range_pct / 100)
 
@@ -364,19 +377,25 @@ class GridTrader:
 
     async def _check_grid_crossings(self, pair_id: str, config: GridPairConfig,
                                      old_price: float, new_price: float):
-        """Detect ALL levels crossed between old and new price (handles gaps)."""
+        """Detect ALL levels crossed between old and new price (handles gaps).
+
+        Key design: any upward level crossing (buy or sell side) can trigger a sell.
+        This lets buys exit after just one spacing of upward movement, instead of
+        requiring price to cross all the way above center to hit a 'sell' level.
+        """
+        if old_price == new_price:
+            return
+
         levels = self.grids[pair_id]
         lo, hi = min(old_price, new_price), max(old_price, new_price)
 
         for level in levels:
-            if level.filled:
-                continue
             if not (lo <= level.price <= hi):
                 continue
 
-            if level.side == "buy" and new_price <= level.price < old_price:
+            if level.side == "buy" and not level.filled and new_price <= level.price < old_price:
                 await self._execute_grid_buy(pair_id, config, level, new_price)
-            elif level.side == "sell" and new_price >= level.price > old_price:
+            elif new_price >= level.price > old_price and self.active_buys.get(pair_id):
                 await self._execute_grid_sell(pair_id, config, level, new_price)
 
     async def _execute_grid_buy(self, pair_id: str, config: GridPairConfig,
@@ -406,7 +425,8 @@ class GridTrader:
                 try:
                     trade = await self.dex_trader.buy(
                         network=config.network, token_address=config.base_token,
-                        amount_usd=level.amount_usd, slippage=1.0, token_symbol=config.base_symbol)
+                        amount_usd=level.amount_usd, slippage=self.dex_trader.SLIPPAGE_GRID,
+                        token_symbol=config.base_symbol)
                     if trade and trade.status == "confirmed":
                         level.filled = True
                         level.fill_price = current_price
@@ -425,28 +445,41 @@ class GridTrader:
 
         is_sim = self.safety.is_simulation_mode() if self.safety else True
         gas = GAS_COST_USD.get(config.network, 0.1)
+        min_net_profit = gas * MIN_PROFIT_GAS_MULT
 
-        buy_order = self.active_buys[pair_id][0]
+        # Find the most profitable active buy that passes the profitability gate
+        best_idx = -1
+        best_profit_usd = -float('inf')
+        best_profit_pct = 0.0
+        best_total_gas = 0.0
+
+        for idx, candidate in enumerate(self.active_buys[pair_id]):
+            bp = candidate["buy_price"]
+            amt = candidate["amount_usd"]
+            tg = candidate.get("gas_cost", 0) + gas
+            pp = ((current_price - bp) / bp) * 100
+            pu = amt * (pp / 100) - tg
+            if pu >= min_net_profit and pu > best_profit_usd:
+                best_idx = idx
+                best_profit_usd = pu
+                best_profit_pct = pp
+                best_total_gas = tg
+
+        if best_idx == -1:
+            return
+
+        buy_order = self.active_buys[pair_id][best_idx]
         buy_price = buy_order["buy_price"]
         amount_usd = buy_order["amount_usd"]
-        total_gas = buy_order.get("gas_cost", 0) + gas
-
-        profit_pct = ((current_price - buy_price) / buy_price) * 100
-        profit_usd = amount_usd * (profit_pct / 100) - total_gas
-
-        min_net_profit = gas * MIN_PROFIT_GAS_MULT
-        if profit_usd < min_net_profit:
-            self.logger.debug(
-                f"[GRID] SKIP SELL {config.base_symbol} @ ${current_price:,.2f} — "
-                f"net ${profit_usd:+.3f} < min ${min_net_profit:.3f} (waiting for better exit)")
-            return
+        profit_usd = best_profit_usd
+        profit_pct = best_profit_pct
+        total_gas = best_total_gas
 
         self.logger.info(f"[GRID] SELL {config.base_symbol} @ ${current_price:,.2f} (bought @ ${buy_price:,.2f})")
 
         if is_sim:
-            self.active_buys[pair_id].pop(0)
+            self.active_buys[pair_id].pop(best_idx)
 
-            # Unfill buy level for reuse
             buy_level_price = buy_order.get("level_price")
             if buy_level_price:
                 for lv in self.grids[pair_id]:
@@ -491,7 +524,7 @@ class GridTrader:
                         network=config.network, token_address=config.base_token,
                         amount_tokens=token_amount, token_symbol=config.base_symbol)
                     if trade and trade.status == "confirmed":
-                        self.active_buys[pair_id].pop(0)
+                        self.active_buys[pair_id].pop(best_idx)
                         self.total_cycles += 1
                         self.total_profit_usd += profit_usd
                         if profit_usd > 0:
@@ -623,8 +656,11 @@ class GridTrader:
         amount = config.base_amount_per_grid_usd * rp["amount_mult"]
         gas = GAS_COST_USD.get(config.network, 0.1)
 
-        buy_levels = [center * (1 - spacing * i) for i in range(1, rp["num_grids"] + 1)]
-        sell_levels = [center * (1 + spacing * i) for i in range(1, rp["num_grids"] + 1)]
+        min_spacing_pct = self._min_profitable_spacing_pct(config, amount)
+        effective_spacing = max(spacing, min_spacing_pct / 100.0)
+        buy_levels = [center * (1 - effective_spacing * i) for i in range(1, rp["num_grids"] + 1)]
+        sell_levels = [center * (1 + effective_spacing * i) for i in range(1, rp["num_grids"] + 1)]
+        all_levels = sorted(set(buy_levels + sell_levels))
 
         bt_buys = []
         bt_cycles = 0
@@ -636,23 +672,32 @@ class GridTrader:
 
         for i in range(1, len(history)):
             old_p, new_p = history[i - 1], history[i]
+            if old_p == new_p:
+                continue
+
+            lo, hi = min(old_p, new_p), max(old_p, new_p)
 
             for bl in buy_levels:
-                if old_p > bl >= new_p and len(bt_buys) < rp["num_grids"]:
+                if lo <= bl <= hi and new_p <= bl < old_p and len(bt_buys) < rp["num_grids"]:
                     bt_buys.append(new_p)
 
-            for sl in sell_levels:
-                if old_p < sl <= new_p and bt_buys:
-                    bp = bt_buys[0]
-                    pnl_pct = ((new_p - bp) / bp) * 100
-                    pnl_usd = amount * (pnl_pct / 100) - total_gas_2x
-                    if pnl_usd < min_net:
+            for lv in all_levels:
+                if lo <= lv <= hi and new_p >= lv > old_p and bt_buys:
+                    best_idx = -1
+                    best_pnl = -float('inf')
+                    for idx, bp in enumerate(bt_buys):
+                        pnl_pct = ((new_p - bp) / bp) * 100
+                        pnl_usd = amount * (pnl_pct / 100) - total_gas_2x
+                        if pnl_usd >= min_net and pnl_usd > best_pnl:
+                            best_idx = idx
+                            best_pnl = pnl_usd
+                    if best_idx == -1:
                         bt_skipped += 1
                         continue
-                    bt_buys.pop(0)
-                    bt_profit += pnl_usd
+                    bt_buys.pop(best_idx)
+                    bt_profit += best_pnl
                     bt_cycles += 1
-                    if pnl_usd > 0:
+                    if best_pnl > 0:
                         bt_wins += 1
 
         wr = (bt_wins / max(bt_cycles, 1)) * 100

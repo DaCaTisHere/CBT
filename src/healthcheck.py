@@ -11,7 +11,7 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 # Ring buffer for the last 50 log entries exposed via /logs
-_log_buffer: deque = deque(maxlen=50)
+_log_buffer: deque = deque(maxlen=300)
 
 
 class _DashboardLogHandler(logging.Handler):
@@ -30,11 +30,13 @@ class _DashboardLogHandler(logging.Handler):
 
 
 def install_log_handler():
-    """Attach the dashboard handler to the root logger so all modules are captured."""
+    """Attach the dashboard handler to the root logger AND structlog bridge."""
     handler = _DashboardLogHandler()
     handler.setLevel(logging.INFO)
     handler.setFormatter(logging.Formatter("%(message)s"))
     logging.getLogger().addHandler(handler)
+    from src.utils.logger import set_dashboard_buffer
+    set_dashboard_buffer(_log_buffer)
 
 
 def get_trading_mode():
@@ -99,35 +101,89 @@ def get_real_wallet_balance():
         return {}, 0
 
 def get_trading_stats():
-    """Get paper trading stats if available"""
+    """Get real trading stats from safety_manager (primary) + sniper positions"""
     try:
-        from src.trading.paper_trader import get_paper_trader
-        trader = get_paper_trader()
-        stats = trader.get_stats()
-        
-        # Add positions info with PnL
-        positions_with_pnl = {}
-        for symbol, p in trader.portfolio.positions.items():
-            current_price = trader.price_cache.get(symbol, p.entry_price)
-            pnl_pct = ((current_price - p.entry_price) / p.entry_price) * 100 if p.entry_price > 0 else 0
-            
-            positions_with_pnl[symbol] = {
-                'entry_price': p.entry_price,
-                'current_price': current_price,
-                'amount': p.amount,
-                'value': p.value,
-                'pnl_pct': pnl_pct,
-                'stop_loss': p.stop_loss,
-                'take_profit': p.take_profit,
-                'trailing_activated': p.trailing_activated,
-                'tp1_hit': p.tp1_hit,
-                'tp2_hit': p.tp2_hit,
-                'entry_time': p.entry_time.isoformat() if p.entry_time else None
-            }
-        
-        stats['positions'] = positions_with_pnl
-        stats['open_positions'] = len(trader.portfolio.positions)
-        return stats
+        from src.core.safety_manager import get_safety_manager
+        sm = get_safety_manager()
+        status = sm.get_status()
+
+        sim = status.get("simulation", {})
+        mom = status.get("momentum", {})
+        grid = status.get("grid", {})
+
+        total_trades = sim.get("trades", 0)
+        won = sim.get("won", 0)
+        lost = sim.get("lost", 0)
+        wr_str = sim.get("win_rate", "0%")
+        try:
+            win_rate = float(wr_str.replace("%", ""))
+        except Exception:
+            win_rate = 0.0
+        pnl_str = sim.get("total_pnl", "$+0.00")
+        try:
+            total_pnl = float(pnl_str.replace("$", "").replace("+", "").replace(",", ""))
+        except Exception:
+            total_pnl = 0.0
+
+        avg_win_str = sim.get("avg_win", "+0%")
+        avg_loss_str = sim.get("avg_loss", "0%")
+
+        sniper_positions = {}
+        try:
+            from src.core.orchestrator import Orchestrator
+            orch = Orchestrator._instance if hasattr(Orchestrator, '_instance') else None
+            if orch:
+                for attr_name in dir(orch):
+                    obj = getattr(orch, attr_name, None)
+                    if obj and hasattr(obj, 'sniper_positions'):
+                        for addr, pos in obj.sniper_positions.items():
+                            entry = pos.get("entry_price", 0)
+                            symbol = pos.get("symbol", addr[:8])
+                            sniper_positions[symbol] = {
+                                'entry_price': entry,
+                                'current_price': pos.get("highest_price", entry),
+                                'amount': float(pos.get("amount_remaining", 0)),
+                                'value': float(pos.get("amount_remaining", 0)) * entry,
+                                'pnl_pct': 0,
+                                'stop_loss': pos.get("sl_price", 0),
+                                'take_profit': pos.get("tp1_price", 0),
+                                'trailing_activated': True,
+                                'tp1_hit': pos.get("tp1_hit", False),
+                                'tp2_hit': pos.get("tp2_hit", False),
+                                'entry_time': pos.get("entry_time", datetime.utcnow()).isoformat() if hasattr(pos.get("entry_time"), 'isoformat') else None,
+                                'network': pos.get("network", ""),
+                            }
+                        break
+        except Exception:
+            pass
+
+        progress = sm.get_progress_bar()
+        needed = max(0, sm.MIN_SIM_TRADES - total_trades)
+        safety_info = status.get("safety", {})
+
+        return {
+            'current_value': 10000 + total_pnl,
+            'total_pnl': total_pnl,
+            'total_pnl_percent': (total_pnl / 10000) * 100 if total_pnl else 0,
+            'total_trades': total_trades,
+            'win_rate': win_rate,
+            'winning_trades': won,
+            'losing_trades': lost,
+            'avg_win': avg_win_str,
+            'avg_loss': avg_loss_str,
+            'positions': sniper_positions,
+            'open_positions': len(sniper_positions),
+            'progress_bar': progress,
+            'needed_for_unlock': needed,
+            'grid_trades': grid.get("trades", 0),
+            'grid_wr': grid.get("win_rate", "0%"),
+            'grid_pnl': grid.get("pnl", "$0"),
+            'mom_trades': mom.get("trades", 0),
+            'mom_wr': mom.get("win_rate", "0%"),
+            'mom_pnl': mom.get("pnl", "$0"),
+            'is_unlocked': safety_info.get("real_trading_unlocked", False),
+            'unlock_reason': safety_info.get("unlock_reason", ""),
+        }
     except Exception as e:
         print(f"Error getting stats: {e}")
         return None
@@ -230,7 +286,6 @@ async def index(request):
     """Root endpoint - Modern Dashboard"""
     uptime = time.time() - _start_time
     stats = get_trading_stats()
-    ml_info = get_ml_info()
     mode_name, mode_color = get_trading_mode()
     
     # Get real wallet balance if in REAL mode
@@ -270,40 +325,16 @@ async def index(request):
         positions = {}
         open_positions = 0
     
-    # ML Auto-Learner info
-    if ml_info:
-        ml_trained = ml_info.get('is_trained', False)
-        ml_samples = ml_info.get('completed_trades', 0)
-        ml_win_rate = ml_info.get('win_rate', '0%')
-        ml_avg_win = ml_info.get('avg_win', '+0%')
-        ml_avg_loss = ml_info.get('avg_loss', '0%')
-        ml_last_trained = ml_info.get('last_trained', 'Never')
-        
-        # Use ML stats if paper_trader stats are missing (after redeploy)
-        if total_trades == 0 and ml_samples > 0:
-            total_trades = ml_samples
-            # Parse win_rate from ML (e.g., "40.9%" -> 40.9)
-            try:
-                win_rate = float(ml_win_rate.replace('%', ''))
-            except Exception as e:
-                logger.debug(f"Failed to parse ML win rate '{ml_win_rate}': {e}")
-                win_rate = 0
-            # Calculate wins/losses from ML data
-            winning = int(total_trades * (win_rate / 100))
-            losing = total_trades - winning
-    else:
-        ml_trained = False
-        ml_samples = 0
-        ml_win_rate = '0%'
-        ml_avg_win = '+0%'
-        ml_avg_loss = '0%'
-        ml_last_trained = 'Never'
+    ml_trained = False
+    ml_samples = 0
+    ml_win_rate = '0%'
+    ml_avg_win = '+0%'
+    ml_avg_loss = '0%'
+    ml_last_trained = 'Never'
     
     # Colors
     pnl_color = '#00ff88' if total_pnl >= 0 else '#ff4444'
     pnl_sign = '+' if total_pnl >= 0 else ''
-    ml_color = '#00ff88' if ml_trained else '#ffaa00'
-    ml_status = f'ACTIVE ({ml_samples} trades)' if ml_trained else 'LEARNING...'
     
     # Format uptime
     hours = int(uptime // 3600)
@@ -654,8 +685,8 @@ async def index(request):
         }}
         
         .ml-badge {{
-            background: {ml_color}22;
-            color: {ml_color};
+            background: #ffaa0022;
+            color: #ffaa00;
             padding: 6px 12px;
             border-radius: 8px;
             font-size: 0.8rem;
@@ -802,25 +833,36 @@ async def index(request):
         
         <div class="card">
             <div class="card-header">
-                <span class="card-title">🧠 Auto-Learning</span>
-                <span class="ml-badge">{ml_status}</span>
+                <span class="card-title">Progression vers mode REEL</span>
+                <span class="card-badge" style="background: #ffaa0022; color: #ffaa00;">
+                    {stats.get('needed_for_unlock', 20)} trades restants
+                </span>
+            </div>
+            <div style="background: rgba(255,255,255,0.05); border-radius: 10px; height: 30px; overflow: hidden; margin-bottom: 15px;">
+                <div style="background: linear-gradient(90deg, #00d4ff, #00ff88); height: 100%; width: {min(100, (total_trades / 20) * 100):.0f}%; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 700; color: #000;">
+                    {total_trades}/20
+                </div>
             </div>
             <div class="ml-stats">
                 <div class="ml-stat">
-                    <div class="ml-stat-value">{ml_samples}</div>
-                    <div class="ml-stat-label">Trades Analyzed</div>
+                    <div class="ml-stat-value">{stats.get('mom_trades', 0)}</div>
+                    <div class="ml-stat-label">Momentum</div>
                 </div>
                 <div class="ml-stat">
-                    <div class="ml-stat-value">{ml_win_rate}</div>
-                    <div class="ml-stat-label">Learned Win Rate</div>
+                    <div class="ml-stat-value">{stats.get('mom_wr', '0%')}</div>
+                    <div class="ml-stat-label">Mom WR</div>
                 </div>
                 <div class="ml-stat">
-                    <div class="ml-stat-value">{ml_avg_win}</div>
-                    <div class="ml-stat-label">Avg Win</div>
+                    <div class="ml-stat-value">{stats.get('grid_trades', 0)}</div>
+                    <div class="ml-stat-label">Grid</div>
                 </div>
                 <div class="ml-stat">
-                    <div class="ml-stat-value">{ml_avg_loss}</div>
-                    <div class="ml-stat-label">Avg Loss</div>
+                    <div class="ml-stat-value">{stats.get('avg_win', '+0%')}</div>
+                    <div class="ml-stat-label">Gain moyen</div>
+                </div>
+                <div class="ml-stat">
+                    <div class="ml-stat-value">{stats.get('avg_loss', '0%')}</div>
+                    <div class="ml-stat-label">Perte moy.</div>
                 </div>
             </div>
         </div>
@@ -862,13 +904,13 @@ async def index(request):
                     </div>
                 </div>
                 <div class="strategy-section">
-                    <div class="strategy-title">🚀 Quick Exit Strategy</div>
+                    <div class="strategy-title">Sortie rapide</div>
                     <div class="filter-list">
-                        <div class="filter-item">SL: -15% (tight)</div>
-                        <div class="filter-item">TP1: +20%</div>
-                        <div class="filter-item">TP2: +50%</div>
-                        <div class="filter-item">TP3: +100%</div>
-                        <div class="filter-item">Max hold: 24h</div>
+                        <div class="filter-item">SL: -20% (trailing ATR)</div>
+                        <div class="filter-item">TP1: +30% (vente 33%)</div>
+                        <div class="filter-item">TP2: +75% (vente 50%)</div>
+                        <div class="filter-item">TP3: +150% (vente 100%)</div>
+                        <div class="filter-item">Max hold: 30 min</div>
                     </div>
                 </div>
                 <div class="strategy-section">

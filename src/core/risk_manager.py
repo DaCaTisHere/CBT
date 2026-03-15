@@ -217,12 +217,12 @@ class RiskManager:
     async def get_metrics(self) -> Dict:
         """Get current risk metrics"""
         total_pnl = self.current_capital - self.initial_capital
-        total_pnl_pct = (total_pnl / self.initial_capital) * Decimal("100")
+        total_pnl_pct = (total_pnl / self.initial_capital) * Decimal("100") if self.initial_capital else Decimal("0")
         
         daily_pnl = self.current_capital - self.daily_start_capital
-        daily_pnl_pct = (daily_pnl / self.daily_start_capital) * Decimal("100")
+        daily_pnl_pct = (daily_pnl / self.daily_start_capital) * Decimal("100") if self.daily_start_capital else Decimal("0")
         
-        drawdown = ((self.peak_capital - self.current_capital) / self.peak_capital) * Decimal("100")
+        drawdown = ((self.peak_capital - self.current_capital) / self.peak_capital) * Decimal("100") if self.peak_capital else Decimal("0")
         
         return {
             "current_capital": float(self.current_capital),

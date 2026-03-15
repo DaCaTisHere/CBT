@@ -114,9 +114,12 @@ class DEXTrader:
     }
     NATIVE_TOKEN_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
     
-    # Default settings
-    DEFAULT_SLIPPAGE = 5.0  # 5% for new tokens (higher needed)
-    MAX_SLIPPAGE = 15.0     # 15% max
+    # Slippage tiers: grid (established) < momentum (mid-cap) < sniper (micro-cap)
+    SLIPPAGE_GRID = 1.0       # 1% for grid trades on ETH/BNB (high liquidity)
+    SLIPPAGE_MOMENTUM = 3.0   # 3% for momentum tokens with $50k+ liquidity
+    SLIPPAGE_SNIPER = 5.0     # 5% for micro-cap new tokens
+    DEFAULT_SLIPPAGE = 3.0    # Sensible default
+    MAX_SLIPPAGE = 10.0       # 10% absolute max (was 15%)
     GAS_BUFFER = 1.2        # 20% buffer for gas estimation
     
     # Minimum gas to ALWAYS keep reserved (in native tokens)
@@ -158,6 +161,8 @@ class DEXTrader:
         # Safety manager - blocks all real trades until simulation is validated
         from src.core.safety_manager import get_safety_manager
         self.safety = get_safety_manager()
+        
+        self._kyber_router_cache: Dict[str, str] = {}
     
     @property
     def providers(self) -> Dict[str, Any]:
@@ -393,16 +398,15 @@ class DEXTrader:
         Returns:
             DEXTrade object or None if failed
         """
-        if not self.is_initialized:
+        is_sim = self.safety.is_simulation_mode()
+        
+        if not self.is_initialized and not is_sim:
             self.logger.warning("[DEX] Not initialized - cannot trade")
             return None
         
-        if network not in self.web3_clients:
+        if network not in self.web3_clients and not is_sim:
             self.logger.warning(f"[DEX] Network {network} not available")
             return None
-        
-        # In simulation mode, skip real wallet checks entirely
-        is_sim = self.safety.is_simulation_mode()
         
         if is_sim:
             self.logger.info(f"[DEX] 🧪 SIMULATION mode - using virtual capital")
@@ -446,7 +450,7 @@ class DEXTrader:
                 slippage_bps=int(slippage * 100)
             )
 
-            # Fallback: Uniswap V3 direct router if KyberSwap failed
+            # Fallback: Uniswap V3 direct router if KyberSwap failed (real mode only)
             if not tx_hash and not is_sim:
                 self.logger.warning(f"[DEX] KyberSwap failed, trying V3 direct router...")
                 weth = self.WRAPPED_NATIVE.get(network)
@@ -465,14 +469,34 @@ class DEXTrader:
             
             # Get token decimals (most ERC20 = 18, but some differ)
             token_decimals = 18
-            try:
-                w3 = self.web3_clients.get(network)
-                if w3:
-                    token_cs = w3.to_checksum_address(token_address)
-                    token_contract = w3.eth.contract(address=token_cs, abi=self.ERC20_ABI)
-                    token_decimals = token_contract.functions.decimals().call()
-            except Exception:
-                pass
+            if not is_sim:
+                try:
+                    w3 = self.web3_clients.get(network)
+                    if w3:
+                        token_cs = w3.to_checksum_address(token_address)
+                        token_contract = w3.eth.contract(address=token_cs, abi=self.ERC20_ABI)
+                        token_decimals = token_contract.functions.decimals().call()
+                except Exception:
+                    pass
+            
+            # SIMULATION FALLBACK: if KyberSwap API couldn't route (common for
+            # new/micro-cap tokens), use GeckoTerminal real price to simulate
+            # Apply realistic costs: slippage + DEX fee + gas
+            if not tx_hash and is_sim:
+                sim_price = await self._get_token_price(network, token_address)
+                if sim_price and sim_price > 0:
+                    import hashlib, time as _t
+                    slippage_pct = self.SLIPPAGE_SNIPER / 100
+                    dex_fee_pct = 0.003
+                    gas_cost_native = float(self.ESTIMATED_GAS_PER_TRADE.get(network, Decimal("0.001")))
+                    gas_cost_usd = gas_cost_native * self._get_native_price_usd(network)
+                    effective_usd = amount_usd * (1 - slippage_pct - dex_fee_pct) - gas_cost_usd
+                    effective_usd = max(effective_usd, amount_usd * 0.5)
+                    sim_amount = Decimal(str(effective_usd)) / Decimal(str(sim_price))
+                    amount_out_raw = int(sim_amount * Decimal(10 ** token_decimals))
+                    tx_hash = "SIM_" + hashlib.sha256(f"sim-buy-{token_address}-{_t.time()}".encode()).hexdigest()[:60]
+                    penalty = amount_usd - effective_usd
+                    self.logger.info(f"[DEX] 🧪 SIM buy: {sim_amount:.4f} @ ${sim_price:.10f} | costs: -${penalty:.2f} (slip {slippage_pct*100:.0f}% + fee 0.3% + gas ${gas_cost_usd:.2f})")
             
             # Calculate token price: USD spent / tokens received
             amount_tokens = Decimal(str(amount_out_raw)) / Decimal(10**token_decimals) if amount_out_raw else Decimal("0")
@@ -533,7 +557,7 @@ class DEXTrader:
         Returns:
             DEXTrade object or None if failed
         """
-        if not self.is_initialized:
+        if not self.is_initialized and not self.safety.is_simulation_mode():
             return None
         
         slippage = slippage or self.DEFAULT_SLIPPAGE
@@ -557,11 +581,25 @@ class DEXTrader:
                 await self._approve_token_for_kyber(network, token_address, amount_in_wei)
             
             if self.safety.is_simulation_mode():
-                import hashlib
-                tx_hash = "0x" + hashlib.sha256(f"sim-sell-{token_address}-{amount_in_wei}".encode()).hexdigest()
+                import hashlib, time as _t
+                tx_hash = "SIM_" + hashlib.sha256(f"sim-sell-{token_address}-{_t.time()}".encode()).hexdigest()[:60]
                 price_usd = await self._get_token_price(network, token_address) or 0
-                amount_usd = float(amount_tokens) * price_usd
-                self.logger.info(f"[DEX] 🧪 SIMULATION sell: {amount_tokens:.4f} tokens @ ${price_usd:.10f} = ${amount_usd:.2f}")
+                if price_usd <= 0 and position:
+                    price_usd = position.get("avg_price", 0)
+                if price_usd <= 0:
+                    sniper_pos = self.sniper_positions.get(token_address)
+                    if sniper_pos:
+                        price_usd = sniper_pos.get("_last_known_price", sniper_pos.get("entry_price", 0))
+                raw_usd = float(amount_tokens) * price_usd
+                slippage_pct = self.SLIPPAGE_SNIPER / 100
+                dex_fee_pct = 0.003
+                network_key = position.get("network", network) if position else network
+                gas_cost_native = float(self.ESTIMATED_GAS_PER_TRADE.get(network_key, Decimal("0.001")))
+                gas_cost_usd = gas_cost_native * self._get_native_price_usd(network_key)
+                amount_usd = raw_usd * (1 - slippage_pct - dex_fee_pct) - gas_cost_usd
+                amount_usd = max(amount_usd, 0)
+                penalty = raw_usd - amount_usd
+                self.logger.info(f"[DEX] 🧪 SIM sell: {amount_tokens:.4f} @ ${price_usd:.10f} = ${amount_usd:.2f} (brut ${raw_usd:.2f} - ${penalty:.2f} frais)")
             else:
                 tx_hash, amount_out_raw = await self._kyber_swap(
                     network=network,
@@ -570,6 +608,18 @@ class DEXTrader:
                     amount_in_wei=amount_in_wei,
                     slippage_bps=int(slippage * 100)
                 )
+                if not tx_hash:
+                    self.logger.warning(f"[DEX] KyberSwap sell failed, trying V3 fallback...")
+                    fb_hash = await self._send_v3_swap(
+                        network=network,
+                        token_in=token_address,
+                        token_out=self.NATIVE_TOKEN_ADDRESS,
+                        amount_in=amount_tokens,
+                        is_eth_swap=False
+                    )
+                    if fb_hash:
+                        tx_hash = fb_hash
+                        self.logger.info(f"[DEX] V3 sell fallback succeeded: {tx_hash}")
                 price_usd = await self._get_token_price(network, token_address) or 0
                 amount_usd = float(amount_tokens) * price_usd
             
@@ -597,23 +647,37 @@ class DEXTrader:
             self.logger.error(f"[DEX] Sell error: {e}")
             return None
     
+    _gecko_client = None
+
     async def _get_token_price(self, network: str, token_address: str) -> Optional[float]:
-        """Get token price from DEX"""
-        client = None
+        """Get token price via GeckoTerminal (cached client) with DexScreener fallback"""
         try:
             from src.modules.geckoterminal.gecko_client import GeckoTerminalClient
-            client = GeckoTerminalClient()
-            await client.initialize()
-            price = await client.get_token_price(network, token_address)
-            return price
+            if DEXTrader._gecko_client is None:
+                DEXTrader._gecko_client = GeckoTerminalClient()
+                await DEXTrader._gecko_client.initialize()
+            price = await DEXTrader._gecko_client.get_token_price(network, token_address)
+            if price and price > 0:
+                return price
         except Exception:
-            return None
-        finally:
-            if client:
-                try:
-                    await client.close()
-                except Exception:
-                    pass
+            pass
+
+        # DexScreener fallback: more reliable for newly listed tokens
+        try:
+            from src.modules.geckoterminal.dexscreener_client import DexScreenerClient
+            if not hasattr(DEXTrader, '_dexscreener_client') or DEXTrader._dexscreener_client is None:
+                DEXTrader._dexscreener_client = DexScreenerClient()
+                await DEXTrader._dexscreener_client.initialize()
+            pairs = await DEXTrader._dexscreener_client.get_token_pairs(token_address)
+            if pairs:
+                best = max(pairs, key=lambda p: float(p.get("liquidity", {}).get("usd", 0) or 0))
+                price = float(best.get("priceUsd", 0) or 0)
+                if price > 0:
+                    return price
+        except Exception:
+            pass
+
+        return None
     
     # Uniswap V2 Router ABI (minimal for swaps)
     UNISWAP_V2_ROUTER_ABI = [
@@ -781,17 +845,13 @@ class DEXTrader:
             else:
                 path = [token_in_checksum, weth_checksum, token_out_checksum]
             
-            # Calculate deadline (10 minutes from now)
-            deadline = int(datetime.utcnow().timestamp()) + 600
+            # Short deadline = MEV protection (sandwich attacks need time)
+            deadline = int(datetime.utcnow().timestamp()) + 120  # 2 min max
             
             # Amount with 18 decimals (simplified - should check actual decimals)
             amount_in_wei = int(amount_in * Decimal(10**18))
             
-            # For new/unknown tokens, we can't reliably estimate output amount
-            # Set amount_out_min = 0 to accept any output (slippage protection via
-            # our own position management: stop-loss, take-profit, max hold time)
-            # This is standard practice for sniper bots trading new tokens
-            amount_out_min = 0
+            amount_out_min = int(amount_in_wei * 85 / 100)
             
             self.logger.info(f"[DEX] Swap params: in={amount_in_wei} wei | out_min={amount_out_min} | router={router_address[:16]}... | path={[p[:10]+'...' for p in path]}")
             
@@ -876,8 +936,9 @@ class DEXTrader:
             # Get the KyberSwap router address
             base_url = f"https://aggregator-api.kyberswap.com/{chain_slug}/api/v1"
             
-            # Use standard KyberSwap router for approvals
-            kyber_router = "0x6131B5fae19EA4f9D964eAc0408E4408b66337b5"  # KyberSwap MetaAggregationRouterV2
+            kyber_router = self._kyber_router_cache.get(
+                network, "0x6131B5fae19EA4f9D964eAc0408E4408b66337b5"
+            )
             
             token_cs = w3.to_checksum_address(token_address)
             router_cs = w3.to_checksum_address(kyber_router)
@@ -966,7 +1027,7 @@ class DEXTrader:
         
         w3 = self.web3_clients.get(network)
         wallet = self.wallets.get(network)
-        if not w3 or not wallet:
+        if (not w3 or not wallet) and not is_sim:
             self.logger.error(f"[DEX] KyberSwap: no web3/wallet for {network}")
             return None, 0
         
@@ -1006,7 +1067,7 @@ class DEXTrader:
                 # SIMULATION: return fake TX + real quote amount
                 if is_sim:
                     import hashlib
-                    fake_hash = "0x" + hashlib.sha256(f"kyber-{token_out}-{amount_in_wei}-{time.time()}".encode()).hexdigest()
+                    fake_hash = "SIM_" + hashlib.sha256(f"kyber-{token_out}-{amount_in_wei}-{time.time()}".encode()).hexdigest()[:60]
                     self.logger.info(f"[DEX] 🧪 SIMULATION - Quote: {amount_out} tokens (~${amount_out_usd})")
                     return fake_hash, amount_out
                 
@@ -1035,6 +1096,8 @@ class DEXTrader:
                     return None, 0
                 
                 tx_data = build_data["data"]
+                
+                self._kyber_router_cache[network] = tx_data["routerAddress"]
                 
                 # Step 3: Sign and send transaction
                 nonce = w3.eth.get_transaction_count(wallet["address"])
@@ -1147,20 +1210,21 @@ class DEXTrader:
             token_in_cs = w3.to_checksum_address(token_in)
             token_out_cs = w3.to_checksum_address(token_out)
             amount_in_wei = int(amount_in * Decimal(10**18))
-            deadline = int(datetime.utcnow().timestamp()) + 600
+            deadline = int(datetime.utcnow().timestamp()) + 120  # 2 min MEV protection
             
             # Try each fee tier
             for fee in self.V3_FEE_TIERS:
                 try:
                     nonce = w3.eth.get_transaction_count(wallet["address"])
                     
+                    min_out = int(amount_in_wei * 85 / 100)
                     params = (
                         token_in_cs,       # tokenIn
                         token_out_cs,      # tokenOut
                         fee,               # fee tier
                         wallet["address"], # recipient
                         amount_in_wei,     # amountIn
-                        0,                 # amountOutMinimum (0 = accept any)
+                        min_out,           # amountOutMinimum (15% slippage max)
                         0                  # sqrtPriceLimitX96 (0 = no limit)
                     )
                     
@@ -1315,9 +1379,7 @@ class DEXTrader:
     
     async def _wait_confirmation(self, network: str, tx_hash: str, timeout: int = 60) -> bool:
         """Wait for transaction confirmation"""
-        import os
-        _sim_env = os.getenv("SIMULATION_MODE", "true").strip().lower()
-        if _sim_env in ("true", "1", "yes", "on"):
+        if self.safety.is_simulation_mode():
             await asyncio.sleep(1)
             return True
         
@@ -1327,7 +1389,7 @@ class DEXTrader:
                 return False
             
             start = datetime.utcnow()
-            while (datetime.utcnow() - start).seconds < timeout:
+            while (datetime.utcnow() - start).total_seconds() < timeout:
                 try:
                     receipt = w3.eth.get_transaction_receipt(tx_hash)
                     if receipt:
@@ -1409,7 +1471,7 @@ class DEXTrader:
         tp2_pct: float = 50,    # Take profit 2 at +50%
         tp3_pct: float = 100,   # Take profit 3 at +100%
         sl_pct: float = 15,     # Stop loss at -15%
-        max_hold_hours: int = 24
+        max_hold_hours: float = 24
     ) -> Optional[DEXTrade]:
         """
         SNIPER BUY - Quick entry with predefined exit strategy
@@ -1423,24 +1485,26 @@ class DEXTrader:
             network=network,
             token_address=token_address,
             amount_usd=amount_usd,
-            slippage=5.0,
+            slippage=self.SLIPPAGE_SNIPER,
             token_symbol=token_symbol
         )
         
         if trade and trade.status == "confirmed":
-            trailing_pct = sl_pct  # Trailing stop follows the highest price
+            # ATR-adaptive trailing: start with sl_pct, will be adjusted by
+            # price volatility in check_sniper_positions (2-3x ATR)
             self.sniper_positions[token_address] = {
                 "network": network,
                 "symbol": token_symbol,
                 "entry_price": trade.price_usd,
-                "highest_price": trade.price_usd,  # Track peak for trailing SL
+                "highest_price": trade.price_usd,
                 "amount": trade.amount_out,
                 "entry_time": datetime.utcnow(),
                 "tp1_price": trade.price_usd * (1 + tp1_pct / 100),
                 "tp2_price": trade.price_usd * (1 + tp2_pct / 100),
                 "tp3_price": trade.price_usd * (1 + tp3_pct / 100),
                 "sl_price": trade.price_usd * (1 - sl_pct / 100),
-                "trailing_pct": trailing_pct,
+                "trailing_pct": sl_pct,
+                "atr_prices": [trade.price_usd],  # price samples for ATR calc
                 "max_hold_until": datetime.utcnow() + timedelta(hours=max_hold_hours),
                 "tp1_hit": False,
                 "tp2_hit": False,
@@ -1488,15 +1552,24 @@ class DEXTrader:
                 current_price = price_map.get(token_address)
                 if not current_price:
                     pos["_price_fail_count"] = pos.get("_price_fail_count", 0) + 1
+                    last_known = pos.get("_last_known_price", pos.get("entry_price", 0))
                     if pos["_price_fail_count"] > 10:
                         symbol = pos.get("symbol", token_address[:10])
-                        self.logger.warning(f"[SNIPER] No price for {symbol} after 10 tries — recording as total loss")
-                        entry_price = pos.get("entry_price", 0)
-                        remaining_usd = float(pos.get("amount_remaining", pos.get("amount", 0))) * entry_price if entry_price > 0 else 0
-                        self.safety.record_sell(symbol, pos["network"], remaining_usd, -100.0, -remaining_usd, self.safety.is_simulation_mode())
-                        positions_to_close.append(token_address)
-                    continue
+                        if last_known > 0:
+                            current_price = last_known * 0.7
+                            self.logger.warning(f"[SNIPER] No price for {symbol} after 10 tries — using last known * 0.7 = ${current_price:.10f}")
+                            pos["_price_fail_count"] = 0
+                        else:
+                            self.logger.warning(f"[SNIPER] No price for {symbol} after 10 tries — recording as total loss")
+                            entry_price = pos.get("entry_price", 0)
+                            remaining_usd = float(pos.get("amount_remaining", pos.get("amount", 0))) * entry_price if entry_price > 0 else 0
+                            self.safety.record_sell(symbol, pos["network"], remaining_usd, -100.0, -remaining_usd, self.safety.is_simulation_mode())
+                            positions_to_close.append(token_address)
+                            continue
+                    if not current_price:
+                        continue
                 pos["_price_fail_count"] = 0
+                pos["_last_known_price"] = current_price
                 
                 symbol = pos.get("symbol", token_address[:10])
                 entry_price = pos["entry_price"]
@@ -1505,15 +1578,29 @@ class DEXTrader:
                     positions_to_close.append(token_address)
                     continue
                 
-                # Update highest price and trailing SL
+                # ATR-adaptive trailing stop: recalculate trailing % from
+                # recent price volatility (2.5x ATR) instead of fixed %
+                atr_prices = pos.setdefault("atr_prices", [entry_price])
+                atr_prices.append(current_price)
+                if len(atr_prices) > 30:
+                    pos["atr_prices"] = atr_prices[-30:]
+                    atr_prices = pos["atr_prices"]
+                
+                if len(atr_prices) >= 5:
+                    changes = [abs(atr_prices[i] - atr_prices[i-1]) / atr_prices[i-1] * 100
+                               for i in range(1, len(atr_prices))]
+                    atr_pct = sum(changes) / len(changes)
+                    adaptive_trail = max(8.0, min(atr_pct * 2.5, 25.0))  # 8%-25% range for volatile new tokens
+                    pos["trailing_pct"] = adaptive_trail
+                
                 if current_price > pos.get("highest_price", entry_price):
                     pos["highest_price"] = current_price
-                    trailing_pct = pos.get("trailing_pct", 8)
+                    trailing_pct = pos.get("trailing_pct", 15)
                     new_sl = current_price * (1 - trailing_pct / 100)
                     if new_sl > pos["sl_price"]:
                         old_sl = pos["sl_price"]
                         pos["sl_price"] = new_sl
-                        self.logger.info(f"[SNIPER] 📈 {symbol} trailing SL raised: ${old_sl:.8f} → ${new_sl:.8f} (peak: ${current_price:.8f})")
+                        self.logger.info(f"[SNIPER] 📈 {symbol} trailing SL raised: ${old_sl:.8f} → ${new_sl:.8f} (trail:{trailing_pct:.1f}% ATR-based)")
                 
                 pnl_pct = ((current_price - entry_price) / entry_price) * 100
                 remaining_usd = float(pos.get("amount_remaining", pos.get("amount", 0))) * entry_price
@@ -1521,7 +1608,7 @@ class DEXTrader:
                 should_close = False
                 close_reason = ""
 
-                HARD_STOP_LOSS_PCT = -8.0  # Tightened from -12% (avg loss was -23.5%)
+                HARD_STOP_LOSS_PCT = -30.0  # Hard floor for new token volatility
 
                 if pnl_pct <= HARD_STOP_LOSS_PCT:
                     close_reason = f"HARD STOP-LOSS ({pnl_pct:+.1f}% <= {HARD_STOP_LOSS_PCT}%)"
@@ -1532,9 +1619,9 @@ class DEXTrader:
                 elif datetime.utcnow() >= pos["max_hold_until"]:
                     close_reason = f"MAX HOLD ({pnl_pct:+.1f}%)"
                     should_close = True
-                elif pnl_pct < -2.0:
+                elif pnl_pct < -10.0:
                     hold_minutes = (datetime.utcnow() - pos["entry_time"]).total_seconds() / 60
-                    if hold_minutes >= 20:
+                    if hold_minutes >= 15:
                         close_reason = f"TIME+LOSS EXIT ({pnl_pct:+.1f}% after {hold_minutes:.0f}min)"
                         should_close = True
                 elif not pos["tp3_hit"] and current_price >= pos["tp3_price"]:
@@ -1544,10 +1631,18 @@ class DEXTrader:
                 if should_close:
                     self.logger.warning(f"[SNIPER] {close_reason} for {symbol}")
                     try:
-                        await self.sell(
+                        sell_result = await self.sell(
                             network=pos["network"], token_address=token_address,
-                            percent=100, slippage=3.0, token_symbol=symbol
+                            percent=100, slippage=self.SLIPPAGE_SNIPER, token_symbol=symbol
                         )
+                        if sell_result is None:
+                            pos["_sell_retries"] = pos.get("_sell_retries", 0) + 1
+                            self.logger.error(f"[SNIPER] Sell returned None for {symbol} (attempt {pos['_sell_retries']})")
+                            if pos["_sell_retries"] >= 3:
+                                self.logger.error(f"[SNIPER] Max retries for {symbol} — recording as total loss")
+                                self.safety.record_sell(symbol, pos["network"], remaining_usd, -100.0, -remaining_usd, self.safety.is_simulation_mode())
+                                positions_to_close.append(token_address)
+                            continue
                     except Exception as sell_err:
                         pos["_sell_retries"] = pos.get("_sell_retries", 0) + 1
                         self.logger.error(f"[SNIPER] Sell failed for {symbol} (attempt {pos['_sell_retries']}): {sell_err}")
@@ -1563,22 +1658,34 @@ class DEXTrader:
                 
                 # Partial take-profits
                 if not pos["tp1_hit"] and current_price >= pos["tp1_price"]:
-                    self.logger.info(f"[SNIPER] 💰 TP1 HIT for {symbol} (+{pnl_pct:.1f}%) - Selling 33%")
-                    await self.sell(
-                        network=pos["network"], token_address=token_address,
-                        percent=33, token_symbol=symbol
-                    )
-                    pos["tp1_hit"] = True
-                    pos["amount_remaining"] = pos["amount_remaining"] * Decimal("0.67")
+                    self.logger.info(f"[SNIPER] TP1 HIT for {symbol} (+{pnl_pct:.1f}%) - Selling 33%")
+                    try:
+                        tp_result = await self.sell(
+                            network=pos["network"], token_address=token_address,
+                            percent=33, token_symbol=symbol
+                        )
+                        if tp_result is not None:
+                            pos["tp1_hit"] = True
+                            pos["amount_remaining"] = pos["amount_remaining"] * Decimal("0.67")
+                        else:
+                            self.logger.warning(f"[SNIPER] TP1 sell returned None for {symbol}")
+                    except Exception as e:
+                        self.logger.error(f"[SNIPER] TP1 sell failed for {symbol}: {e}")
                 
                 elif not pos["tp2_hit"] and current_price >= pos["tp2_price"]:
-                    self.logger.info(f"[SNIPER] 💰💰 TP2 HIT for {symbol} (+{pnl_pct:.1f}%) - Selling 50%")
-                    await self.sell(
-                        network=pos["network"], token_address=token_address,
-                        percent=50, token_symbol=symbol
-                    )
-                    pos["tp2_hit"] = True
-                    pos["amount_remaining"] = pos["amount_remaining"] * Decimal("0.5")
+                    self.logger.info(f"[SNIPER] TP2 HIT for {symbol} (+{pnl_pct:.1f}%) - Selling 50%")
+                    try:
+                        tp_result = await self.sell(
+                            network=pos["network"], token_address=token_address,
+                            percent=50, token_symbol=symbol
+                        )
+                        if tp_result is not None:
+                            pos["tp2_hit"] = True
+                            pos["amount_remaining"] = pos["amount_remaining"] * Decimal("0.5")
+                        else:
+                            self.logger.warning(f"[SNIPER] TP2 sell returned None for {symbol}")
+                    except Exception as e:
+                        self.logger.error(f"[SNIPER] TP2 sell failed for {symbol}: {e}")
                     
             except Exception as e:
                 self.logger.error(f"[SNIPER] Error checking position {token_address[:10]}: {e}")

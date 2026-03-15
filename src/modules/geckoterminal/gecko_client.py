@@ -221,8 +221,19 @@ class GeckoTerminalClient:
         for item in data.get("data", [])[:limit]:
             try:
                 attrs = item.get("attributes", {})
+                
+                # Extract BASE TOKEN address from relationships (not the pool LP address)
+                base_token_id = (item.get("relationships", {})
+                                 .get("base_token", {})
+                                 .get("data", {})
+                                 .get("id", ""))
+                if "_" in base_token_id:
+                    token_address = base_token_id.split("_", 1)[1]
+                else:
+                    token_address = attrs.get("address", "")
+                
                 pools.append(Pool(
-                    address=attrs.get("address", ""),
+                    address=token_address,
                     name=attrs.get("name", "Unknown"),
                     network=network,
                     dex=attrs.get("dex_id", "unknown"),
@@ -267,8 +278,19 @@ class GeckoTerminalClient:
         for item in data.get("data", [])[:limit]:
             try:
                 attrs = item.get("attributes", {})
+                
+                # Extract BASE TOKEN address from relationships (not the pool LP address)
+                base_token_id = (item.get("relationships", {})
+                                 .get("base_token", {})
+                                 .get("data", {})
+                                 .get("id", ""))
+                if "_" in base_token_id:
+                    token_address = base_token_id.split("_", 1)[1]
+                else:
+                    token_address = attrs.get("address", "")
+                
                 pools.append(Pool(
-                    address=attrs.get("address", ""),
+                    address=token_address,
                     name=attrs.get("name", "Unknown"),
                     network=network,
                     dex=attrs.get("dex_id", "unknown"),

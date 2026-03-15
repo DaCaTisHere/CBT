@@ -21,7 +21,16 @@ from dataclasses import dataclass, asdict
 
 logger = logging.getLogger(__name__)
 
-STATS_FILE = "/tmp/safety_stats.json"
+import pathlib as _pathlib
+
+# Persistent storage: use /data/ (Railway volume) or fallback to /tmp/
+_DATA_DIR = _pathlib.Path("/data")
+if not _DATA_DIR.exists():
+    try:
+        _DATA_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        _DATA_DIR = _pathlib.Path("/tmp")
+STATS_FILE = str(_DATA_DIR / "safety_stats.json")
 
 
 @dataclass
@@ -91,10 +100,15 @@ class SafetyManager:
     REAL_MIN_WIN_RATE = 25.0
     REAL_MIN_TRADES_FOR_CHECK = 10
     
+    CONSECUTIVE_LOSS_LIMIT = 3
+    LOSS_COOLDOWN_SECONDS = 1800  # 30 min pause after 3 consecutive losses
+    
     def __init__(self):
         self.stats = SafetyStats()
         self.trade_history: List[TradeRecord] = []
         self._notifier = None
+        self._consecutive_losses = 0
+        self._cooldown_until = 0.0
         self._load_stats()
 
     def set_notifier(self, callback):
@@ -162,6 +176,14 @@ class SafetyManager:
     
     # ==================== PRE-TRADE GATE ====================
     
+    def is_in_cooldown(self) -> Tuple[bool, float]:
+        """Check if bot is in loss cooldown. Returns (in_cooldown, seconds_remaining)."""
+        import time
+        now = time.time()
+        if now < self._cooldown_until:
+            return True, self._cooldown_until - now
+        return False, 0
+    
     def can_trade_real(self, network: str, amount_usd: float) -> Tuple[bool, str]:
         """
         THE MAIN GATE. Called before EVERY real transaction.
@@ -169,6 +191,11 @@ class SafetyManager:
         If this returns False, the trade MUST NOT execute.
         """
         self._reset_daily_if_needed()
+        
+        # Consecutive loss cooldown
+        in_cooldown, remaining = self.is_in_cooldown()
+        if in_cooldown:
+            return False, f"LOSS COOLDOWN: {remaining/60:.0f}min remaining after {self.CONSECUTIVE_LOSS_LIMIT} consecutive losses"
         
         # Emergency stop
         if self.stats.emergency_stop:
@@ -267,6 +294,21 @@ class SafetyManager:
         
         won = pnl_pct > 0
         is_grid = token.startswith("GRID_")
+        
+        # Track consecutive losses for cooldown
+        if won:
+            self._consecutive_losses = 0
+        else:
+            self._consecutive_losses += 1
+            if self._consecutive_losses >= self.CONSECUTIVE_LOSS_LIMIT:
+                import time
+                self._cooldown_until = time.time() + self.LOSS_COOLDOWN_SECONDS
+                logger.warning(f"[SAFETY] ⏸️ {self._consecutive_losses} consecutive losses — "
+                               f"COOLDOWN {self.LOSS_COOLDOWN_SECONDS/60:.0f}min activated")
+                self._fire_notifier("loss_cooldown", {
+                    "consecutive_losses": self._consecutive_losses,
+                    "cooldown_minutes": self.LOSS_COOLDOWN_SECONDS / 60
+                })
         
         if is_sim:
             self.stats.sim_trades_total += 1
@@ -448,6 +490,8 @@ class SafetyManager:
         logger.info("[SAFETY] Resetting simulation stats for new strategy test")
         self.stats = SafetyStats()
         self.trade_history.clear()
+        self._consecutive_losses = 0
+        self._cooldown_until = 0.0
         self._save_stats()
         logger.info("[SAFETY] Simulation reset complete - starting from 0/20 trades")
 

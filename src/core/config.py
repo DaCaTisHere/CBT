@@ -188,24 +188,15 @@ def _parse_bool_env(name: str, default: bool) -> bool:
         return True
     return default
 
-# Debug: show what pydantic parsed vs what env says
-_sim_raw = os.getenv("SIMULATION_MODE", "NOT_SET")
 _sim_parsed = _parse_bool_env("SIMULATION_MODE", settings.SIMULATION_MODE)
-print(f"[CONFIG-DEBUG] SIMULATION_MODE: env='{_sim_raw}' -> pydantic={settings.SIMULATION_MODE} -> forced={_sim_parsed}", flush=True)
-
 if settings.SIMULATION_MODE != _sim_parsed:
-    print(f"[CONFIG-FIX] Correcting SIMULATION_MODE: {settings.SIMULATION_MODE} -> {_sim_parsed}", flush=True)
     settings.SIMULATION_MODE = _sim_parsed
 
 _dry_parsed = _parse_bool_env("DRY_RUN", settings.DRY_RUN)
 if settings.DRY_RUN != _dry_parsed:
-    print(f"[CONFIG-FIX] Correcting DRY_RUN: {settings.DRY_RUN} -> {_dry_parsed}", flush=True)
     settings.DRY_RUN = _dry_parsed
 
 _test_parsed = _parse_bool_env("USE_TESTNET", settings.USE_TESTNET)
 if settings.USE_TESTNET != _test_parsed:
-    print(f"[CONFIG-FIX] Correcting USE_TESTNET: {settings.USE_TESTNET} -> {_test_parsed}", flush=True)
     settings.USE_TESTNET = _test_parsed
-
-print(f"[CONFIG-FINAL] SIMULATION_MODE={settings.SIMULATION_MODE} | DRY_RUN={settings.DRY_RUN} | USE_TESTNET={settings.USE_TESTNET}", flush=True)
 

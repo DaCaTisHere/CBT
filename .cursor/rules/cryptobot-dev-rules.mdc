@@ -1,0 +1,43 @@
+---
+description: Règles de développement obligatoires pour le cryptobot - checklist avant chaque modification
+alwaysApply: true
+---
+
+# Règles de développement - Cryptobot
+
+## CHECKLIST OBLIGATOIRE AVANT TOUTE MODIFICATION
+
+1. **Lire le fichier ENTIER** avant de modifier quoi que ce soit
+2. **Vérifier les effets de bord** : qui importe ce fichier ? Qui appelle cette fonction ?
+3. **Tester la division par zéro** : tout calcul avec `/` doit avoir un guard
+4. **Ne jamais hardcoder -100%** : les pertes API doivent être capées au stop-loss
+5. **Vérifier le mode sim/real** : `safety.is_simulation_mode()` lit `os.getenv()`, pas `settings`
+6. **Singleton pattern** : DEXTrader, SafetyManager sont des singletons - NE PAS créer de nouvelles instances
+7. **Commit CHAQUE fix individuellement** avec un message descriptif
+
+## PIÈGES CONNUS (ne pas reproduire)
+
+- `datetime.utcnow()` est deprecated → utiliser `datetime.now(timezone.utc)`
+- `.seconds` tronque à 60s → toujours `.total_seconds()`
+- `asyncio.get_event_loop()` deprecated → `asyncio.get_running_loop()` ou `async`
+- `except:` nu attrape SystemExit → toujours `except Exception:`
+- `SIMULATION_MODE` default doit être `True` (sécurité)
+- Les adresses EVM font 42 chars (0x + 40 hex), jamais plus
+
+## PATTERN DE RECORD_SELL (safety_manager)
+
+```python
+# CORRECT - utiliser des keyword args cohérents
+safety.record_sell(
+    token=symbol, network=network, amount_usd=amount_usd,
+    pnl_pct=pnl_pct, pnl_usd=pnl_usd, is_sim=safety.is_simulation_mode()
+)
+```
+
+## AVANT UN DEPLOY
+
+1. Vérifier les linter errors sur tous les fichiers modifiés
+2. S'assurer que `SIMULATION_MODE` default = True dans config.py
+3. Vérifier qu'aucun `print()` n'a été ajouté (utiliser `logger`)
+4. Vérifier qu'aucun debug log n'a été laissé
+5. Lire les Railway logs après deploy pour confirmer le démarrage

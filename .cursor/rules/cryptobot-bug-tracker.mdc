@@ -1,0 +1,46 @@
+---
+description: Suivi des bugs du cryptobot - bugs corrigés et bugs encore ouverts
+alwaysApply: true
+---
+
+# Bug Tracker - Cryptobot
+
+## BUGS CORRIGÉS (ne pas réintroduire)
+
+| Date | Fichier | Bug | Fix |
+|------|---------|-----|-----|
+| 2026-03-15 | dex_trader.py:1566,1643,1651 | -100% loss quand API échoue | Capé au trailing stop (-20%) |
+| 2026-03-15 | safety_manager.py | PnL corrompu par les -100% | recalculate_pnl() au démarrage |
+| 2026-03-15 | safety_manager.py | Pas de logs unlock | Ajouté diagnostic complet |
+| 2026-03-15 | grid_trader.py:522 | Division par zéro amount_usd/buy_price | Guard buy_price > 0 |
+| 2026-03-15 | grid_trader.py:98 | Pool address ETH invalide (66 hex) | Adresse 42 chars corrigée |
+| 2026-03-15 | grid_trader.py:540 | Emergency close ne vend pas on-chain | Ajouté real sell DEX |
+| 2026-03-15 | grid_trader.py:260 | Momentum +66207% (pas de cap) | Capé à ±200% |
+| 2026-03-15 | grid_trader.py:726 | asyncio.get_event_loop() deprecated | stop() devenu async |
+| 2026-03-15 | healthcheck.py:1049 | /dex crée nouveau DEXTrader par requête | Utilise singleton Orchestrator |
+| 2026-03-15 | healthcheck.py:100,188,231 | print() au lieu de logger | Remplacé par logger.error() |
+| 2026-03-15 | config.py:140 | SIMULATION_MODE default False | Changé à True |
+| 2026-03-15 | gecko_client.py:337 | Bare except: | except Exception: |
+| 2026-03-15 | pool_detector.py:155 | Cache bypass après enrich_pool | Cache 2 adresses |
+| 2026-03-15 | telegram_bot.py:132 | Session None crash | Guard ajouté |
+| 2026-03-15 | orchestrator.py:450 | pass redondant | Supprimé |
+| 2026-03-15 | orchestrator.py:634 | import time mal placé | Déplacé avant 1ère utilisation |
+| 2026-03-15 | dex_trader.py:1395 | .seconds vs .total_seconds() | Corrigé |
+| 2026-03-15 | risk_manager.py:220 | Division par zéro dans get_metrics() | Guards ajoutés |
+| 2026-03-15 | dex_trader.py:667 | _dexscreener_client pas déclaré | Ajouté comme class var |
+
+## BUGS ENCORE OUVERTS
+
+| Priorité | Fichier | Bug | Impact |
+|----------|---------|-----|--------|
+| MEDIUM | dexscreener_client.py:203 | enrich_pool écrase pool.address avec baseToken.address | Adresse pool incorrecte |
+| MEDIUM | ai/sentiment_analyzer.py:69,154 | .seconds au lieu de .total_seconds() | Cache TTL incorrect >24h |
+| LOW | trending_tracker.py:144,155 | Division par zéro si liquidity=0 ou total=0 | Crash potentiel |
+| LOW | dex_trader.py:1607 | Division par zéro si entry_price=0 | Crash potentiel |
+| LOW | dex_trader.py:504 | Division par zéro si amount_tokens=0 | Crash potentiel |
+| LOW | safety_manager.py:285 | Division par zéro si buy_price=0 | Crash potentiel |
+| LOW | grid_trader.py:260 | Division par zéro si old_price=0 | Crash potentiel |
+| INFO | risk_manager.py:150 | TODO: envoyer alerte Telegram | Feature manquante |
+| INFO | dex_trader.py (partout) | datetime.utcnow() deprecated Python 3.12+ | Avertissement futur |
+
+## RÈGLE : quand tu fixes un bug, METS À JOUR ce fichier

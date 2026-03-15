@@ -1,0 +1,43 @@
+---
+description: Logique de safety et trading du cryptobot - comment fonctionne le unlock et les trades
+alwaysApply: false
+globs: src/core/safety_manager.py, src/trading/*.py
+---
+
+# Safety & Trading Logic
+
+## Unlock Simulation → Real (safety_manager.py)
+
+Deux chemins pour l'unlock :
+
+### Path A - Overall (ligne 374)
+- `sim_trades_total >= 20` (MIN_SIM_TRADES)
+- `sim_win_rate >= 35.0%` (MIN_SIM_WIN_RATE)
+- `sim_total_pnl_usd > 0`
+
+### Path B - Grid Shortcut (ligne 385)
+- `grid_trades_total >= 10` (MIN_GRID_TRADES_FOR_UNLOCK)
+- `grid_wr >= 50%` (MIN_GRID_WIN_RATE)
+- `grid_total_pnl_usd > 0`
+- `momentum_wr >= 20%` (si momentum trades > 0)
+
+## is_simulation_mode() (ligne 235)
+1. Si `os.getenv("SIMULATION_MODE")` = false → force REAL
+2. Si emergency_stop → force SIM
+3. Si auto-switch unlocked → REAL
+4. Default → SIM
+
+**ATTENTION** : lit os.getenv(), PAS settings.SIMULATION_MODE
+
+## record_sell() signature
+```python
+record_sell(token, network, amount_usd, pnl_pct, pnl_usd, is_sim)
+```
+Les appels DOIVENT être cohérents dans tous les fichiers.
+
+## État actuel (2026-03-15)
+- 27 sim trades, 59.3% WR, PnL $+3.10
+- UNLOCKED via Path A (overall)
+- Grid : 3 trades, 100% WR (pas assez pour Path B)
+- Momentum : 24 trades, 54% WR
+- Wallet : ~$12 total (BSC + Base)

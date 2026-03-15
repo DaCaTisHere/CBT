@@ -1,0 +1,37 @@
+---
+description: Protocole de modification obligatoire - étapes à suivre pour chaque changement de code
+alwaysApply: true
+---
+
+# Protocole de Modification
+
+## AVANT de toucher au code
+
+1. **Lire les rules** : consulter cryptobot-bug-tracker.mdc pour les bugs connus
+2. **Lire le fichier ENTIER** : jamais de modification sans lecture complète
+3. **Identifier les dépendances** : qui appelle cette fonction ? Qui importe ce module ?
+4. **Créer un plan TODO** : lister toutes les modifications AVANT de commencer
+
+## PENDANT la modification
+
+5. **Un fix = un commit** : ne PAS accumuler 20 fixes dans un seul commit
+6. **Tester les edge cases** : division par zéro, None, liste vide, mode sim vs real
+7. **Vérifier les lints** après chaque fichier modifié
+8. **NE PAS ajouter** : print(), debug logs, pass redondant, bare except
+
+## APRÈS la modification
+
+9. **Mettre à jour** cryptobot-bug-tracker.mdc si un bug a été fixé/trouvé
+10. **Commit avec message descriptif** : "Fix: [fichier] [description du fix]"
+11. **Push + deploy** si demandé
+12. **Vérifier les logs Railway** après deploy (chercher errors/warnings)
+
+## ERREURS PASSÉES À NE PAS RÉPÉTER
+
+- Modifier un fichier sans le lire en entier → bugs introduits
+- Accumuler trop de fixes sans commit → oublis
+- Oublier de mettre à jour le bug tracker → perte de contexte
+- Ne pas vérifier les logs après deploy → bugs en production
+- Créer des nouvelles instances au lieu d'utiliser les singletons
+- Hardcoder des valeurs sans guard (division par zéro, None)
+- Modifier safety_manager sans comprendre les 2 paths d'unlock

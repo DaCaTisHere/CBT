@@ -1,0 +1,49 @@
+---
+description: Architecture complète du cryptobot - carte des fichiers, dépendances, modules actifs
+alwaysApply: true
+---
+
+# Cryptobot Ultimate - Architecture
+
+## Entry Point
+`src/main.py` → `Orchestrator.start()` → lance tous les modules
+
+## Modules ACTIFS (en production)
+- **Grid Trader** (`src/trading/grid_trader.py`) : ETH/USDC (Base) + BNB/USDT (BSC), 80% capital
+- **Pool Detector** (`src/modules/geckoterminal/pool_detector.py`) : scan DexScreener/GeckoTerminal
+- **DEX Trader** (`src/trading/dex_trader.py`) : exécution trades DEX (sniper + momentum)
+- **Momentum Detector** (`src/modules/momentum_detector.py`) : signaux TA sur cryptos existantes
+- **AI Trading Engine** (`src/modules/ai/trading_engine.py`) : analyse avant achat
+- **Safety Manager** (`src/core/safety_manager.py`) : simulation → real auto-switch
+- **Telegram Bot** (`src/notifications/telegram_bot.py`) : notifications temps réel
+- **Healthcheck** (`src/healthcheck.py`) : dashboard HTTP port 8080
+
+## Fichiers CORE (modifier avec précaution)
+| Fichier | Lignes | Rôle |
+|---------|--------|------|
+| `src/core/orchestrator.py` | ~1170 | Chef d'orchestre principal |
+| `src/core/safety_manager.py` | ~574 | Gestion sim/real + emergency stop |
+| `src/core/config.py` | ~188 | Config Pydantic (.env) |
+| `src/core/risk_manager.py` | ~258 | Limites de risque globales |
+| `src/trading/dex_trader.py` | ~1700 | Trading DEX + sniper positions |
+| `src/trading/grid_trader.py` | ~740 | Grid trading adaptatif |
+
+## Chaîne de dépendances critique
+```
+main.py → Orchestrator → SafetyManager (singleton)
+                       → DEXTrader (singleton via get_dex_trader())
+                       → GridTrader → DEXTrader + SafetyManager
+                       → PoolDetector → DEXTrader + AITradingEngine
+                       → MomentumDetector → PaperTrader
+                       → TelegramBot
+                       → Healthcheck server
+```
+
+## Modules INACTIFS (Supabase non provisionné)
+- AutonomousManager, AIOptimizer, ParameterOptimizer, AutoHealer, SmartAlerts
+- Modules désactivés : SniperBot, NewsTrader, SentimentAnalyzer, MLPredictor, ArbitrageEngine, CopyTrader
+
+## Déploiement
+- Railway (Dockerfile, port 8080)
+- `railway.json` → `python src/main.py --simulation`
+- GitHub repo : DaCaTisHere/CBT

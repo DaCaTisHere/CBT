@@ -28,6 +28,11 @@ alwaysApply: true
 | 2026-03-15 | dex_trader.py:1395 | .seconds vs .total_seconds() | Corrigé |
 | 2026-03-15 | risk_manager.py:220 | Division par zéro dans get_metrics() | Guards ajoutés |
 | 2026-03-15 | dex_trader.py:667 | _dexscreener_client pas déclaré | Ajouté comme class var |
+| 2026-03-15 | healthcheck.py:836-843 | Dashboard affiche 27/20 même quand UNLOCK | Affiche "MODE RÉEL ACTIF" si unlocked |
+| 2026-03-15 | healthcheck.py:42-52 | get_trading_mode() ignore safety auto-unlock | Consulte safety_manager en premier |
+| 2026-03-15 | railway.json:8 | --simulation empêche le passage auto en réel | Flag retiré, safety manager contrôle |
+| 2026-03-15 | safety_manager.py | Pas de check capital wallet avant mode réel | Guard MIN_WALLET_USD ajouté |
+| 2026-03-15 | safety_manager.py | Pas d'auto-évolution des paramètres | auto_evolve() ajouté, exécuté toutes les 2h |
 
 ## BUGS ENCORE OUVERTS
 

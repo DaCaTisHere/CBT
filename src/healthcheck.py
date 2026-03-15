@@ -1049,6 +1049,17 @@ async def safety_reset(request):
         return web.json_response({"error": str(e)}, status=500)
 
 
+async def evolve_status(request):
+    """Auto-evolution status and trigger"""
+    try:
+        from src.core.safety_manager import get_safety_manager
+        sm = get_safety_manager()
+        result = sm.auto_evolve()
+        return web.json_response(result)
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
 async def dex_status(request):
     """DEX Trader status"""
     try:
@@ -1193,6 +1204,7 @@ async def start_healthcheck_server(port=8080):
     app.router.add_get('/dex', dex_status)
     app.router.add_get('/safety', safety_status)
     app.router.add_get('/safety/reset', safety_reset)
+    app.router.add_get('/evolve', evolve_status)
     app.router.add_get('/grid', grid_status)
     app.router.add_get('/backtest', grid_backtest)
     app.router.add_get('/logs', logs_endpoint)

@@ -233,27 +233,60 @@ class SafetyManager:
         
         return True, "All safety checks passed"
     
+    MIN_WALLET_USD_FOR_REAL = 30.0
+
+    def _get_wallet_balance_usd(self) -> float:
+        """Quick check of wallet balance across funded chains."""
+        try:
+            from web3 import Web3
+            from src.core.config import settings
+            pk = settings.WALLET_PRIVATE_KEY
+            if not pk:
+                return 0.0
+            if not pk.startswith("0x"):
+                pk = "0x" + pk
+            addr = Web3().eth.account.from_key(pk).address
+
+            total = 0.0
+            rpcs = {
+                "bsc": (getattr(settings, "BSC_RPC_URL", None), 660),
+                "base": (getattr(settings, "BASE_RPC_URL", None), 2100),
+            }
+            for net, (rpc, native_usd) in rpcs.items():
+                if not rpc:
+                    continue
+                try:
+                    w3 = Web3(Web3.HTTPProvider(rpc, request_kwargs={"timeout": 5}))
+                    bal = w3.eth.get_balance(addr) / 1e18
+                    total += bal * native_usd
+                except Exception:
+                    pass
+            return total
+        except Exception:
+            return 0.0
+
     def is_simulation_mode(self) -> bool:
         """
         AUTOMATIC mode detection:
         - Starts in simulation
         - Auto-switches to real when sim criteria are met
         - Auto-reverts to simulation on emergency stop
+        - Stays in simulation if wallet balance too low
         """
-        # Hard override: SIMULATION_MODE=false in env = force real (skip sim validation)
         sim_env = os.getenv("SIMULATION_MODE", "true").lower()
         if sim_env in ("false", "0", "no", "off"):
             return False
         
-        # Emergency stop = back to simulation
         if self.stats.emergency_stop:
             return True
         
-        # Auto-switch: sim criteria met = go real
         if self.stats.real_trading_unlocked and self.stats.auto_switched_to_real:
+            wallet_usd = self._get_wallet_balance_usd()
+            if wallet_usd < self.MIN_WALLET_USD_FOR_REAL:
+                logger.info(f"[SAFETY] Unlocked but wallet ${wallet_usd:.2f} < ${self.MIN_WALLET_USD_FOR_REAL} — staying in SIMULATION")
+                return True
             return False
         
-        # Default: simulation
         return True
     
     # ==================== TRADE RECORDING ====================
@@ -552,6 +585,78 @@ class SafetyManager:
         self._check_unlock_status()
         self._save_stats()
         logger.info(f"[SAFETY] PnL recalculated: {sim_total}t WR={self.stats.sim_win_rate:.1f}% PnL=${sim_pnl:+.2f}")
+
+    def auto_evolve(self) -> Dict:
+        """Analyze trade history and auto-adjust parameters for continuous improvement."""
+        sells = [t for t in self.trade_history if t.action == "sell"]
+        if len(sells) < 10:
+            return {"evolved": False, "reason": f"Not enough trades ({len(sells)}/10)"}
+
+        wins = [t for t in sells if t.pnl_percent > 0]
+        losses = [t for t in sells if t.pnl_percent <= 0]
+        changes = {}
+
+        avg_win = sum(t.pnl_percent for t in wins) / len(wins) if wins else 0
+        avg_loss = sum(t.pnl_percent for t in losses) / len(losses) if losses else 0
+        win_rate = len(wins) / len(sells) * 100
+
+        old_max_trade = self.MAX_TRADE_USD
+        old_daily_loss = self.MAX_DAILY_LOSS_USD
+
+        if win_rate >= 60 and avg_win > abs(avg_loss):
+            new_max_trade = min(old_max_trade * 1.15, 200.0)
+            if new_max_trade != old_max_trade:
+                self.MAX_TRADE_USD = round(new_max_trade, 2)
+                changes["max_trade_usd"] = f"${old_max_trade} → ${self.MAX_TRADE_USD}"
+        elif win_rate < 45 or avg_win < abs(avg_loss) * 0.5:
+            new_max_trade = max(old_max_trade * 0.8, 20.0)
+            if new_max_trade != old_max_trade:
+                self.MAX_TRADE_USD = round(new_max_trade, 2)
+                changes["max_trade_usd"] = f"${old_max_trade} → ${self.MAX_TRADE_USD}"
+
+        big_losses = [t for t in losses if t.pnl_percent < -25]
+        if len(big_losses) > len(sells) * 0.15:
+            changes["stop_loss_tighten"] = f"{len(big_losses)} trades > -25% loss — tightening recommended"
+
+        recent = sells[-15:]
+        recent_wr = len([t for t in recent if t.pnl_percent > 0]) / len(recent) * 100
+        recent_pnl = sum(t.pnl_usd for t in recent)
+        if recent_wr < 40 and recent_pnl < -5:
+            new_daily_loss = max(old_daily_loss * 0.85, 15.0)
+            if new_daily_loss != old_daily_loss:
+                self.MAX_DAILY_LOSS_USD = round(new_daily_loss, 2)
+                changes["daily_loss_limit"] = f"${old_daily_loss} → ${self.MAX_DAILY_LOSS_USD}"
+
+        if recent_wr >= 65 and recent_pnl > 0:
+            new_daily_loss = min(old_daily_loss * 1.1, 100.0)
+            if new_daily_loss != old_daily_loss:
+                self.MAX_DAILY_LOSS_USD = round(new_daily_loss, 2)
+                changes["daily_loss_limit"] = f"${old_daily_loss} → ${self.MAX_DAILY_LOSS_USD}"
+
+        if changes:
+            self._save_stats()
+            logger.info(f"[EVOLVE] Auto-evolution applied: {changes}")
+            self._fire_notifier("regime_change", {
+                "old_regime": "previous_params",
+                "new_regime": f"evolved ({len(changes)} changes)",
+            })
+
+        return {
+            "evolved": bool(changes),
+            "changes": changes,
+            "stats": {
+                "total_trades": len(sells),
+                "win_rate": f"{win_rate:.1f}%",
+                "avg_win": f"+{avg_win:.1f}%",
+                "avg_loss": f"{avg_loss:.1f}%",
+                "recent_15_wr": f"{recent_wr:.1f}%",
+                "recent_15_pnl": f"${recent_pnl:+.2f}",
+            },
+            "params": {
+                "max_trade_usd": self.MAX_TRADE_USD,
+                "daily_loss_limit": self.MAX_DAILY_LOSS_USD,
+            }
+        }
 
     def reset_simulation(self):
         """Reset simulation stats to start fresh (e.g. after strategy change)"""

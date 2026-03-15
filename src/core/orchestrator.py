@@ -1033,7 +1033,9 @@ class Orchestrator:
         """Main orchestrator loop"""
         import time as _t
         _last_daily_report = _t.time()
+        _last_evolve = _t.time()
         DAILY_REPORT_INTERVAL = 3600 * 6  # Every 6 hours
+        EVOLVE_INTERVAL = 3600 * 2  # Auto-evolve every 2 hours
 
         while self.is_running:
             try:
@@ -1041,8 +1043,20 @@ class Orchestrator:
                 await self._update_metrics()
                 await self.risk_manager.check_global_limits()
 
-                # Periodic Telegram report
                 now = _t.time()
+
+                # Auto-evolution: adjust parameters based on performance
+                if now - _last_evolve > EVOLVE_INTERVAL:
+                    _last_evolve = now
+                    try:
+                        from src.core.safety_manager import get_safety_manager
+                        evolve_result = get_safety_manager().auto_evolve()
+                        if evolve_result.get("evolved"):
+                            self.logger.info(f"[EVOLVE] Bot evolved: {evolve_result['changes']}")
+                    except Exception as e:
+                        self.logger.warning(f"[EVOLVE] Error: {e}")
+
+                # Periodic Telegram report
                 if now - _last_daily_report > DAILY_REPORT_INTERVAL:
                     _last_daily_report = now
                     await self._send_telegram_report()

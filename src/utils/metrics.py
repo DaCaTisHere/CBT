@@ -7,7 +7,11 @@ from typing import Dict, List
 class MetricsTracker:
     """Track bot performance metrics"""
     
-    def __init__(self, filepath: str = "metrics.json"):
+    def __init__(self, filepath: str = None):
+        if filepath is None:
+            import os
+            _persist = "/data" if os.path.isdir("/data") else "."
+            filepath = f"{_persist}/metrics.json"
         self.filepath = Path(filepath)
         self.metrics = self._load()
     

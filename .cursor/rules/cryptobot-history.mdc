@@ -1,0 +1,45 @@
+---
+description: Historique complet du cryptobot - timeline, versions, performance passée
+alwaysApply: true
+---
+
+# Historique du Cryptobot (depuis nov 2025)
+
+## Timeline des versions (53+ commits)
+
+| Date | Version | Événement clé |
+|------|---------|---------------|
+| 2025-11-23 | v1.0 | Création initiale, déploiement Railway |
+| 2025-12-29 | v3.0-v4.1 | Analyse critique: 1685 trades, 27.4% WR, -$460. Correctifs ultra-stricts |
+| 2026-01-08 | v4.2 | Optimisation paramètres |
+| 2026-01-12 | -- | Désactivation market aggregator après 88h d'analyse |
+| 2026-01-22 | v5.0-v6.0 | Pullback + Swing strategies (backtest 30 jours) |
+| 2026-01-31 | v7.0-v8.0 | Discovery Mode, DEX integration, MetaMask |
+| 2026-02-05 | v8.1 | DEX Trader + GeckoTerminal |
+| 2026-02-25 | Grid Engine | Grid ETH/BNB, régimes adaptatifs, OHLCV |
+| 2026-03-02 | Audit | Auto-unlock, hard stop-loss |
+| 2026-03-06 | Overhaul | Momentum strategy refonte |
+| 2026-03-15 | v9.0 | Audit critique: cap -100%, auto-evolution, persistance |
+
+## Performance historique
+
+### v1-v3 (nov-déc 2025) : CATASTROPHIQUE
+- 1,685 trades en 113h, 27.4% WR, -$460 (-4.6%)
+- Cause : market aggregator achetait sans analyse technique
+
+### v9 actuelle (mars 2026) : RENTABLE en simulation
+- 30 trades en ~72h, 56.7% WR, +$3.60
+- Grid: 3t, 100% WR, +$0.65
+- Momentum: 27t, 51.9% WR, +$2.95
+- 0 trades réels exécutés
+
+## Données perdues (CRITIQUE - corrigé le 15/03/2026)
+Avant la correction, tous les fichiers sauf safety_stats.json
+étaient écrits dans data/ (éphémère) au lieu de /data/ (volume Railway).
+ML patterns, paper portfolio, bot state, risk state étaient perdus
+à chaque redéploiement. CORRIGÉ: tous les fichiers pointent vers /data/.
+
+## Infra Railway
+- Volume monté sur `/data/` (persistant entre redéploiements)
+- 42 variables d'environnement configurées
+- Telegram, RPCs BSC/Base/ETH/ARB, OpenAI, Binance, Supabase: tous configurés

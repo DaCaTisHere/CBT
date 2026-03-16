@@ -61,8 +61,8 @@ class StateManager:
     - Multiple storage backends (file, database)
     """
     
-    STATE_FILE = "data/bot_state.json"
-    BACKUP_FILE = "data/bot_state_backup.json"
+    STATE_FILE = "/data/bot_state.json" if os.path.isdir("/data") else "data/bot_state.json"
+    BACKUP_FILE = "/data/bot_state_backup.json" if os.path.isdir("/data") else "data/bot_state_backup.json"
     AUTO_SAVE_INTERVAL = 60  # seconds
     
     def __init__(self):

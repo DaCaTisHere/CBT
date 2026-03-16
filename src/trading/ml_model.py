@@ -40,7 +40,7 @@ class TradingMLModel:
     
     def __init__(self):
         self.logger = logger
-        self.model_dir = "data/models"
+        self.model_dir = "/data/models" if os.path.isdir("/data") else "data/models"
         os.makedirs(self.model_dir, exist_ok=True)
         
         # Learned patterns from training

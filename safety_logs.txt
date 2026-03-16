@@ -1,0 +1,1049 @@
+﻿{"message":"[SAFETY] Loaded stats: 27 sim trades, 0 real trades","timestamp":"2026-03-15T18:26:36.299252796Z","level":"info"}
+{"message":"[SAFETY] Recalc: MemeClaw capped -27.4% ÔåÆ -20.0%","timestamp":"2026-03-15T18:26:36.299257181Z","level":"info"}
+{"message":"[SAFETY] Recalc: JARV1S capped -29.1% ÔåÆ -20.0%","timestamp":"2026-03-15T18:26:36.299262689Z","level":"info"}
+{"message":"[SAFETY] Recalc: wkeyDAO2 capped -54.5% ÔåÆ -20.0%","timestamp":"2026-03-15T18:26:36.299951423Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:26:36.299960405Z"}
+{"message":"[SAFETY] PnL recalculated: 27t WR=59.3% PnL=$+3.10","timestamp":"2026-03-15T18:26:36.299966937Z","level":"info"}
+{"timestamp":"2026-03-15T18:26:36.869064544Z","level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","timestamp":"2026-03-15T18:26:36.975882186Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T18:26:36.975888995Z","message":"\u001b[2m2026-03-15T18:26:36.965720Z\u001b[0m [\u001b[32m\u001b[1minfo     \u001b[0m] \u001b[1m[SAFETY] Safety Manager initialized\u001b[0m","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:26:37.071557041Z","level":"info"}
+{"message":"\u001b[2m2026-03-15T18:26:37.069011Z\u001b[0m [\u001b[32m\u001b[1minfo     \u001b[0m] \u001b[1m[SAFETY] Mode: SIMULATION\u001b[0m","timestamp":"2026-03-15T18:26:37.071565265Z","level":"info"}
+{"message":"\u001b[2m2026-03-15T18:26:37.069111Z\u001b[0m [\u001b[32m\u001b[1minfo     \u001b[0m] \u001b[1m[SAFETY] Sim trades: 27/20\u001b[0m","level":"info","timestamp":"2026-03-15T18:26:37.071571404Z"}
+{"message":"\u001b[2m2026-03-15T18:26:37.069150Z\u001b[0m [\u001b[32m\u001b[1minfo     \u001b[0m] \u001b[1m[SAFETY] Real trading unlocked: True\u001b[0m","timestamp":"2026-03-15T18:26:37.071578227Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T18:26:37.071584490Z","message":"\u001b[2m2026-03-15T18:26:37.069190Z\u001b[0m [\u001b[32m\u001b[1minfo     \u001b[0m] \u001b[1m[SAFETY] Progress: [ÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûê] 20/20 trades (100%) | WR: 59.3%\u001b[0m"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:26:37.298256314Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:26:48.351137317Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:27:55.666546692Z","level":"info"}
+{"timestamp":"2026-03-15T18:33:44.551415869Z","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:33:44.551420812Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:33:44.551426229Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:33:55.135014079Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T18:33:55.233460088Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-15T18:33:55.330879307Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T18:34:15.304034820Z","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:34:15.304040075Z"}
+{"timestamp":"2026-03-15T18:34:15.304044846Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T18:34:26.668640978Z"}
+{"level":"info","timestamp":"2026-03-15T18:34:26.812438361Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:34:26.862711643Z"}
+{"timestamp":"2026-03-15T18:34:46.869627843Z","level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:34:46.869632083Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:34:46.869636147Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:34:56.871205125Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:34:58.429414832Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:34:58.429419783Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:34:58.505004190Z"}
+{"timestamp":"2026-03-15T18:35:14.056699594Z","level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:35:14.136421234Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:35:14.282725977Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:35:29.801072435Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:35:29.895517734Z"}
+{"timestamp":"2026-03-15T18:35:29.995486679Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:35:49.981747550Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:35:49.981752032Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:35:49.981756375Z"}
+{"level":"info","timestamp":"2026-03-15T18:36:01.414318912Z","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T18:36:01.514411295Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:36:01.660807481Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T18:36:17.288493430Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:36:17.288500304Z"}
+{"level":"info","timestamp":"2026-03-15T18:36:17.358594713Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-15T18:36:32.918373027Z","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:36:33.032135128Z"}
+{"timestamp":"2026-03-15T18:36:33.108401900Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T18:36:48.667990080Z","level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:36:48.816563977Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:36:48.870723022Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:37:08.979138151Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:37:08.979144817Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T18:37:08.979159592Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:37:20.287631183Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:37:20.386377738Z","level":"info"}
+{"timestamp":"2026-03-15T18:37:20.467340445Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:37:40.468404506Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:37:40.468411238Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:37:40.468415859Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:37:51.796571422Z","level":"info"}
+{"timestamp":"2026-03-15T18:37:51.938630164Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T18:37:51.978019374Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:38:12.120934284Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:38:12.120940642Z","level":"info"}
+{"timestamp":"2026-03-15T18:38:12.120945512Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:38:23.417741832Z"}
+{"timestamp":"2026-03-15T18:38:23.498966296Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:38:23.589160043Z"}
+{"timestamp":"2026-03-15T18:38:23.842277488Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T18:38:49.290807510Z","level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T18:38:49.290816277Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","timestamp":"2026-03-15T18:38:49.290823745Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:38:54.915440758Z","level":"info"}
+{"timestamp":"2026-03-15T18:38:55.003646674Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:38:55.091996674Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:39:15.288676829Z","level":"info"}
+{"timestamp":"2026-03-15T18:39:15.288683669Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T18:39:15.288689121Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:39:26.568933884Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:39:26.644116010Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:39:26.915581738Z"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:39:47.917205403Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:39:47.917211891Z","level":"info"}
+{"timestamp":"2026-03-15T18:39:47.917216765Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:39:58.073849131Z","level":"info"}
+{"timestamp":"2026-03-15T18:39:58.343685951Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:39:58.343692825Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:40:00.007111502Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:40:13.919697144Z","level":"info"}
+{"timestamp":"2026-03-15T18:40:14.015708067Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T18:40:14.165903166Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:40:29.838271809Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:40:29.838276401Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:40:29.860558822Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:40:50.498433363Z"}
+{"timestamp":"2026-03-15T18:40:50.498437808Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:40:50.498443154Z"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:41:01.162625435Z"}
+{"timestamp":"2026-03-15T18:41:01.414978879Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:41:01.414984609Z"}
+{"level":"info","timestamp":"2026-03-15T18:41:17.052685008Z","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:41:17.140804427Z"}
+{"timestamp":"2026-03-15T18:41:17.236332677Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T18:41:37.238789837Z","level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","timestamp":"2026-03-15T18:41:37.238794482Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:41:37.238799705Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T18:41:48.571491277Z","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:41:48.646656482Z"}
+{"timestamp":"2026-03-15T18:41:48.729725443Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T18:42:10.735717260Z"}
+{"level":"info","timestamp":"2026-03-15T18:42:10.735726360Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:42:10.735732420Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:42:20.147378272Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T18:42:20.226797294Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:42:20.367055046Z","level":"info"}
+{"timestamp":"2026-03-15T18:42:40.404513517Z","level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:42:40.404525370Z"}
+{"timestamp":"2026-03-15T18:42:40.404537169Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:42:51.637610649Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:42:51.738026630Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:42:51.839912504Z"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:43:12.166467058Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:43:12.166472730Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:43:12.166477258Z"}
+{"level":"info","timestamp":"2026-03-15T18:43:23.267660340Z","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:43:23.360268294Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:43:23.448621633Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T18:43:24.931873601Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T18:43:25.777746492Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T18:43:39.057901854Z","level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T18:43:39.200727925Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:43:39.244110150Z"}
+{"level":"info","timestamp":"2026-03-15T18:43:54.858447572Z","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T18:43:54.904137789Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T18:43:55.003275104Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T18:44:15.654261842Z","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"timestamp":"2026-03-15T18:44:15.654267361Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:44:15.654271948Z"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:44:26.443908540Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:44:26.532061556Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:44:26.724578942Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:44:49.749236222Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:44:49.749243717Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:44:49.749249452Z"}
+{"timestamp":"2026-03-15T18:44:58.007832769Z","level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:44:58.295452500Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:44:58.295486298Z","level":"info"}
+{"timestamp":"2026-03-15T18:45:13.751826681Z","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"timestamp":"2026-03-15T18:45:13.853106020Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T18:45:13.958634825Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:45:14.830359600Z"}
+{"timestamp":"2026-03-15T18:45:14.930203012Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:45:15.248003663Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T18:45:15.725136945Z","message":"[SAFETY] SIM buy recorded: TORIVA $50.00"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:45:15.725198269Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:45:37.425218362Z"}
+{"timestamp":"2026-03-15T18:45:37.425223685Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:45:37.425229898Z"}
+{"timestamp":"2026-03-15T18:45:45.356775383Z","level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T18:45:45.444924132Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:45:45.539312550Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T18:46:05.233694982Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:46:05.233704586Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:46:05.233719233Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:46:16.878751732Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:46:17.020977050Z"}
+{"level":"info","timestamp":"2026-03-15T18:46:17.078866372Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:46:37.797487463Z","level":"info"}
+{"timestamp":"2026-03-15T18:46:37.797494832Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:46:37.797500104Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:46:48.480060559Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:46:48.597229097Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:46:48.674150563Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T18:47:04.241468100Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:47:04.321892563Z","level":"info"}
+{"timestamp":"2026-03-15T18:47:04.446363343Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:47:24.450735269Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T18:47:24.450749968Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:47:24.450755853Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:47:36.035015122Z","level":"info"}
+{"timestamp":"2026-03-15T18:47:36.122423509Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T18:47:36.321606267Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-15T18:47:56.203184746Z","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T18:47:56.203189051Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:47:56.203193176Z"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:48:07.723232798Z"}
+{"timestamp":"2026-03-15T18:48:07.723238252Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T18:48:07.735444925Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T18:48:27.707359661Z","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:48:27.707365904Z","level":"info"}
+{"timestamp":"2026-03-15T18:48:27.707371836Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T18:48:37.712988801Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:48:39.197610828Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:48:39.281615353Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:48:39.422911456Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:48:39.475797187Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:49:04.607669471Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:49:04.607675262Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:49:04.607680040Z","level":"info"}
+{"timestamp":"2026-03-15T18:49:10.706772845Z","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"timestamp":"2026-03-15T18:49:10.815942678Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:49:10.899221571Z"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:49:26.497481705Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:49:26.567620936Z","level":"info"}
+{"timestamp":"2026-03-15T18:49:26.656444556Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:49:42.333754515Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T18:49:42.678148695Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T18:49:42.678223521Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T18:50:03.657811802Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:50:03.657818666Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:50:03.657826180Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:50:13.983068231Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:50:13.983072394Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:50:14.061869244Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:50:17.447105206Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:50:29.633564329Z","level":"info"}
+{"timestamp":"2026-03-15T18:50:29.698873277Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T18:50:29.819627425Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","timestamp":"2026-03-15T18:50:45.478729163Z","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T18:50:45.604038097Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:50:45.684870623Z","level":"info"}
+{"timestamp":"2026-03-15T18:51:07.127339184Z","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"timestamp":"2026-03-15T18:51:07.127346984Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:51:07.127353654Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T18:51:17.003119271Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:51:17.100494475Z"}
+{"timestamp":"2026-03-15T18:51:17.195068084Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:51:41.212462982Z"}
+{"timestamp":"2026-03-15T18:51:41.212467496Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:51:41.212472345Z"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:51:48.630375696Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:51:48.734392873Z","level":"info"}
+{"timestamp":"2026-03-15T18:51:48.821686364Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T18:51:53.187186840Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:52:04.410230246Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:52:04.492392541Z","level":"info"}
+{"timestamp":"2026-03-15T18:52:04.603135940Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:52:20.163414345Z","level":"info"}
+{"timestamp":"2026-03-15T18:52:20.373578806Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:52:20.373591489Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:52:43.965846340Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:52:43.965850909Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:52:43.965855909Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:52:51.804312063Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:52:51.909296816Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:52:52.024881361Z"}
+{"timestamp":"2026-03-15T18:53:07.626485356Z","level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:53:07.667884772Z"}
+{"timestamp":"2026-03-15T18:53:07.905242724Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:53:27.811770438Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:53:27.811774771Z"}
+{"level":"info","timestamp":"2026-03-15T18:53:27.811779983Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T18:53:30.317326025Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-15T18:53:39.104687501Z","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","timestamp":"2026-03-15T18:53:39.181204335Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T18:53:39.416941636Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T18:53:54.957286076Z"}
+{"timestamp":"2026-03-15T18:53:55.046307182Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:53:55.139516445Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T18:54:10.702938228Z"}
+{"timestamp":"2026-03-15T18:54:10.804806951Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:54:10.893042570Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T18:54:36.507224395Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:54:36.507229126Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:54:36.507233633Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:54:42.211213120Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:54:42.294856185Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:54:42.547222686Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:55:06.772333886Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:55:06.772339385Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:55:06.772344443Z"}
+{"level":"info","timestamp":"2026-03-15T18:55:10.498824812Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:55:12.606368262Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:55:13.878408638Z","level":"info"}
+{"timestamp":"2026-03-15T18:55:13.920797760Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:55:13.998573490Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T18:55:37.850338102Z"}
+{"timestamp":"2026-03-15T18:55:37.850343389Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:55:37.850347737Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:55:45.320644050Z","level":"info"}
+{"timestamp":"2026-03-15T18:55:45.451224167Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:55:45.551409913Z","level":"info"}
+{"timestamp":"2026-03-15T18:56:07.056891698Z","level":"info","message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T18:56:07.056902296Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:56:07.056908659Z"}
+{"message":"[SAFETY] Unlock check: trades=27/20 WR=59.3%/35.0% PnL=$+3.10(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=54%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:56:17.118254647Z","level":"info"}
+{"timestamp":"2026-03-15T18:56:17.118261525Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:56:17.194132055Z","level":"info"}
+{"timestamp":"2026-03-15T18:56:21.207191931Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T18:56:21.303597090Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:56:21.398241824Z","level":"info"}
+{"level":"info","message":"[SAFETY] SIM sell: TORIVA PnL -4.6% ($-2.32) | Overall: 57.1% (28t) | Grid: 100% (3t) | Mom: 52% (25t)","timestamp":"2026-03-15T18:56:21.398248179Z"}
+{"timestamp":"2026-03-15T18:56:21.398253803Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:56:41.406773033Z","level":"info"}
+{"timestamp":"2026-03-15T18:56:41.406780512Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:56:41.406785668Z"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:56:48.517207294Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:56:48.594753328Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:56:48.688273435Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:56:49.647653894Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:57:04.512962254Z","level":"info"}
+{"timestamp":"2026-03-15T18:57:04.512967255Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T18:57:04.559198941Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:57:20.125110743Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:57:20.240829545Z"}
+{"level":"info","timestamp":"2026-03-15T18:57:20.309266922Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T18:57:44.961475266Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"timestamp":"2026-03-15T18:57:44.961481278Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:57:44.961494015Z"}
+{"timestamp":"2026-03-15T18:57:51.658536178Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:57:51.742669578Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T18:57:52.002521163Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:58:14.584849208Z","level":"info"}
+{"timestamp":"2026-03-15T18:58:14.584855819Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","timestamp":"2026-03-15T18:58:14.584861655Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T18:58:23.288048868Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","timestamp":"2026-03-15T18:58:23.517728575Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T18:58:23.517734606Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:58:39.046996132Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:58:39.169716281Z"}
+{"timestamp":"2026-03-15T18:58:39.230402271Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:58:54.981938464Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T18:58:54.981946190Z"}
+{"timestamp":"2026-03-15T18:58:54.981982019Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"level":"info","timestamp":"2026-03-15T18:59:10.655810137Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T18:59:10.763782523Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-15T18:59:10.840594849Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T18:59:26.408709622Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:59:26.493020366Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:59:26.635897453Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T18:59:42.149615882Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:59:42.254116172Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:59:42.352776859Z"}
+{"timestamp":"2026-03-15T18:59:57.919021383Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:59:58.014816257Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T18:59:58.117610114Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T19:00:13.678252348Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:00:13.773654138Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:00:14.073133671Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:00:14.073139293Z"}
+{"level":"info","timestamp":"2026-03-15T19:00:14.556865452Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:00:29.535481950Z"}
+{"level":"info","timestamp":"2026-03-15T19:00:29.623543204Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:00:29.717652693Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:00:45.285512629Z"}
+{"timestamp":"2026-03-15T19:00:45.562653464Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:00:45.562657287Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T19:01:08.800286391Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T19:01:08.800291229Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T19:01:08.800295932Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:01:16.890813056Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"timestamp":"2026-03-15T19:01:16.998595792Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:01:17.079195242Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:01:38.849153962Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:01:38.849163160Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:01:38.849168092Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:01:48.432528007Z","level":"info"}
+{"timestamp":"2026-03-15T19:01:48.526545994Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:01:48.625318703Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:01:51.753233028Z"}
+{"level":"info","timestamp":"2026-03-15T19:02:04.192007353Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:02:04.293477311Z"}
+{"timestamp":"2026-03-15T19:02:04.382477671Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-15T19:02:20.113372372Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:02:20.159717256Z"}
+{"level":"info","timestamp":"2026-03-15T19:02:20.282981581Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:02:41.657487882Z","level":"info"}
+{"timestamp":"2026-03-15T19:02:41.657493843Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:02:41.657500226Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:02:51.642479331Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:02:51.684758271Z"}
+{"level":"info","timestamp":"2026-03-15T19:02:51.828186187Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:03:15.517141424Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"timestamp":"2026-03-15T19:03:15.517148089Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:03:15.517154770Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T19:03:23.195999064Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T19:03:23.311760645Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:03:23.394122561Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:03:39.138723820Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:03:39.138729146Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:03:39.161947566Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T19:03:59.081955170Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","timestamp":"2026-03-15T19:03:59.081959394Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:03:59.081963690Z","level":"info"}
+{"timestamp":"2026-03-15T19:04:10.490306032Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T19:04:10.585329794Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:04:10.792653564Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:04:26.479300335Z","level":"info"}
+{"timestamp":"2026-03-15T19:04:26.731818952Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-15T19:04:26.731823257Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:04:42.197551801Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","timestamp":"2026-03-15T19:04:42.347216606Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:04:42.387088435Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:04:58.134681705Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:04:58.134686800Z"}
+{"level":"info","timestamp":"2026-03-15T19:04:58.135753463Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:05:17.944734732Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:05:17.944739395Z"}
+{"level":"info","timestamp":"2026-03-15T19:05:17.944744426Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:05:29.584156010Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"timestamp":"2026-03-15T19:05:29.651833137Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T19:05:29.755355818Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:05:49.806234985Z","level":"info"}
+{"timestamp":"2026-03-15T19:05:49.806242598Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:05:49.806249959Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:06:01.056456106Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:06:01.156234448Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:06:01.247339300Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:06:21.250624970Z","level":"info"}
+{"timestamp":"2026-03-15T19:06:21.250630118Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T19:06:21.250635230Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T19:06:32.642061128Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T19:06:32.752542626Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:06:32.834591734Z"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:06:52.833352896Z"}
+{"timestamp":"2026-03-15T19:06:52.833359528Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:06:52.833365286Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:07:04.143240622Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:07:04.266134714Z"}
+{"timestamp":"2026-03-15T19:07:04.349036816Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:07:19.918602924Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:07:20.014914610Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:07:20.110112696Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:07:40.889158640Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:07:40.889164566Z"}
+{"timestamp":"2026-03-15T19:07:40.889170235Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:07:51.553192598Z"}
+{"timestamp":"2026-03-15T19:07:51.665749937Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T19:07:51.732908787Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:08:11.736276690Z","level":"info"}
+{"timestamp":"2026-03-15T19:08:11.736286363Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:08:11.736292898Z","level":"info"}
+{"timestamp":"2026-03-15T19:08:23.055564558Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:08:23.143966802Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:08:23.286299657Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:08:43.346599137Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:08:43.346606129Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:08:43.346612910Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:08:53.564366344Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:08:54.697478853Z"}
+{"level":"info","timestamp":"2026-03-15T19:08:54.787245038Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:08:54.876333749Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:09:19.548867649Z"}
+{"timestamp":"2026-03-15T19:09:19.548874234Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:09:19.548881104Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:09:26.246424253Z"}
+{"timestamp":"2026-03-15T19:09:26.312042280Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-15T19:09:26.597599981Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:09:46.542962887Z"}
+{"timestamp":"2026-03-15T19:09:46.542972117Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T19:09:46.542978647Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:09:57.850943845Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:09:58.124077854Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:09:58.124087767Z"}
+{"timestamp":"2026-03-15T19:10:18.040200986Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:10:18.040210008Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:10:18.040216183Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:10:29.622783276Z","level":"info"}
+{"timestamp":"2026-03-15T19:10:29.622792352Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:10:29.622927077Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","timestamp":"2026-03-15T19:10:45.214540599Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:10:45.308078776Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:10:45.457137946Z"}
+{"timestamp":"2026-03-15T19:11:00.952438906Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:11:01.047978074Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:11:01.144697244Z"}
+{"level":"info","timestamp":"2026-03-15T19:11:16.696458066Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:11:16.838819042Z"}
+{"timestamp":"2026-03-15T19:11:16.892980774Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-15T19:11:41.962446484Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:11:41.962451185Z","level":"info"}
+{"timestamp":"2026-03-15T19:11:41.962455723Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:11:48.342521268Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:11:48.616380278Z","level":"info"}
+{"timestamp":"2026-03-15T19:11:48.616387343Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:12:04.110528829Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T19:12:04.183511279Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:12:04.299867077Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:12:19.858221619Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:12:19.956423624Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:12:20.252001428Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:12:20.252023974Z","level":"info"}
+{"timestamp":"2026-03-15T19:12:45.328255205Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","timestamp":"2026-03-15T19:12:45.328259716Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:12:45.328264567Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:12:51.623277791Z","level":"info"}
+{"timestamp":"2026-03-15T19:12:51.623283855Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:12:51.657366413Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:13:12.532062758Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T19:13:12.532071329Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:13:12.532076023Z"}
+{"timestamp":"2026-03-15T19:13:23.248832383Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:13:23.248843427Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:13:23.248849751Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:13:44.139132482Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:13:44.139139479Z"}
+{"timestamp":"2026-03-15T19:13:44.139144529Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:13:54.723240335Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:13:54.740515649Z","level":"info"}
+{"timestamp":"2026-03-15T19:13:54.883124974Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T19:13:56.045744967Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T19:14:10.460340001Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:14:10.501689847Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T19:14:10.620896941Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:14:26.277471604Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T19:14:26.277610733Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:14:26.352574579Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:14:47.174566353Z"}
+{"timestamp":"2026-03-15T19:14:47.174581826Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:14:47.174604460Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:14:57.956303493Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:14:58.052348196Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:14:58.194561238Z"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:15:21.328127699Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:15:21.328137263Z","level":"info"}
+{"timestamp":"2026-03-15T19:15:21.328143588Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:15:29.493873463Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","timestamp":"2026-03-15T19:15:29.578162048Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:15:29.675873487Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:15:45.374715370Z"}
+{"timestamp":"2026-03-15T19:15:45.374721013Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:15:45.422930212Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:16:01.096720894Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:16:01.207122393Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:16:01.296455309Z"}
+{"timestamp":"2026-03-15T19:16:17.021619276Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:16:17.021626230Z","level":"info"}
+{"timestamp":"2026-03-15T19:16:17.026229144Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T19:16:32.585260988Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"timestamp":"2026-03-15T19:16:32.681145706Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-15T19:16:32.823299005Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:16:48.507166208Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:16:48.507172331Z"}
+{"timestamp":"2026-03-15T19:16:48.512701354Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:17:04.186253860Z"}
+{"level":"info","timestamp":"2026-03-15T19:17:04.287848780Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:17:04.432370729Z"}
+{"level":"info","timestamp":"2026-03-15T19:17:20.110490869Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:17:20.110511916Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:17:20.123210661Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:17:20.784410171Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:17:21.542332714Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:17:35.686069748Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:17:35.788591184Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:17:35.882652171Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:17:51.458141177Z","level":"info"}
+{"timestamp":"2026-03-15T19:17:51.554926271Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:17:51.641273107Z"}
+{"timestamp":"2026-03-15T19:18:14.421093540Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T19:18:14.421098057Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:18:14.421102591Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:18:23.124607617Z"}
+{"timestamp":"2026-03-15T19:18:23.170639625Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-15T19:18:23.259043763Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:18:45.842535756Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:18:45.842542702Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:18:45.842547427Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:18:54.676839497Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:18:54.677144663Z"}
+{"timestamp":"2026-03-15T19:18:54.773013127Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:19:10.446864248Z"}
+{"timestamp":"2026-03-15T19:19:10.558548447Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:19:10.775716438Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:19:30.710636892Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:19:30.710642956Z"}
+{"level":"info","timestamp":"2026-03-15T19:19:30.710652664Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:19:41.955983040Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T19:19:42.054039664Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-15T19:19:42.197574746Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:20:02.140266704Z","level":"info"}
+{"timestamp":"2026-03-15T19:20:02.140271419Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:20:02.140276044Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:20:13.571865872Z"}
+{"level":"info","timestamp":"2026-03-15T19:20:13.689340246Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:20:13.781915068Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:20:34.175983766Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:20:34.175989163Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:20:34.175993852Z"}
+{"timestamp":"2026-03-15T19:20:45.088259434Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:20:45.179423437Z"}
+{"timestamp":"2026-03-15T19:20:45.269055001Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:20:46.899617061Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:21:00.983927013Z"}
+{"timestamp":"2026-03-15T19:21:00.983931579Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:21:01.064082957Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:21:16.750384254Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:21:16.850424407Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:21:16.939493073Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:21:32.537155148Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:21:32.611597083Z"}
+{"level":"info","timestamp":"2026-03-15T19:21:32.698821229Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:21:48.328971886Z"}
+{"timestamp":"2026-03-15T19:21:48.362840773Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:21:48.462245284Z"}
+{"timestamp":"2026-03-15T19:22:04.030729203Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:22:04.109589300Z"}
+{"timestamp":"2026-03-15T19:22:04.234195465Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:22:19.927399184Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:22:20.155389744Z","level":"info"}
+{"timestamp":"2026-03-15T19:22:20.155394939Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:22:23.414930964Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:22:25.247600956Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:22:35.664099827Z"}
+{"timestamp":"2026-03-15T19:22:35.805242616Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:22:35.859727719Z"}
+{"timestamp":"2026-03-15T19:22:51.600144343Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:22:51.600150388Z"}
+{"timestamp":"2026-03-15T19:22:51.611684652Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:23:16.235649876Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T19:23:16.235656012Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:23:16.235661657Z"}
+{"level":"info","timestamp":"2026-03-15T19:23:23.043379130Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:23:23.147846355Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:23:23.233373125Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:23:39.152916066Z"}
+{"timestamp":"2026-03-15T19:23:39.152922611Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","timestamp":"2026-03-15T19:23:39.152929501Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:23:59.106938288Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T19:23:59.106945192Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:23:59.106951638Z"}
+{"level":"info","timestamp":"2026-03-15T19:24:02.751183490Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:24:10.339120283Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:24:10.426990581Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:24:10.665719059Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:24:30.648283034Z"}
+{"timestamp":"2026-03-15T19:24:30.648287245Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:24:30.648292368Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:24:42.118891581Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T19:24:42.118901777Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:24:42.119048798Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:25:02.054367390Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:25:02.054374849Z","level":"info"}
+{"timestamp":"2026-03-15T19:25:02.054379904Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:25:13.472030030Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:25:13.559002109Z"}
+{"timestamp":"2026-03-15T19:25:13.702569838Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:25:33.952586241Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:25:33.952590712Z"}
+{"timestamp":"2026-03-15T19:25:33.952595726Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:25:39.484831926Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:25:45.090874748Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T19:25:45.167289646Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:25:45.246853430Z"}
+{"level":"info","timestamp":"2026-03-15T19:26:05.682522378Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T19:26:05.682527213Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:26:05.682532162Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:26:16.564006664Z"}
+{"timestamp":"2026-03-15T19:26:16.658998676Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:26:16.759359465Z","level":"info"}
+{"timestamp":"2026-03-15T19:26:36.884960767Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:26:36.884966192Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:26:36.884971302Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:26:48.257282963Z","level":"info"}
+{"timestamp":"2026-03-15T19:26:48.280355729Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:26:48.397873160Z"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:27:08.480542327Z"}
+{"timestamp":"2026-03-15T19:27:08.480547486Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:27:08.480552453Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:27:16.502275467Z","level":"info"}
+{"timestamp":"2026-03-15T19:27:19.693216803Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:27:19.806413203Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:27:19.902669775Z"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:27:35.795929222Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:27:35.795935344Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:27:35.795940274Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:27:51.327332413Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:27:51.414657470Z"}
+{"level":"info","timestamp":"2026-03-15T19:27:51.512089921Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:28:16.860172200Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:28:16.860181270Z"}
+{"timestamp":"2026-03-15T19:28:16.860187116Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-15T19:28:22.838179873Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:28:22.924584230Z"}
+{"level":"info","timestamp":"2026-03-15T19:28:23.067288213Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-15T19:28:47.176946415Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:28:47.176957244Z"}
+{"timestamp":"2026-03-15T19:28:47.176963421Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T19:28:54.448774848Z","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"timestamp":"2026-03-15T19:28:54.591455259Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T19:28:54.630929074Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T19:28:57.446381048Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T19:28:59.085849177Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:29:00.338173031Z"}
+{"timestamp":"2026-03-15T19:29:10.227035496Z","level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-15T19:29:10.455167705Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:29:10.455173217Z"}
+{"message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:29:25.958180164Z","level":"info"}
+{"timestamp":"2026-03-15T19:29:26.075307593Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","timestamp":"2026-03-15T19:29:26.150452349Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=28/20 WR=57.1%/35.0% PnL=$+0.78(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-15T19:29:41.826447129Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:29:41.902761588Z","level":"info"}
+{"timestamp":"2026-03-15T19:29:41.996593404Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:30:37.525451764Z"}
+{"timestamp":"2026-03-15T19:32:14.878662417Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:33:53.143435037Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T19:33:54.140991216Z"}
+{"timestamp":"2026-03-15T19:35:33.565781626Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:38:55.526039043Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","timestamp":"2026-03-15T19:42:22.599531099Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:47:34.691373031Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:51:00.736567962Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:51:01.564998322Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:54:25.992592458Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:56:04.862656899Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T19:56:05.259272820Z"}
+{"timestamp":"2026-03-15T19:57:42.795874867Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T19:59:18.386825398Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-15T20:00:56.021302478Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T20:02:37.191938420Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T20:02:38.984659605Z"}
+{"timestamp":"2026-03-15T20:02:40.290112394Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T20:04:17.408574896Z","level":"info"}
+{"timestamp":"2026-03-15T20:05:54.463399585Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T20:07:32.759279677Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T20:07:33.614040781Z"}
+{"level":"info","timestamp":"2026-03-15T20:16:22.480248728Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T20:21:34.877355080Z","level":"info"}
+{"timestamp":"2026-03-15T20:24:59.791602460Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T20:25:00.601819725Z"}
+{"timestamp":"2026-03-15T20:28:25.527661935Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T20:30:02.575949895Z"}
+{"timestamp":"2026-03-15T20:30:04.185896795Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T20:31:41.950767787Z","level":"info"}
+{"timestamp":"2026-03-15T20:33:18.231433252Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T20:34:54.688950897Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T20:36:34.576113543Z"}
+{"level":"info","timestamp":"2026-03-15T20:36:36.227139307Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T20:36:37.355883792Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T20:38:14.286027810Z"}
+{"timestamp":"2026-03-15T20:39:51.334498516Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T20:41:29.051097751Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T20:41:29.946620149Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T20:46:39.685230976Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T20:50:07.827404802Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T20:55:21.575270024Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T20:58:47.526169985Z"}
+{"timestamp":"2026-03-15T20:58:48.510496501Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T21:02:12.756140566Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T21:03:50.288098985Z"}
+{"timestamp":"2026-03-15T21:03:51.831041577Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:05:29.506941246Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:07:05.366945476Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T21:08:41.919965300Z"}
+{"level":"info","timestamp":"2026-03-15T21:10:22.073028934Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:10:23.761253440Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:10:25.318846923Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T21:13:48.650530128Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:15:26.502747173Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:15:27.350870067Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:20:36.656511486Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T21:24:04.824530015Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:29:18.914484955Z","level":"info"}
+{"timestamp":"2026-03-15T21:32:43.779916508Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:32:44.624197974Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:36:08.378008177Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:37:46.011737085Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:37:47.634462904Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:39:25.013226328Z"}
+{"timestamp":"2026-03-15T21:41:01.128062569Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T21:42:38.240821328Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:44:18.678414505Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:44:20.358426651Z"}
+{"timestamp":"2026-03-15T21:44:21.488842609Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:47:45.366591491Z"}
+{"timestamp":"2026-03-15T21:49:23.826238409Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","timestamp":"2026-03-15T21:49:24.483080285Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T21:58:12.972019067Z","level":"info"}
+{"timestamp":"2026-03-15T22:01:39.898909739Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T22:03:16.690105281Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-15T22:06:41.462678979Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:06:42.375028564Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:10:06.488402479Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T22:11:43.888368872Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:11:45.351688222Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:13:22.524240248Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:14:58.549465577Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T22:16:35.774415635Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T22:18:15.061215370Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T22:18:16.762640843Z"}
+{"timestamp":"2026-03-15T22:18:17.904839018Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:21:42.437943404Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:23:19.883359426Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:23:20.727228209Z"}
+{"timestamp":"2026-03-15T22:24:57.516893488Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T22:31:57.235415651Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:35:22.616307399Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T22:36:59.577029972Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:40:25.488191527Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:40:26.072724913Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:45:37.201774114Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:45:38.936358000Z","level":"info"}
+{"timestamp":"2026-03-15T22:47:16.554660145Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T22:48:52.836634223Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T22:50:30.027075081Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:52:10.081935861Z","level":"info"}
+{"timestamp":"2026-03-15T22:52:11.826346081Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:52:13.007499484Z","level":"info"}
+{"timestamp":"2026-03-15T22:53:49.871495433Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T22:55:26.694808254Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:57:04.484881651Z"}
+{"timestamp":"2026-03-15T22:57:05.258737966Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T22:58:42.851143732Z","level":"info"}
+{"timestamp":"2026-03-15T23:02:05.760811710Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T23:05:32.206447533Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","timestamp":"2026-03-15T23:05:33.212948383Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-15T23:08:57.258558316Z"}
+{"timestamp":"2026-03-15T23:10:36.307664095Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T23:14:02.174443525Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T23:14:03.092854239Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T23:17:27.831726010Z","level":"info"}
+{"timestamp":"2026-03-15T23:19:04.760882268Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T23:19:06.608994604Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T23:20:44.227976221Z","level":"info"}
+{"timestamp":"2026-03-15T23:22:20.558527089Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T23:23:57.807250176Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T23:25:38.473848747Z","level":"info"}
+{"timestamp":"2026-03-15T23:25:40.151157974Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T23:25:41.495818319Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-15T23:29:05.736719647Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T23:30:43.787227224Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T23:30:44.796223479Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T23:32:22.227967027Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T23:39:23.156838214Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T23:42:46.654461810Z","level":"info"}
+{"timestamp":"2026-03-15T23:44:25.882655392Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","timestamp":"2026-03-15T23:47:51.402828248Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-15T23:47:52.344827251Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T23:51:17.182028770Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T23:52:54.471042768Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T23:52:56.339292538Z","level":"info"}
+{"level":"info","timestamp":"2026-03-15T23:54:34.255469192Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T23:56:09.944127969Z"}
+{"timestamp":"2026-03-15T23:57:46.584119579Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T23:59:27.142083667Z"}
+{"timestamp":"2026-03-15T23:59:28.847589521Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-15T23:59:29.919289122Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T00:02:54.282528696Z"}
+{"timestamp":"2026-03-16T00:04:33.675614214Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-16T00:04:33.962536062Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-16T00:06:10.767477644Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-16T00:08:18.933587536Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T00:11:49.891422584Z"}
+{"level":"info","timestamp":"2026-03-16T00:11:50.036734483Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","timestamp":"2026-03-16T00:11:50.476075137Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-16T00:11:51.832274138Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] SIM buy recorded: AgentForge $50.00","timestamp":"2026-03-16T00:11:51.832280747Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T00:13:02.123784340Z","level":"info"}
+{"timestamp":"2026-03-16T00:16:24.659275095Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T00:16:56.142883506Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T00:16:56.236526848Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T00:16:56.398202361Z"}
+{"message":"[SAFETY] SIM sell: AgentForge PnL -16.7% ($-8.35) | Overall: 55.2% (29t) | Grid: 100% (3t) | Mom: 50% (26t)","level":"info","timestamp":"2026-03-16T00:16:56.398207109Z"}
+{"message":"[SAFETY] Unlock check: trades=29/20 WR=55.2%/35.0% PnL=$-7.57(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=50%/20% | overall=False grid_path=False => LOCKED","timestamp":"2026-03-16T00:16:56.398211959Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=29/20 WR=55.2%/35.0% PnL=$-7.57(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=50%/20% | overall=False grid_path=False => LOCKED","timestamp":"2026-03-16T00:26:52.398060535Z","level":"info"}
+{"timestamp":"2026-03-16T06:27:01.664259260Z","level":"info","message":"[SAFETY] Unlock check: trades=29/20 WR=55.2%/35.0% PnL=$-7.57(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=50%/20% | overall=False grid_path=False => LOCKED"}
+{"level":"info","timestamp":"2026-03-16T06:41:41.451381141Z","message":"[SAFETY] SIM buy recorded: BinanceAICLAW $50.00"}
+{"message":"[SAFETY] SIM sell: BinanceAICLAW PnL +33.4% ($+11.18) | Overall: 56.7% (30t) | Grid: 100% (3t) | Mom: 52% (27t)","timestamp":"2026-03-16T06:50:51.519426191Z","level":"info"}
+{"timestamp":"2026-03-16T06:50:51.519432171Z","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"timestamp":"2026-03-16T06:50:51.519444596Z","level":"info","message":"[SAFETY] *** AUTO-SWITCH TO REAL TRADING ***"}
+{"timestamp":"2026-03-16T06:50:51.519450837Z","message":"[SAFETY] AUTO-UNLOCKED: 30 trades, 56.7% WR, PnL $+3.60, Grid 100%/3t, Mom 52%/27t","level":"info"}
+{"level":"info","message":"[SAFETY] Daily loss limit: $30.0","timestamp":"2026-03-16T06:50:51.519457380Z"}
+{"timestamp":"2026-03-16T06:51:10.449392269Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T06:54:34.006973306Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T06:58:00.161704365Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T06:58:01.169418165Z","level":"info"}
+{"level":"info","timestamp":"2026-03-16T06:58:01.863641505Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T06:59:38.327540557Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:01:14.299922870Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T07:01:14.974412740Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:02:55.110058092Z"}
+{"timestamp":"2026-03-16T07:06:17.809297115Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:06:18.441967993Z"}
+{"timestamp":"2026-03-16T07:07:48.767517814Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:07:56.595275363Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T07:09:28.115110159Z"}
+{"level":"info","timestamp":"2026-03-16T07:09:33.099312745Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T07:11:10.583750232Z"}
+{"timestamp":"2026-03-16T07:11:12.244251751Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-16T07:12:50.178347712Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:16:12.857596770Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:17:53.605194556Z","level":"info"}
+{"level":"info","timestamp":"2026-03-16T07:17:55.857855459Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:17:56.703692020Z"}
+{"timestamp":"2026-03-16T07:21:21.617281075Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:23:01.639509933Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:24:38.807675373Z","level":"info"}
+{"timestamp":"2026-03-16T07:28:02.097719397Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-16T07:31:27.867616392Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:31:28.709276762Z"}
+{"timestamp":"2026-03-16T07:31:29.572415033Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:31:30.453955615Z"}
+{"level":"info","timestamp":"2026-03-16T07:33:07.403808268Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:34:43.582114435Z","level":"info"}
+{"timestamp":"2026-03-16T07:34:44.004293318Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:36:23.837983825Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:37:56.228308706Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:39:32.288342230Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:39:37.198264172Z","level":"info"}
+{"level":"info","timestamp":"2026-03-16T07:39:37.815631023Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T07:43:02.364002804Z"}
+{"timestamp":"2026-03-16T07:44:40.297097615Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:44:42.065446047Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T07:46:19.355291309Z"}
+{"level":"info","timestamp":"2026-03-16T07:49:42.200025098Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:51:23.519836463Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T07:51:25.792339025Z"}
+{"timestamp":"2026-03-16T07:51:26.883681523Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","timestamp":"2026-03-16T07:53:46.802120112Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-16T07:53:46.802146925Z","level":"info","message":"[SAFETY] SIM buy recorded: GRID_ETH $24.00"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:54:51.240333721Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T07:56:31.042633768Z","level":"info"}
+{"timestamp":"2026-03-16T07:58:07.639263905Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-16T07:58:57.278156088Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:01:31.911041999Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:02:58.126360474Z"}
+{"timestamp":"2026-03-16T08:04:58.180862670Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:04:59.180687157Z","level":"info"}
+{"timestamp":"2026-03-16T08:05:00.199231557Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:05:00.836800175Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:06:37.111102293Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:08:13.528307087Z"}
+{"level":"info","timestamp":"2026-03-16T08:08:14.389204427Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:09:49.216331475Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:09:54.119489440Z","level":"info"}
+{"timestamp":"2026-03-16T08:11:27.482349979Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-16T08:13:08.793707036Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-16T08:13:09.300686332Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:16:33.378410955Z","level":"info"}
+{"timestamp":"2026-03-16T08:18:11.980691262Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T08:18:13.089980865Z"}
+{"timestamp":"2026-03-16T08:19:50.884940482Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-16T08:20:58.175002094Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-16T08:23:13.775032395Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-16T08:24:54.139188499Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:24:56.374245169Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:24:57.433333200Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:25:43.562256976Z"}
+{"timestamp":"2026-03-16T08:25:43.691209851Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T08:25:43.761706987Z"}
+{"message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:25:49.043298673Z","level":"info"}
+{"level":"info","timestamp":"2026-03-16T08:25:49.139017320Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:25:49.241773618Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:26:04.833649090Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:26:04.933940824Z","level":"info"}
+{"level":"info","timestamp":"2026-03-16T08:26:05.021447825Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:26:25.636745003Z"}
+{"timestamp":"2026-03-16T08:26:25.636752332Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-16T08:26:25.636759944Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:26:34.384507580Z","level":"info"}
+{"timestamp":"2026-03-16T08:26:36.421201361Z","level":"info","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:26:36.463801948Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:26:36.604220512Z","level":"info"}
+{"timestamp":"2026-03-16T08:26:52.211408642Z","level":"info","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:26:52.325613568Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:26:52.424574996Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:27:08.141979813Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:27:08.242148883Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:27:08.335389259Z"}
+{"timestamp":"2026-03-16T08:27:24.170127362Z","level":"info","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-16T08:27:24.170138121Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:27:24.170146711Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:27:39.758251717Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T08:27:39.758258608Z"}
+{"timestamp":"2026-03-16T08:27:39.848209732Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-16T08:27:55.484997803Z","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"timestamp":"2026-03-16T08:27:55.515177466Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-16T08:27:55.634184515Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:28:11.299095288Z"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:28:11.299107930Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:28:11.666485749Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T08:28:11.666491981Z"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:28:27.073512885Z"}
+{"timestamp":"2026-03-16T08:28:27.146860154Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"timestamp":"2026-03-16T08:28:27.239752598Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:28:42.801577396Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:28:42.923924314Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:28:43.220559925Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-16T08:29:06.823337435Z"}
+{"timestamp":"2026-03-16T08:29:06.823345843Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"level":"info","timestamp":"2026-03-16T08:29:06.823352156Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:29:14.672146601Z","level":"info"}
+{"timestamp":"2026-03-16T08:29:14.672153963Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:29:14.705388675Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:29:37.208446156Z","level":"info"}
+{"timestamp":"2026-03-16T08:29:37.208455610Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:29:37.208462044Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:29:46.130213872Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:29:46.145603209Z"}
+{"level":"info","timestamp":"2026-03-16T08:29:46.242033803Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:29:51.427866221Z","level":"info"}
+{"message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:30:01.813745077Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T08:30:01.927785749Z"}
+{"timestamp":"2026-03-16T08:30:02.001969279Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"timestamp":"2026-03-16T08:30:17.693372144Z","level":"info","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"timestamp":"2026-03-16T08:30:17.795153300Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:30:17.882369621Z"}
+{"level":"info","timestamp":"2026-03-16T08:30:42.097382324Z","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:30:42.097386960Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:30:42.097392079Z"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:30:49.222233294Z"}
+{"timestamp":"2026-03-16T08:30:49.370144737Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:30:49.395413069Z"}
+{"message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:31:04.985809133Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T08:31:05.070557871Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:31:05.453432895Z","level":"info"}
+{"timestamp":"2026-03-16T08:31:26.866045347Z","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:31:26.866051927Z","level":"info"}
+{"level":"info","timestamp":"2026-03-16T08:31:26.866060371Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:31:28.174761441Z"}
+{"level":"info","timestamp":"2026-03-16T08:31:36.605823509Z","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:31:36.702455317Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:31:36.797374777Z"}
+{"level":"info","timestamp":"2026-03-16T08:31:56.907352834Z","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T08:31:56.907360201Z"}
+{"timestamp":"2026-03-16T08:31:56.907366612Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info","timestamp":"2026-03-16T08:32:08.160326232Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:32:08.224049090Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:32:08.627235082Z"}
+{"timestamp":"2026-03-16T08:32:24.072672591Z","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"timestamp":"2026-03-16T08:32:24.170906977Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T08:32:24.271165140Z"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:32:36.670958018Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:32:36.785178295Z"}
+{"message":"100.64.0.4 [16/Mar/2026:08:32:36 +0000] \"GET /safety HTTP/1.1\" 200 1096 \"-\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36\"","timestamp":"2026-03-16T08:32:36.785187250Z","level":"info"}
+{"level":"info","timestamp":"2026-03-16T08:32:39.697090039Z","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:32:39.762820643Z"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T08:32:39.865205395Z"}
+{"timestamp":"2026-03-16T08:32:55.625328116Z","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","level":"info"}
+{"timestamp":"2026-03-16T08:32:55.625332964Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:32:55.625337790Z"}
+{"message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:33:11.161311599Z","level":"info"}
+{"timestamp":"2026-03-16T08:33:11.285940350Z","level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:33:11.365760703Z","level":"info"}
+{"timestamp":"2026-03-16T08:33:27.032328992Z","level":"info","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info","timestamp":"2026-03-16T08:33:27.337928524Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:33:27.337933762Z"}
+{"message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:33:42.805576309Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:33:42.881763527Z","level":"info"}
+{"message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:33:42.988181852Z","level":"info"}
+{"level":"info","message":"[SAFETY] Unlock check: trades=30/20 WR=56.7%/35.0% PnL=$+3.60(need>$0) | Grid:3t/10 GWR=100%/50.0% MomWR=52%/20% | overall=True grid_path=False => UNLOCK","timestamp":"2026-03-16T08:33:58.710797596Z"}
+{"level":"info","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","timestamp":"2026-03-16T08:33:58.710802835Z"}
+{"timestamp":"2026-03-16T08:33:58.725879456Z","message":"[SAFETY] Unlocked but wallet $11.94 < $30.0 ÔÇö staying in SIMULATION","level":"info"}

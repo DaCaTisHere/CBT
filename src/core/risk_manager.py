@@ -84,7 +84,8 @@ class RiskManager:
                 self.logger.info("[WALLET] Using default capital for simulation")
         
         # Load from saved state if exists
-        state_file = "data/risk_state.json"
+        _persist = "/data" if os.path.isdir("/data") else "data"
+        state_file = f"{_persist}/risk_state.json"
         if os.path.exists(state_file):
             try:
                 import json
@@ -257,7 +258,9 @@ class RiskManager:
                 "saved_at": datetime.utcnow().isoformat()
             }
             
-            with open("data/risk_state.json", "w") as f:
+            _persist = "/data" if os.path.isdir("/data") else "data"
+            os.makedirs(_persist, exist_ok=True)
+            with open(f"{_persist}/risk_state.json", "w") as f:
                 json.dump(state, f, indent=2, default=str)
                 
             self.logger.debug("[RISK] State saved")

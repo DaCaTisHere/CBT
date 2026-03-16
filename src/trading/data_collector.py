@@ -96,7 +96,8 @@ class RealDataCollector:
     def __init__(self):
         self.logger = logger
         self.listings: List[ListingEvent] = []
-        self.data_dir = "data/historical"
+        _base = "/data" if os.path.isdir("/data") else "data"
+        self.data_dir = f"{_base}/historical"
         os.makedirs(self.data_dir, exist_ok=True)
         
     async def initialize(self):

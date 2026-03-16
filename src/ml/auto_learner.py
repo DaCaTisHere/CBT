@@ -75,7 +75,7 @@ class AutoLearner:
     """
     
     # Configuration
-    DATA_DIR = "data/ml"
+    DATA_DIR = "/data/ml" if os.path.isdir("/data") else "data/ml"
     TRADES_FILE = "trade_records.json"
     MODEL_FILE = "learned_patterns.json"
     MIN_TRADES_FOR_TRAINING = 20  # Minimum trades before model is useful

@@ -722,8 +722,9 @@ class PaperTrader:
                 "saved_at": datetime.utcnow().isoformat()
             }
             
-            os.makedirs("data", exist_ok=True)
-            with open("data/paper_portfolio.json", "w") as f:
+            _persist = "/data" if os.path.isdir("/data") else "data"
+            os.makedirs(_persist, exist_ok=True)
+            with open(f"{_persist}/paper_portfolio.json", "w") as f:
                 json.dump(state, f, indent=2)
                 
         except Exception as e:
@@ -732,10 +733,11 @@ class PaperTrader:
     async def _load_state(self):
         """Load portfolio state from file"""
         try:
-            if not os.path.exists("data/paper_portfolio.json"):
+            _persist = "/data" if os.path.isdir("/data") else "data"
+            if not os.path.exists(f"{_persist}/paper_portfolio.json"):
                 return
-            
-            with open("data/paper_portfolio.json", "r") as f:
+
+            with open(f"{_persist}/paper_portfolio.json", "r") as f:
                 state = json.load(f)
             
             # Restore portfolio

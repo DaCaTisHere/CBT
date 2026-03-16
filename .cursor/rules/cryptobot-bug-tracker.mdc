@@ -33,6 +33,13 @@ alwaysApply: true
 | 2026-03-15 | railway.json:8 | --simulation empêche le passage auto en réel | Flag retiré, safety manager contrôle |
 | 2026-03-15 | safety_manager.py | Pas de check capital wallet avant mode réel | Guard MIN_WALLET_USD ajouté |
 | 2026-03-15 | safety_manager.py | Pas d'auto-évolution des paramètres | auto_evolve() ajouté, exécuté toutes les 2h |
+| 2026-03-16 | paper_trader.py | Écrit dans data/ éphémère au lieu de /data/ | Corrigé vers /data/ (volume Railway) |
+| 2026-03-16 | data_collector.py | Écrit dans data/historical/ éphémère | Corrigé vers /data/historical/ |
+| 2026-03-16 | auto_learner.py | DATA_DIR=data/ml éphémère | Corrigé vers /data/ml/ |
+| 2026-03-16 | state_manager.py | STATE_FILE=data/bot_state.json éphémère | Corrigé vers /data/ |
+| 2026-03-16 | ml_model.py | model_dir=data/models éphémère | Corrigé vers /data/models/ |
+| 2026-03-16 | risk_manager.py | risk_state.json dans data/ éphémère | Corrigé vers /data/ |
+| 2026-03-16 | metrics.py | metrics.json dans CWD éphémère | Corrigé vers /data/ |
 
 ## BUGS ENCORE OUVERTS
 

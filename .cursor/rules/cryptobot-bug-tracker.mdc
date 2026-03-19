@@ -71,6 +71,19 @@ alwaysApply: true
 | 2026-03-19 | honeypot_detector.py | Mauvaise URL GoPlus (gopluslabs.io), nécessite web3, pas de tax check | Réécrit: GoPlus API only, module-level, cache 10min, fail-safe |
 | 2026-03-19 | pool_detector.py | Aucun check honeypot/scam avant signal | Ajouté honeypot_detector.check_token() avant chaque _emit_signal |
 | 2026-03-19 | dex_trader.py:sniper_buy | Aucun check honeypot avant achat sniper | Ajouté honeypot check comme safety gate avant buy() |
+| 2026-03-19 | trading_engine.py:458-464 | Factory importe HoneypotDetector (classe supprimée), DEXAggregator, WhaleTracker (modules supprimés) | Import module-level honeypot_detector, supprimé DEXAggregator/WhaleTracker |
+| 2026-03-19 | trading_engine.py:67,129,351 | datetime.now() sans timezone | Remplacé par datetime.now(timezone.utc) |
+| 2026-03-19 | sentiment_analyzer.py:69,154 | .seconds tronque à 60s au lieu de .total_seconds() | Corrigé |
+| 2026-03-19 | main.py | AUTONOMOUS_AVAILABLE dead code + autonomous_manager params | Supprimé tout le code mort |
+| 2026-03-19 | orchestrator.py:61-69 | capital_allocation référence 7 modules supprimés | Remplacé par grid:80% + sniper:20% |
+| 2026-03-19 | orchestrator.py:17 | import logging inutilisé | Supprimé |
+| 2026-03-19 | orchestrator.py:901-904 | Logs référencent DEX Aggregator et Whale Tracker supprimés | Remplacé par modules actifs |
+| 2026-03-19 | orchestrator.py:371 | import aiohttp redondant dans manage_positions | Supprimé |
+| 2026-03-19 | orchestrator.py:510 | Division par zéro si prev_close=0 | Guard ajouté |
+| 2026-03-19 | order_engine.py:269 | Bare except: attrape SystemExit | except Exception: |
+| 2026-03-19 | safety_manager.py:133 | asyncio.get_event_loop() deprecated | asyncio.get_running_loop() + RuntimeError guard |
+| 2026-03-19 | risk_manager.py:14-15 | import asyncio et timedelta inutilisés | Supprimés |
+| 2026-03-19 | risk_manager.py:256 | os.makedirs("data") redondant (path géré après) | Supprimé |
 
 ## BUGS ENCORE OUVERTS
 

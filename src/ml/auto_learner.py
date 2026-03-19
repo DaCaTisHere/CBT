@@ -13,7 +13,7 @@ The bot learns from its own mistakes and successes!
 import asyncio
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field, asdict
 import numpy as np
@@ -215,7 +215,7 @@ class AutoLearner:
         volatility_24h: float = 0.0
     ) -> TradeRecord:
         """Record a new trade entry with all features"""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         record = TradeRecord(
             symbol=symbol,
@@ -257,7 +257,7 @@ class AutoLearner:
         found = False
         for record in reversed(self.trade_records):
             if record.symbol == symbol and record.exit_time is None:
-                record.exit_time = datetime.utcnow().isoformat()
+                record.exit_time = datetime.now(timezone.utc).isoformat()
                 record.exit_price = exit_price
                 record.pnl_percent = pnl_percent
                 record.is_profitable = pnl_percent > 0
@@ -314,7 +314,7 @@ class AutoLearner:
         # Update feature weights based on correlation with profitability
         await self._learn_feature_weights(completed_trades)
         
-        self.patterns["last_trained"] = datetime.utcnow().isoformat()
+        self.patterns["last_trained"] = datetime.now(timezone.utc).isoformat()
         self.is_trained = True
         
         await self._save_patterns()
@@ -507,7 +507,7 @@ class AutoLearner:
             score += 0.05 * weights.get("volume", 0.1)
         
         # 8. Hour/day patterns
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         hour_success = self.patterns.get("hour_success", {}).get(str(now.hour), 0.5)
         day_success = self.patterns.get("day_success", {}).get(str(now.weekday()), 0.5)
         

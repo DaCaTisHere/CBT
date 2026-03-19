@@ -7,7 +7,7 @@ which new listings are likely to be profitable.
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 import numpy as np
@@ -136,7 +136,7 @@ class TradingMLModel:
         self.patterns["total_samples"] = len(training_data)
         self.patterns["profitable_samples"] = sum(1 for item in training_data if item.get("is_profitable"))
         self.patterns["profit_categories"] = profit_categories
-        self.patterns["trained_at"] = datetime.utcnow().isoformat()
+        self.patterns["trained_at"] = datetime.now(timezone.utc).isoformat()
         
         self.is_trained = True
         
@@ -295,7 +295,7 @@ class TradingMLModel:
                 "patterns": self.patterns,
                 "weights": self.weights,
                 "is_trained": self.is_trained,
-                "saved_at": datetime.utcnow().isoformat()
+                "saved_at": datetime.now(timezone.utc).isoformat()
             }
             
             with open(model_file, "w") as f:

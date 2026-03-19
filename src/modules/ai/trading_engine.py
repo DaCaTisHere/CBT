@@ -7,14 +7,11 @@ Intègre :
 3. Sentiment Analysis
 4. Smart Entry Timing
 5. Dynamic Position Sizing
-6. DEX Aggregation
-7. Whale Tracking
-8. ML Predictions
 """
 import asyncio
 import logging
 from typing import Optional, Dict, Any, List, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -64,7 +61,7 @@ class AIAnalysisResult:
     
     # Timing
     analysis_time_ms: float = 0
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class AITradingEngine:
@@ -126,7 +123,7 @@ class AITradingEngine:
         Returns:
             AIAnalysisResult avec décision et détails
         """
-        start_time = datetime.now()
+        start_time = datetime.now(timezone.utc)
         reasoning = []
         warnings = []
         
@@ -151,12 +148,17 @@ class AITradingEngine:
                     return
                 security_checks_attempted += 1
                 try:
-                    is_honeypot, hp_details = await self.honeypot_detector.is_honeypot(token_address, chain)
-                    if is_honeypot:
-                        warnings.append("HONEYPOT DETECTED")
-                        security_score = 100
+                    result = await self.honeypot_detector.check_token(token_address, chain)
+                    if not result.get("is_safe", True):
+                        hp_risk = result.get("details", {}).get("risk_score", 50)
+                        if hp_risk >= 80:
+                            warnings.append("HONEYPOT DETECTED")
+                            security_score = 100
+                        else:
+                            security_score = hp_risk
+                            reasoning.append(f"Moderate honeypot risk ({hp_risk}/100)")
                     else:
-                        hp_risk = hp_details.get("risk_score", 25)
+                        hp_risk = result.get("details", {}).get("risk_score", 25)
                         security_score = hp_risk
                         if hp_risk < 30:
                             reasoning.append("Passed honeypot check")
@@ -348,7 +350,7 @@ class AITradingEngine:
             confidence = max(0.0, min(1.0, confidence))
             
             # Calculate analysis time
-            analysis_time = (datetime.now() - start_time).total_seconds() * 1000
+            analysis_time = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
             
             # Update stats
             self._performance_stats["total_analyses"] += 1
@@ -455,31 +457,23 @@ def create_ai_trading_engine(
     """
     Crée un moteur de trading IA complet avec tous les modules.
     """
-    from ..security.honeypot_detector import HoneypotDetector
+    from ..security import honeypot_detector
     from ..security.rugpull_detector import RugPullDetector
     from .sentiment_analyzer import SentimentAnalyzer
     from .smart_entry import SmartEntryAI
     from .position_sizer import DynamicPositionSizer
-    from ..trading.dex_aggregator import DEXAggregator
-    from ..trading.whale_tracker import WhaleTracker
     
-    # Initialize all modules
-    honeypot = HoneypotDetector(web3_providers or {})
     rugpull = RugPullDetector()
     sentiment = SentimentAnalyzer()
     smart_entry = SmartEntryAI()
     position_sizer = DynamicPositionSizer(capital)
-    dex_agg = DEXAggregator(web3_providers)
-    whale = WhaleTracker()
     
     engine = AITradingEngine(
-        honeypot_detector=honeypot,
+        honeypot_detector=honeypot_detector,
         rugpull_detector=rugpull,
         sentiment_analyzer=sentiment,
         smart_entry_ai=smart_entry,
         position_sizer=position_sizer,
-        dex_aggregator=dex_agg,
-        whale_tracker=whale,
     )
     
     logger.info("🤖 AI Trading Engine initialized with all modules")

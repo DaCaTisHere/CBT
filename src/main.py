@@ -29,8 +29,6 @@ from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-AUTONOMOUS_AVAILABLE = False
-
 # Import trading mode manager for preflight checks
 try:
     from src.core.trading_mode import get_trading_mode_manager
@@ -76,23 +74,14 @@ def main(testnet: bool, simulation: bool, mode: str, duration: int):
         except EOFError:
             pass  # Non-interactive environment
     
-    # Start orchestrator with autonomous systems
     try:
         orchestrator = Orchestrator()
         
-        # Initialize autonomous manager (Supabase, AI Optimizer, etc.)
-        autonomous_manager = None
-        if AUTONOMOUS_AVAILABLE:
-            autonomous_manager = AutonomousManager()
-            logger.info("[AUTO] Autonomous systems manager created")
-        
         if duration:
-            # Run for specific duration (testing)
             logger.info(f"[TIMER] Running for {duration} seconds...")
-            asyncio.run(run_with_duration(orchestrator, duration, autonomous_manager))
+            asyncio.run(run_with_duration(orchestrator, duration))
         else:
-            # Run until interrupted
-            asyncio.run(run_with_autonomous(orchestrator, autonomous_manager))
+            asyncio.run(run_with_autonomous(orchestrator))
             
     except KeyboardInterrupt:
         logger.info("[STOP] Interrupted by user")
@@ -101,10 +90,9 @@ def main(testnet: bool, simulation: bool, mode: str, duration: int):
         sys.exit(1)
 
 
-async def run_with_autonomous(orchestrator: Orchestrator, autonomous_manager=None):
-    """Run orchestrator with autonomous systems"""
+async def run_with_autonomous(orchestrator: Orchestrator):
+    """Run orchestrator"""
     try:
-        # === PREFLIGHT CHECKS FOR REAL TRADING ===
         if TRADING_MODE_AVAILABLE and not settings.SIMULATION_MODE and not settings.DRY_RUN:
             trading_mode = get_trading_mode_manager()
             logger.info("")
@@ -122,42 +110,23 @@ async def run_with_autonomous(orchestrator: Orchestrator, autonomous_manager=Non
             logger.warning("💰 REAL MONEY IS AT RISK - Trade responsibly!")
             logger.info("")
         
-        # Initialize autonomous systems first
-        if autonomous_manager:
-            logger.info("[AUTO] Starting autonomous systems (Supabase, AI Optimizer)...")
-            await autonomous_manager.initialize()
-            logger.info("[AUTO] Autonomous systems initialized")
-        
-        # Start orchestrator
         await orchestrator.start()
         
     except Exception as e:
         logger.error(f"[ERROR] Error in main loop: {e}", exc_info=True)
         raise
-    finally:
-        # Cleanup autonomous systems
-        if autonomous_manager:
-            await autonomous_manager.stop()
 
 
-async def run_with_duration(orchestrator: Orchestrator, duration: int, autonomous_manager=None):
+async def run_with_duration(orchestrator: Orchestrator, duration: int):
     """Run orchestrator for a specific duration"""
     try:
-        # Initialize autonomous systems first
-        if autonomous_manager:
-            await autonomous_manager.initialize()
-        
-        # Start orchestrator in background
         task = asyncio.create_task(orchestrator.start())
         
-        # Wait for duration
         await asyncio.sleep(duration)
         
-        # Stop gracefully
         logger.info("[TIMER] Duration reached, stopping...")
         await orchestrator.stop()
         
-        # Cancel task
         task.cancel()
         try:
             await task
@@ -167,10 +136,6 @@ async def run_with_duration(orchestrator: Orchestrator, duration: int, autonomou
     except Exception as e:
         logger.error(f"Error during timed run: {e}")
         await orchestrator.stop()
-    finally:
-        # Cleanup autonomous systems
-        if autonomous_manager:
-            await autonomous_manager.stop()
 
 
 def print_banner():

@@ -66,7 +66,7 @@ class SentimentAnalyzer:
         
         if cache_key in self._cache:
             cached = self._cache[cache_key]
-            if (datetime.now() - cached["timestamp"]).seconds < self._cache_ttl:
+            if (datetime.now() - cached["timestamp"]).total_seconds() < self._cache_ttl:
                 return cached["score"], cached["details"]
         
         details = {
@@ -151,7 +151,7 @@ class SentimentAnalyzer:
         """Récupère le Fear & Greed Index crypto."""
         # Use cache if recent
         if self._fear_greed_cache and self._fear_greed_updated:
-            if (datetime.now() - self._fear_greed_updated).seconds < 3600:  # 1 hour cache
+            if (datetime.now() - self._fear_greed_updated).total_seconds() < 3600:
                 return self._fear_greed_cache
         
         try:

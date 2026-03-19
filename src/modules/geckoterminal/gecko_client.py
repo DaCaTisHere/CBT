@@ -11,7 +11,7 @@ Rate Limit: 30 calls/minute (free tier)
 import asyncio
 import aiohttp
 from typing import Dict, List, Optional, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
 
 from src.utils.logger import get_logger
@@ -114,7 +114,7 @@ class GeckoTerminalClient:
             
     async def _rate_limit(self):
         """Enforce rate limiting"""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         # Remove old calls
         self._call_times = [t for t in self._call_times 
@@ -133,13 +133,13 @@ class GeckoTerminalClient:
         """Get cached data if still valid"""
         if key in self._cache:
             data, timestamp = self._cache[key]
-            if datetime.utcnow() - timestamp < timedelta(seconds=self._cache_ttl):
+            if datetime.now(timezone.utc) - timestamp < timedelta(seconds=self._cache_ttl):
                 return data
         return None
         
     def _set_cache(self, key: str, data: Any):
         """Cache data"""
-        self._cache[key] = (data, datetime.utcnow())
+        self._cache[key] = (data, datetime.now(timezone.utc))
         
     async def _get(self, endpoint: str) -> Optional[Dict]:
         """Make GET request with rate limiting, caching, and smart backoff"""
@@ -149,8 +149,8 @@ class GeckoTerminalClient:
             return cached
         
         # Check if we're in backoff period
-        if self._backoff_until and datetime.utcnow() < self._backoff_until:
-            remaining = (self._backoff_until - datetime.utcnow()).total_seconds()
+        if self._backoff_until and datetime.now(timezone.utc) < self._backoff_until:
+            remaining = (self._backoff_until - datetime.now(timezone.utc)).total_seconds()
             if remaining > 0:
                 return None
             else:
@@ -172,7 +172,7 @@ class GeckoTerminalClient:
                     # Smart backoff: 20s first, then 40s, max 90s
                     self._consecutive_429s += 1
                     backoff_time = min(20 * (2 ** (self._consecutive_429s - 1)), 90)
-                    self._backoff_until = datetime.utcnow() + timedelta(seconds=backoff_time)
+                    self._backoff_until = datetime.now(timezone.utc) + timedelta(seconds=backoff_time)
                     self.logger.warning(f"[GECKO] Rate limited - backing off {backoff_time}s (429 #{self._consecutive_429s})")
                     return None
                 elif response.status == 404:

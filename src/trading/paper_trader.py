@@ -7,7 +7,7 @@ Includes auto-learning integration for continuous improvement.
 
 import asyncio
 import aiohttp
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
@@ -236,11 +236,11 @@ class PaperTrader:
             symbol=symbol,
             entry_price=price,
             amount=amount,
-            entry_time=datetime.utcnow(),
+            entry_time=datetime.now(timezone.utc),
             side="BUY",
             stop_loss=price * (1 - sl_pct),
             take_profit=price * (1 + self.default_take_profit),
-            last_movement_time=datetime.utcnow(),
+            last_movement_time=datetime.now(timezone.utc),
             signal_features=signal_features  # Store for ML learning
         )
         
@@ -327,7 +327,7 @@ class PaperTrader:
             exit_price=price,
             amount=position.amount,
             entry_time=position.entry_time,
-            exit_time=datetime.utcnow(),
+            exit_time=datetime.now(timezone.utc),
             pnl=pnl,
             pnl_percent=pnl_percent,
             reason=reason
@@ -391,11 +391,11 @@ class PaperTrader:
             
             # Check for significant price movement (> 1%)
             if abs(pnl_pct) > 1.0:
-                position.last_movement_time = datetime.utcnow()
+                position.last_movement_time = datetime.now(timezone.utc)
             
             # ===== TIMEOUT FOR STAGNANT POSITIONS - SWING TRADE v6.0 =====
             # Swing trades can hold longer - 12h timeout (was 3h)
-            time_since_movement = (datetime.utcnow() - position.last_movement_time).total_seconds()
+            time_since_movement = (datetime.now(timezone.utc) - position.last_movement_time).total_seconds()
             hours_since_movement = time_since_movement / 3600
             
             if hours_since_movement >= 12 and abs(pnl_pct) < 1.5:  # 12h timeout, 1.5% threshold
@@ -604,7 +604,7 @@ class PaperTrader:
             entry_price=listing_price,
             amount=amount,
             value_usd=amount_usd,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.now(timezone.utc)
         )
     
     async def _fetch_real_price(self, symbol: str) -> Optional[float]:
@@ -719,7 +719,7 @@ class PaperTrader:
                     for t in self.portfolio.trade_history[-100:]  # Keep last 100
                 ],
                 "trade_counter": self.trade_counter,
-                "saved_at": datetime.utcnow().isoformat()
+                "saved_at": datetime.now(timezone.utc).isoformat()
             }
             
             _persist = "/data" if os.path.isdir("/data") else "data"

@@ -14,8 +14,6 @@ import signal
 import aiohttp
 from typing import Dict, Optional, Any
 from datetime import datetime, timezone
-import logging
-
 from src.core.config import settings
 from src.core.risk_manager import RiskManager
 from src.utils.logger import get_logger
@@ -57,15 +55,9 @@ class Orchestrator:
         
         Orchestrator._instance = self
         
-        # Capital allocation (percentage per strategy)
         self.capital_allocation = {
+            "grid": 80.0,
             "sniper": 20.0,
-            "news_trader": 25.0,
-            "sentiment": 15.0,
-            "ml_predictor": 15.0,
-            "arbitrage": 15.0,
-            "defi_optimizer": 5.0,
-            "copy_trading": 5.0,
         }
         
         self.logger.info(f"[ORCHESTRATOR] Initialized - {settings.PROJECT_NAME} v{settings.VERSION}")
@@ -368,7 +360,6 @@ class Orchestrator:
                 # Start position manager to auto-sell based on SL/TP
                 async def manage_positions():
                     """Auto-manage positions - check SL/TP every 30 seconds + force close excess"""
-                    import aiohttp
                     MAX_POSITIONS = 5
                     
                     while self.is_running:
@@ -433,7 +424,7 @@ class Orchestrator:
             try:
                 from src.modules.geckoterminal.pool_detector import PoolDetector, PoolSignal
                 from src.trading.dex_trader import DEXTrader, get_dex_trader
-                from src.modules.ai.trading_engine import create_ai_trading_engine, TradeDecision
+                from src.modules.ai.trading_engine import create_ai_trading_engine
                 
                 pool_detector = PoolDetector()
                 await pool_detector.initialize()
@@ -507,6 +498,8 @@ class Orchestrator:
                                     if len(data) >= 2:
                                         prev_close = float(data[0][4])
                                         curr_close = float(data[1][4])
+                                        if prev_close <= 0:
+                                            return False
                                         change_pct = ((curr_close - prev_close) / prev_close) * 100
                                         is_dumping = change_pct < -3.0
                                         _btc_price_cache["price"] = curr_close
@@ -900,8 +893,8 @@ class Orchestrator:
                 self.logger.info(f"[STRATEGY]   Max {5} positions | Check every 30s | BTC trend gate | Min liq $10k")
                 self.logger.info("=" * 60)
                 self.logger.info("[AI]   ✓ Position Sizer - Dynamic risk management")
-                self.logger.info("[AI]   ✓ DEX Aggregator - Best price routing")
-                self.logger.info("[AI]   ✓ Whale Tracker - Big money detection")
+                self.logger.info("[AI]   ✓ Honeypot Detector - Scam token detection")
+                self.logger.info("[AI]   ✓ Sentiment Analyzer - Market sentiment")
                 
             except Exception as e:
                 self.logger.warning(f"[GECKO] Could not start pool detector: {e}")

@@ -1,14 +1,11 @@
 """
 Trading Strategy Modules
 
-7 specialized trading strategies:
-1. Sniper Bot - DEX new token launches
-2. News Trader - Exchange listings announcements
-3. Sentiment Analyzer - Social media analysis
-4. ML Predictor - Machine learning predictions
-5. Arbitrage Engine - Cross-exchange arbitrage
-6. DeFi Optimizer - Yield farming optimization
-7. Copy Trading - Smart money following
+Active modules:
+1. Momentum Detector - TA signals on whitelisted crypto pairs
+2. AI Trading Engine - AI-powered trade analysis before execution
+3. GeckoTerminal Pool Detector - New pool discovery (BSC + Base)
+4. Honeypot Detector - GoPlus API scam/rug detection
 """
 
 __all__ = []

@@ -22,9 +22,9 @@ def set_dashboard_buffer(buf):
 def _dashboard_bridge(logger, method_name, event_dict):
     """Structlog processor that copies log entries to the dashboard ring buffer."""
     if _dashboard_buffer is not None:
-        from datetime import datetime
+        from datetime import datetime, timezone
         _dashboard_buffer.append({
-            "ts": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+            "ts": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
             "level": event_dict.get("level", method_name).upper(),
             "name": event_dict.get("logger", ""),
             "msg": event_dict.get("event", ""),

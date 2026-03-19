@@ -130,11 +130,10 @@ class SafetyManager:
             return
         try:
             import asyncio
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.create_task(self._notifier(event_type, data))
-            else:
-                loop.run_until_complete(self._notifier(event_type, data))
+            loop = asyncio.get_running_loop()
+            loop.create_task(self._notifier(event_type, data))
+        except RuntimeError:
+            pass
         except Exception as e:
             logger.debug(f"[SAFETY] Notifier fire error: {e}")
     

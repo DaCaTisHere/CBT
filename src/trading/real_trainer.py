@@ -9,7 +9,7 @@ This is the REAL training that:
 """
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 
 from src.trading.data_collector import RealDataCollector
@@ -63,7 +63,7 @@ class RealTrainer:
         self.logger.info("=" * 60)
         
         results = {
-            "started_at": datetime.utcnow().isoformat(),
+            "started_at": datetime.now(timezone.utc).isoformat(),
             "data_collection": {},
             "ml_training": {},
             "backtest": {},
@@ -120,7 +120,7 @@ class RealTrainer:
                 results["status"] = "needs_improvement"
                 results["recommendation"] = "Model needs more data or parameter tuning"
             
-            results["completed_at"] = datetime.utcnow().isoformat()
+            results["completed_at"] = datetime.now(timezone.utc).isoformat()
             
             self.training_stats = results
             
@@ -237,15 +237,15 @@ async def _continuous_learning_loop(trainer: RealTrainer):
     and retrains periodically
     """
     retrain_interval = 3600 * 6  # Retrain every 6 hours
-    last_retrain = datetime.utcnow()
+    last_retrain = datetime.now(timezone.utc)
     
     while True:
         try:
             # Check if time to retrain
-            if (datetime.utcnow() - last_retrain).total_seconds() > retrain_interval:
+            if (datetime.now(timezone.utc) - last_retrain).total_seconds() > retrain_interval:
                 logger.info("[REAL-TRAIN] Scheduled retraining...")
                 await trainer.run_initial_training()
-                last_retrain = datetime.utcnow()
+                last_retrain = datetime.now(timezone.utc)
             
             # Sleep before next check
             await asyncio.sleep(300)  # Check every 5 minutes

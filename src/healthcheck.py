@@ -982,7 +982,15 @@ async def index(request):
             <div class="modules-grid">
                 <div class="module-item">
                     <div class="module-icon"></div>
+                    <span>📈 Grid Trader (ETH/BNB)</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"></div>
                     <span>🎯 Pool Detector (BSC + Base)</span>
+                </div>
+                <div class="module-item">
+                    <div class="module-icon"></div>
+                    <span>📊 Momentum Detector</span>
                 </div>
                 <div class="module-item">
                     <div class="module-icon"></div>
@@ -990,43 +998,15 @@ async def index(request):
                 </div>
                 <div class="module-item">
                     <div class="module-icon"></div>
-                    <span>🛡️ Honeypot Detector</span>
+                    <span>🛡️ Safety Manager</span>
                 </div>
                 <div class="module-item">
                     <div class="module-icon"></div>
-                    <span>⚠️ Rug Pull Detector</span>
+                    <span>📱 Telegram Bot</span>
                 </div>
                 <div class="module-item">
                     <div class="module-icon"></div>
-                    <span>📊 Sentiment Analyzer</span>
-                </div>
-                <div class="module-item">
-                    <div class="module-icon"></div>
-                    <span>🎯 Smart Entry AI</span>
-                </div>
-                <div class="module-item">
-                    <div class="module-icon"></div>
-                    <span>📏 Position Sizer</span>
-                </div>
-                <div class="module-item">
-                    <div class="module-icon"></div>
-                    <span>🔄 DEX Aggregator</span>
-                </div>
-                <div class="module-item">
-                    <div class="module-icon"></div>
-                    <span>🐋 Whale Tracker</span>
-                </div>
-                <div class="module-item">
-                    <div class="module-icon"></div>
-                    <span>💰 DEX Trader (REAL)</span>
-                </div>
-                <div class="module-item">
-                    <div class="module-icon"></div>
-                    <span>📰 News Trader</span>
-                </div>
-                <div class="module-item">
-                    <div class="module-icon"></div>
-                    <span>🧠 ML Auto-Learner</span>
+                    <span>🔒 Honeypot Detector</span>
                 </div>
             </div>
         </div>

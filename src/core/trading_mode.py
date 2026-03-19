@@ -7,7 +7,7 @@ IMPORTANT: This module ensures all safety checks are passed before real trading.
 import asyncio
 from typing import Dict, List, Tuple, Optional
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timezone
 
 from src.core.config import settings
 from src.utils.logger import get_logger
@@ -102,7 +102,7 @@ class TradingModeManager:
         
         self.preflight_passed = all_passed
         self.preflight_results = results
-        self.last_check_time = datetime.utcnow()
+        self.last_check_time = datetime.now(timezone.utc)
         
         return all_passed, results
     

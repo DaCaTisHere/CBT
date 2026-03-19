@@ -266,7 +266,7 @@ class OrderEngine:
             try:
                 # Fallback: create simple limit sell at stop price
                 self.logger.info(f"[SL] Attempting alternative stop method...")
-            except:
+            except Exception:
                 pass
     
     async def _set_take_profit(self, exchange: ccxt.Exchange, symbol: str, order_id: str, price: Decimal):

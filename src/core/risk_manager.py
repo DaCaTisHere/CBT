@@ -11,8 +11,7 @@ Responsibilities:
 
 from decimal import Decimal
 from typing import Dict, Optional
-from datetime import datetime, timedelta, timezone
-import asyncio
+from datetime import datetime, timezone
 
 from src.core.config import settings
 from src.utils.logger import get_logger
@@ -253,7 +252,6 @@ class RiskManager:
         import os
         
         try:
-            os.makedirs("data", exist_ok=True)
             state = {
                 "initial_capital": float(self.initial_capital),
                 "current_capital": float(self.current_capital),

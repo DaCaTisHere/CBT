@@ -9,7 +9,7 @@ import asyncio
 import json
 import aiohttp
 from typing import Dict, List, Callable, Optional, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 from src.utils.logger import get_logger
 
@@ -158,7 +158,7 @@ class BinanceWebSocket:
             
             # Update price cache
             self.prices[symbol] = price
-            self.last_update[symbol] = datetime.utcnow()
+            self.last_update[symbol] = datetime.now(timezone.utc)
             
             # Build price update object
             price_update = {
@@ -166,7 +166,7 @@ class BinanceWebSocket:
                 "price": price,
                 "change_24h_pct": change_pct,
                 "volume_24h": volume,
-                "timestamp": datetime.utcnow()
+                "timestamp": datetime.now(timezone.utc)
             }
             
             # Notify callbacks

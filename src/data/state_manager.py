@@ -7,7 +7,7 @@ Saves and loads bot state from database/file to survive restarts.
 import json
 import os
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, asdict
 
@@ -47,7 +47,7 @@ class BotState:
         if self.trade_history is None:
             self.trade_history = []
         if self.started_at is None:
-            self.started_at = datetime.utcnow().isoformat()
+            self.started_at = datetime.now(timezone.utc).isoformat()
 
 
 class StateManager:
@@ -112,7 +112,7 @@ class StateManager:
         """Save current state to storage"""
         try:
             # Update timestamp
-            self.state.last_save = datetime.utcnow().isoformat()
+            self.state.last_save = datetime.now(timezone.utc).isoformat()
             
             # Create backup of existing file
             if os.path.exists(self.STATE_FILE):

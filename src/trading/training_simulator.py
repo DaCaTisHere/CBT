@@ -6,7 +6,7 @@ Simulates market conditions and executes paper trades to train the bot.
 
 import asyncio
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any
 
 from src.trading.paper_trader import get_paper_trader
@@ -52,7 +52,7 @@ async def simulate_listing_event() -> Dict[str, Any]:
         "exchange": listing["exchange"],
         "price": price,
         "type": listing["type"],
-        "timestamp": datetime.utcnow()
+        "timestamp": datetime.now(timezone.utc)
     }
 
 

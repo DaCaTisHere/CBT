@@ -14,7 +14,7 @@ IMPORTANT: Requires WALLET_PRIVATE_KEY and RPC URLs to be configured
 import asyncio
 from typing import Dict, Optional, Any, Tuple
 from decimal import Decimal
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
 from enum import Enum
 
@@ -50,7 +50,7 @@ class DEXTrade:
     
     def __post_init__(self):
         if self.timestamp is None:
-            self.timestamp = datetime.utcnow()
+            self.timestamp = datetime.now(timezone.utc)
 
 
 class DEXTrader:
@@ -491,7 +491,7 @@ class DEXTrader:
                     gas_cost_native = float(self.ESTIMATED_GAS_PER_TRADE.get(network, Decimal("0.001")))
                     gas_cost_usd = gas_cost_native * self._get_native_price_usd(network)
                     effective_usd = amount_usd * (1 - slippage_pct - dex_fee_pct) - gas_cost_usd
-                    effective_usd = max(effective_usd, amount_usd * 0.5)
+                    effective_usd = max(effective_usd, 0)
                     sim_amount = Decimal(str(effective_usd)) / Decimal(str(sim_price))
                     amount_out_raw = int(sim_amount * Decimal(10 ** token_decimals))
                     tx_hash = "SIM_" + hashlib.sha256(f"sim-buy-{token_address}-{_t.time()}".encode()).hexdigest()[:60]
@@ -847,7 +847,7 @@ class DEXTrader:
                 path = [token_in_checksum, weth_checksum, token_out_checksum]
             
             # Short deadline = MEV protection (sandwich attacks need time)
-            deadline = int(datetime.utcnow().timestamp()) + 120  # 2 min max
+            deadline = int(datetime.now(timezone.utc).timestamp()) + 120  # 2 min max
             
             # Amount with 18 decimals (simplified - should check actual decimals)
             amount_in_wei = int(amount_in * Decimal(10**18))
@@ -1211,7 +1211,7 @@ class DEXTrader:
             token_in_cs = w3.to_checksum_address(token_in)
             token_out_cs = w3.to_checksum_address(token_out)
             amount_in_wei = int(amount_in * Decimal(10**18))
-            deadline = int(datetime.utcnow().timestamp()) + 120  # 2 min MEV protection
+            deadline = int(datetime.now(timezone.utc).timestamp()) + 120  # 2 min MEV protection
             
             # Try each fee tier
             for fee in self.V3_FEE_TIERS:
@@ -1389,8 +1389,8 @@ class DEXTrader:
             if not w3:
                 return False
             
-            start = datetime.utcnow()
-            while (datetime.utcnow() - start).total_seconds() < timeout:
+            start = datetime.now(timezone.utc)
+            while (datetime.now(timezone.utc) - start).total_seconds() < timeout:
                 try:
                     receipt = w3.eth.get_transaction_receipt(tx_hash)
                     if receipt:
@@ -1482,6 +1482,16 @@ class DEXTrader:
         - Tight stop-loss
         - Maximum hold time
         """
+        from src.modules.security import honeypot_detector
+
+        safety_check = await honeypot_detector.check_token(token_address, network)
+        if not safety_check["is_safe"]:
+            self.logger.warning(
+                f"[SNIPER] 🍯 BUY BLOCKED — {token_symbol or token_address[:16]} on {network.upper()} "
+                f"failed honeypot check: {safety_check['reasons']} (risk={safety_check['risk_level']})"
+            )
+            return None
+
         trade = await self.buy(
             network=network,
             token_address=token_address,
@@ -1499,14 +1509,14 @@ class DEXTrader:
                 "entry_price": trade.price_usd,
                 "highest_price": trade.price_usd,
                 "amount": trade.amount_out,
-                "entry_time": datetime.utcnow(),
+                "entry_time": datetime.now(timezone.utc),
                 "tp1_price": trade.price_usd * (1 + tp1_pct / 100),
                 "tp2_price": trade.price_usd * (1 + tp2_pct / 100),
                 "tp3_price": trade.price_usd * (1 + tp3_pct / 100),
                 "sl_price": trade.price_usd * (1 - sl_pct / 100),
                 "trailing_pct": sl_pct,
                 "atr_prices": [trade.price_usd],  # price samples for ATR calc
-                "max_hold_until": datetime.utcnow() + timedelta(hours=max_hold_hours),
+                "max_hold_until": datetime.now(timezone.utc) + timedelta(hours=max_hold_hours),
                 "tp1_hit": False,
                 "tp2_hit": False,
                 "tp3_hit": False,
@@ -1618,11 +1628,11 @@ class DEXTrader:
                 elif current_price <= pos["sl_price"]:
                     close_reason = f"TRAILING STOP ({pnl_pct:+.1f}%)"
                     should_close = True
-                elif datetime.utcnow() >= pos["max_hold_until"]:
+                elif datetime.now(timezone.utc) >= pos["max_hold_until"]:
                     close_reason = f"MAX HOLD ({pnl_pct:+.1f}%)"
                     should_close = True
                 elif pnl_pct < -10.0:
-                    hold_minutes = (datetime.utcnow() - pos["entry_time"]).total_seconds() / 60
+                    hold_minutes = (datetime.now(timezone.utc) - pos["entry_time"]).total_seconds() / 60
                     if hold_minutes >= 15:
                         close_reason = f"TIME+LOSS EXIT ({pnl_pct:+.1f}% after {hold_minutes:.0f}min)"
                         should_close = True

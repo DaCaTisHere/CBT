@@ -1,0 +1,24 @@
+v10.0 Major audit: security hardening, honeypot detection, dead code cleanup
+
+CRITICAL FIXES:
+- Dockerfile: SIMULATION_MODE=true (was false, overriding config.py safe default)
+- Untrack .env from git (private keys were in commit history)
+- Dashboard: bearer token auth on sensitive endpoints, mutating routes changed to POST
+- Honeypot detector: GoPlus API integration blocks honeypot/high-tax tokens before buy
+
+BUG FIXES (27 fixes):
+- Replace all datetime.utcnow() with datetime.now(timezone.utc) (~60 occurrences across 10 files)
+- Fix DEXTrader singleton violation in orchestrator (was creating new instance)
+- Fix division-by-zero guards in orchestrator, risk_manager, grid_trader
+- Fix safety_manager: live Binance prices (was hardcoded BNB=$660/ETH=$2100), persist auto_evolve params
+- Fix risk_manager: 30% drawdown circuit breaker now blocks trades (was log-only)
+- Fix grid_trader: record_sell signature + div/zero guards
+- Fix dex_trader: remove simulation price floor that embellished results
+- Fix pool_detector: standardize score thresholds (45/60)
+- Fix momentum_detector: remove JUPUSDT duplicate in whitelist
+- Replace print() with logger in main.py, remove debug log
+
+CLEANUP:
+- Delete 35 orphaned files (~5000 lines of dead code)
+- Remove unused modules: sniper, sentiment, news_trader, arbitrage, copy_trading, defi_optimizer, ml_predictor, whale_tracker, dex_aggregator, metrics, market_sources, autonomous_manager
+- Clean up stale imports in orchestrator, main, config

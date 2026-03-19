@@ -82,22 +82,6 @@ class Settings(BaseSettings):
     MAX_SLIPPAGE_PCT: float = Field(default=2.0, ge=0.0, le=100.0)
     
     # ==========================================
-    # FEATURE FLAGS (Enable/Disable Modules)
-    # ==========================================
-    ENABLE_SNIPER: bool = Field(default=False)
-    ENABLE_NEWS_TRADER: bool = Field(default=True)
-    ENABLE_SENTIMENT: bool = Field(default=False)
-    ENABLE_ML_PREDICTOR: bool = Field(default=False)
-    ENABLE_ARBITRAGE: bool = Field(default=False)
-    ENABLE_DEFI_OPTIMIZER: bool = Field(default=False)
-    ENABLE_COPY_TRADING: bool = Field(default=False)
-    
-    # News Trader sources (sub-features)
-    ENABLE_BINANCE_NEWS: bool = Field(default=True)
-    ENABLE_COINBASE_NEWS: bool = Field(default=True)
-    ENABLE_TWITTER_NEWS: bool = Field(default=False)
-    
-    # ==========================================
     # EXTERNAL APIs (Optional)
     # ==========================================
     TWITTER_API_KEY: Optional[str] = None

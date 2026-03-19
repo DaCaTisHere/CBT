@@ -39,11 +39,14 @@ main.py → Orchestrator → SafetyManager (singleton)
                        → Healthcheck server
 ```
 
-## Modules INACTIFS (Supabase non provisionné)
+## Modules supprimés (code mort nettoyé le 19/03/2026)
+~5000 lignes supprimées, 35 fichiers orphelins retirés :
 - AutonomousManager, AIOptimizer, ParameterOptimizer, AutoHealer, SmartAlerts
-- Modules désactivés : SniperBot, NewsTrader, SentimentAnalyzer, MLPredictor, ArbitrageEngine, CopyTrader
+- SniperBot, NewsTrader, SentimentAnalyzer, MLPredictor, ArbitrageEngine, CopyTrader
+- PaperTrader, DataCollector, AutoLearner, StateManager, MLModel, Metrics
+- gecko_client.py (remplacé par DexScreener dans pool_detector)
 
 ## Déploiement
 - Railway (Dockerfile, port 8080)
-- `railway.json` → `python src/main.py --simulation`
+- `railway.json` → `python src/main.py` (safety_manager contrôle sim/real, plus de flag --simulation)
 - GitHub repo : DaCaTisHere/CBT

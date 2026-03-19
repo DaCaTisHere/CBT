@@ -13,7 +13,7 @@ import asyncio
 import signal
 import aiohttp
 from typing import Dict, Optional, Any
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 from src.core.config import settings
@@ -21,14 +21,6 @@ from src.core.risk_manager import RiskManager
 from src.utils.logger import get_logger
 from src.data.storage.database import Database
 
-# Strategy modules (SniperBot requires web3, may be a dummy if not installed)
-from src.modules.sniper import SniperBot
-from src.modules.news_trader.news_trader import NewsTrader
-from src.modules.sentiment.sentiment_analyzer import SentimentAnalyzer
-from src.modules.ml_predictor.ml_predictor import MLPredictor
-from src.modules.arbitrage.arbitrage_engine import ArbitrageEngine
-from src.modules.defi_optimizer.defi_optimizer import DeFiOptimizer
-from src.modules.copy_trading.copy_trader import CopyTrader
 from src.execution.order_engine import OrderEngine
 from src.execution.wallet_manager import WalletManager
 
@@ -118,103 +110,6 @@ class Orchestrator:
     async def _initialize_modules(self):
         """Initialize enabled strategy modules"""
         self.logger.info("[MODULES] Initializing strategy modules...")
-        
-        # Module 1: Sniper Bot
-        if settings.ENABLE_SNIPER:
-            try:
-                self.logger.info("   Sniper Bot: ENABLED")
-                self.modules["sniper"] = SniperBot(
-                    risk_manager=self.risk_manager,
-                    order_engine=self.order_engine,
-                    wallet_manager=self.wallet_manager
-                )
-                await self.modules["sniper"].initialize()
-                self.logger.info("   ✅ Sniper Bot initialized")
-            except Exception as e:
-                self.logger.error(f"   ❌ Sniper Bot initialization failed: {e}")
-                self.modules["sniper"] = None
-        
-        # Module 2: News Trader
-        if settings.ENABLE_NEWS_TRADER:
-            try:
-                self.logger.info("   News Trader: ENABLED")
-                self.modules["news_trader"] = NewsTrader(
-                    risk_manager=self.risk_manager,
-                    order_engine=self.order_engine
-                )
-                await self.modules["news_trader"].initialize()
-                self.logger.info("   ✅ News Trader initialized")
-            except Exception as e:
-                self.logger.error(f"   ❌ News Trader initialization failed: {e}")
-                self.modules["news_trader"] = None
-        
-        # Module 3: Sentiment Analyzer
-        if settings.ENABLE_SENTIMENT:
-            try:
-                self.logger.info("   Sentiment Analyzer: ENABLED")
-                self.modules["sentiment"] = SentimentAnalyzer(
-                    risk_manager=self.risk_manager
-                )
-                await self.modules["sentiment"].initialize()
-                self.logger.info("   ✅ Sentiment Analyzer initialized")
-            except Exception as e:
-                self.logger.error(f"   ❌ Sentiment Analyzer initialization failed: {e}")
-                self.modules["sentiment"] = None
-        
-        # Module 4: ML Predictor
-        if settings.ENABLE_ML_PREDICTOR:
-            try:
-                self.logger.info("   ML Predictor: ENABLED")
-                self.modules["ml_predictor"] = MLPredictor(
-                    risk_manager=self.risk_manager
-                )
-                await self.modules["ml_predictor"].initialize()
-                self.logger.info("   ✅ ML Predictor initialized")
-            except Exception as e:
-                self.logger.error(f"   ❌ ML Predictor initialization failed: {e}")
-                self.modules["ml_predictor"] = None
-        
-        # Module 5: Arbitrage Engine
-        if settings.ENABLE_ARBITRAGE:
-            try:
-                self.logger.info("   Arbitrage Engine: ENABLED")
-                self.modules["arbitrage"] = ArbitrageEngine(
-                    risk_manager=self.risk_manager,
-                    order_engine=self.order_engine
-                )
-                await self.modules["arbitrage"].initialize()
-                self.logger.info("   ✅ Arbitrage Engine initialized")
-            except Exception as e:
-                self.logger.error(f"   ❌ Arbitrage Engine initialization failed: {e}")
-                self.modules["arbitrage"] = None
-        
-        # Module 6: DeFi Optimizer
-        if settings.ENABLE_DEFI_OPTIMIZER:
-            try:
-                self.logger.info("   DeFi Optimizer: ENABLED")
-                self.modules["defi_optimizer"] = DeFiOptimizer(
-                    risk_manager=self.risk_manager
-                )
-                await self.modules["defi_optimizer"].initialize()
-                self.logger.info("   ✅ DeFi Optimizer initialized")
-            except Exception as e:
-                self.logger.error(f"   ❌ DeFi Optimizer initialization failed: {e}")
-                self.modules["defi_optimizer"] = None
-        
-        # Module 7: Copy Trading
-        if settings.ENABLE_COPY_TRADING:
-            try:
-                self.logger.info("   Copy Trading: ENABLED")
-                self.modules["copy_trading"] = CopyTrader(
-                    risk_manager=self.risk_manager,
-                    order_engine=self.order_engine
-                )
-                await self.modules["copy_trading"].initialize()
-                self.logger.info("   ✅ Copy Trading initialized")
-            except Exception as e:
-                self.logger.error(f"   ❌ Copy Trading initialization failed: {e}")
-                self.modules["copy_trading"] = None
-        
         enabled_count = len([m for m in self.modules.values() if m is not None])
         self.logger.info(f"[OK] {enabled_count} modules initialized")
     
@@ -228,7 +123,7 @@ class Orchestrator:
                 await self.initialize()
             
             self.is_running = True
-            self.start_time = datetime.utcnow()
+            self.start_time = datetime.now(timezone.utc)
             
             # Start healthcheck server for Railway
             import os
@@ -327,7 +222,7 @@ class Orchestrator:
                         # === FILTRES DE SÉCURITÉ ===
                         
                         # 0. Enforce minimum time between trades (avoid over-trading)
-                        now = datetime.utcnow()
+                        now = datetime.now(timezone.utc)
                         if self._last_trade_time:
                             seconds_since_last = (now - self._last_trade_time).total_seconds()
                             if seconds_since_last < MIN_TRADE_INTERVAL_SECONDS:
@@ -442,7 +337,7 @@ class Orchestrator:
                                 self.total_trades += 1
                                 
                                 # Update last trade time (enforce minimum interval)
-                                self._last_trade_time = datetime.utcnow()
+                                self._last_trade_time = datetime.now(timezone.utc)
                                 
                                 self.momentum_detector.set_token_cooldown(signal.symbol)
                             else:
@@ -491,7 +386,7 @@ class Orchestrator:
                                             
                                             for symbol, pos in paper_trader.portfolio.positions.items():
                                                 current = prices.get(symbol, pos.entry_price)
-                                                pnl_pct = ((current - pos.entry_price) / pos.entry_price) * 100
+                                                pnl_pct = ((current - pos.entry_price) / pos.entry_price) * 100 if pos.entry_price > 0 else 0
                                                 positions_with_pnl.append((symbol, pnl_pct, current))
                                 
                                 # Sort by PnL (worst first)
@@ -519,7 +414,7 @@ class Orchestrator:
                                             # Log position status
                                             for symbol, pos in paper_trader.portfolio.positions.items():
                                                 current = prices.get(symbol, pos.entry_price)
-                                                pnl_pct = ((current - pos.entry_price) / pos.entry_price) * 100
+                                                pnl_pct = ((current - pos.entry_price) / pos.entry_price) * 100 if pos.entry_price > 0 else 0
                                                 self.logger.info(f"[POS] {symbol}: Entry ${pos.entry_price:.6f} → Now ${current:.6f} ({pnl_pct:+.2f}%)")
                             
                             await asyncio.sleep(30)
@@ -537,14 +432,14 @@ class Orchestrator:
             # Detects new pools and trending tokens across DEXes with AI analysis
             try:
                 from src.modules.geckoterminal.pool_detector import PoolDetector, PoolSignal
-                from src.trading.dex_trader import DEXTrader
+                from src.trading.dex_trader import DEXTrader, get_dex_trader
                 from src.modules.ai.trading_engine import create_ai_trading_engine, TradeDecision
                 
                 pool_detector = PoolDetector()
                 await pool_detector.initialize()
                 
                 # Initialize DEX trader for real trading
-                dex_trader = DEXTrader()
+                dex_trader = get_dex_trader()
                 dex_initialized = await dex_trader.initialize()
                 
                 # Initialize AI Trading Engine
@@ -809,7 +704,7 @@ class Orchestrator:
                                 if not current_price:
                                     continue
                                 
-                                price_change_pct = ((current_price - token["detect_price"]) / token["detect_price"]) * 100
+                                price_change_pct = ((current_price - token["detect_price"]) / token["detect_price"]) * 100 if token["detect_price"] > 0 else 0
                                 
                                 # Track price history for volatility analysis
                                 token.setdefault("price_history", []).append(current_price)
@@ -837,7 +732,7 @@ class Orchestrator:
                                 elif not above_detect:
                                     token["confirm_count"] = 0
                                 else:
-                                    dip_pct = ((token["last_price"] - current_price) / token["last_price"]) * 100
+                                    dip_pct = ((token["last_price"] - current_price) / token["last_price"]) * 100 if token["last_price"] > 0 else 0
                                     if dip_pct > CONFIRM_DIP_TOLERANCE:
                                         token["confirm_count"] = max(0, token["confirm_count"] - 2)
                                 
@@ -1084,7 +979,7 @@ class Orchestrator:
 
             uptime_h = 0
             if self.start_time:
-                uptime_h = (datetime.utcnow() - self.start_time).total_seconds() / 3600
+                uptime_h = (datetime.now(timezone.utc) - self.start_time).total_seconds() / 3600
 
             grid_info = ""
             if self.grid_trader:
@@ -1103,7 +998,7 @@ class Orchestrator:
                 f"Trades: {sim['trades']} | WR: {sim['win_rate']} | P&L: {sim['total_pnl']}\n"
                 f"Grid: {grid['trades']}t WR {grid['win_rate']} | Mom: {mom['trades']}t WR {mom['win_rate']}"
                 f"{grid_info}\n\n"
-                f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+                f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
             )
             await self.telegram.send_message(msg)
         except Exception as e:
@@ -1128,7 +1023,7 @@ class Orchestrator:
     async def _update_metrics(self):
         """Update system metrics and dashboard status"""
         if self.start_time:
-            uptime = (datetime.utcnow() - self.start_time).total_seconds()
+            uptime = (datetime.now(timezone.utc) - self.start_time).total_seconds()
             if int(uptime) % 300 == 0:
                 self.logger.info(f"[INFO] Uptime: {uptime/3600:.2f}h | Trades: {self.total_trades} | PnL: ${self.total_pnl:.2f}")
 
@@ -1179,7 +1074,7 @@ class Orchestrator:
             
             # Final statistics
             if self.start_time:
-                runtime = (datetime.utcnow() - self.start_time).total_seconds()
+                runtime = (datetime.now(timezone.utc) - self.start_time).total_seconds()
                 self.logger.info(f"[INFO] Final Stats:")
                 self.logger.info(f"   Runtime: {runtime/3600:.2f} hours")
                 self.logger.info(f"   Total trades: {self.total_trades}")
@@ -1195,7 +1090,7 @@ class Orchestrator:
         return {
             "is_running": self.is_running,
             "start_time": self.start_time.isoformat() if self.start_time else None,
-            "uptime_seconds": (datetime.utcnow() - self.start_time).total_seconds() if self.start_time else 0,
+            "uptime_seconds": (datetime.now(timezone.utc) - self.start_time).total_seconds() if self.start_time else 0,
             "total_trades": self.total_trades,
             "total_pnl": self.total_pnl,
             "enabled_modules": list(self.modules.keys()),

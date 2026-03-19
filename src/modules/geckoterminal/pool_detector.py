@@ -9,11 +9,12 @@ Scans multiple chains for:
 
 import asyncio
 from typing import Dict, List, Optional, Callable, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
 
 from src.modules.geckoterminal.gecko_client import GeckoTerminalClient, Pool
 from src.modules.geckoterminal.dexscreener_client import DexScreenerClient
+from src.modules.security import honeypot_detector
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -122,7 +123,7 @@ class PoolDetector:
                 
     def _clean_seen_pools(self):
         """Remove old entries from seen_pools to allow re-evaluation"""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expired = [
             addr for addr, seen_at in self.seen_pools.items()
             if (now - seen_at) > timedelta(minutes=30)
@@ -155,9 +156,9 @@ class PoolDetector:
             pool = await self.dexscreener.enrich_pool(pool)
             await asyncio.sleep(0.5)
             
-            self.seen_pools[original_address] = datetime.utcnow()
+            self.seen_pools[original_address] = datetime.now(timezone.utc)
             if pool.address != original_address:
-                self.seen_pools[pool.address] = datetime.utcnow()
+                self.seen_pools[pool.address] = datetime.now(timezone.utc)
             self.pools_scanned += 1
             
             # Score based on signal type
@@ -167,23 +168,32 @@ class PoolDetector:
                 min_score = 60  # Lower for trending (was 70)
             else:
                 score, reasons, is_sniper = self._score_new_pool(pool)
-                min_score = 40 if is_sniper else 55  # Lowered thresholds
+                min_score = 45 if is_sniper else 60
             
             if score >= min_score:
+                safety_check = await honeypot_detector.check_token(pool.address, pool.network)
+                if not safety_check["is_safe"]:
+                    self.logger.warning(
+                        f"[POOL] 🍯 BLOCKED {pool.base_token} on {pool.network.upper()}: "
+                        f"{safety_check['reasons']} (risk={safety_check['risk_level']})"
+                    )
+                    continue
+
                 actual_type = "sniper" if is_sniper else signal_type
                 signal = PoolSignal(
                     pool=pool,
                     signal_type=actual_type,
                     score=score,
                     reasons=reasons,
-                    timestamp=datetime.utcnow()
+                    timestamp=datetime.now(timezone.utc)
                 )
-                
+
                 emoji = {"sniper": "🎯", "new_pool": "🆕", "trending": "🔥"}.get(actual_type, "📡")
                 self.logger.info(f"[POOL] {emoji} {actual_type.upper()} on {pool.network.upper()}: {pool.base_token}")
                 self.logger.info(f"[POOL]    Price: ${pool.price_usd:.8f} | Liq: ${pool.liquidity_usd:,.0f} | Vol: ${pool.volume_24h:,.0f}")
                 self.logger.info(f"[POOL]    Score: {score:.0f}/100 | {', '.join(reasons[:3])}")
-                
+                self.logger.info(f"[POOL]    Safety: {safety_check['risk_level']} | Tax: buy={safety_check['details'].get('buy_tax', 0)*100:.1f}% sell={safety_check['details'].get('sell_tax', 0)*100:.1f}%")
+
                 await self._emit_signal(signal)
                 new_signals += 1
             else:
@@ -299,7 +309,7 @@ class PoolDetector:
                     continue
                     
                 # Mark as seen
-                self.seen_pools[pool.address] = datetime.utcnow()
+                self.seen_pools[pool.address] = datetime.now(timezone.utc)
                 
                 # Score the pool
                 score, reasons, is_sniper_opportunity = self._score_new_pool(pool)
@@ -308,14 +318,22 @@ class PoolDetector:
                 min_score = 45 if is_sniper_opportunity else 60
                 
                 if score >= min_score:
+                    safety_check = await honeypot_detector.check_token(pool.address, pool.network)
+                    if not safety_check["is_safe"]:
+                        self.logger.warning(
+                            f"[POOL] 🍯 BLOCKED {pool.base_token} on {chain.upper()}: "
+                            f"{safety_check['reasons']} (risk={safety_check['risk_level']})"
+                        )
+                        continue
+
                     signal = PoolSignal(
                         pool=pool,
                         signal_type="sniper" if is_sniper_opportunity else "new_pool",
                         score=score,
                         reasons=reasons,
-                        timestamp=datetime.utcnow()
+                        timestamp=datetime.now(timezone.utc)
                     )
-                    
+
                     emoji = "🎯" if is_sniper_opportunity else "🆕"
                     self.logger.info(f"[POOL] {emoji} {'SNIPER OPPORTUNITY' if is_sniper_opportunity else 'NEW POOL'} on {chain.upper()}")
                     self.logger.info(f"[POOL]    {pool.base_token}/{pool.quote_token} on {pool.dex}")
@@ -323,7 +341,7 @@ class PoolDetector:
                     self.logger.info(f"[POOL]    Score: {score:.0f}/100 | {', '.join(reasons)}")
                     if is_sniper_opportunity:
                         self.logger.info(f"[POOL]    💨 Quick trade: TP +{self.NEW_TOKEN_TAKE_PROFIT_1}%/+{self.NEW_TOKEN_TAKE_PROFIT_2}% | SL -{self.NEW_TOKEN_STOP_LOSS}%")
-                    
+
                     await self._emit_signal(signal)
                     
         except Exception as e:
@@ -345,25 +363,33 @@ class PoolDetector:
                 cache_key = f"trending_{pool.address}"
                 if cache_key in self.seen_pools:
                     last_signal = self.seen_pools[cache_key]
-                    if datetime.utcnow() - last_signal < timedelta(hours=1):
+                    if datetime.now(timezone.utc) - last_signal < timedelta(hours=1):
                         continue
                         
                 if score >= 50:
-                    self.seen_pools[cache_key] = datetime.utcnow()
-                    
+                    safety_check = await honeypot_detector.check_token(pool.address, pool.network)
+                    if not safety_check["is_safe"]:
+                        self.logger.warning(
+                            f"[POOL] 🍯 BLOCKED trending {pool.base_token} on {chain.upper()}: "
+                            f"{safety_check['reasons']} (risk={safety_check['risk_level']})"
+                        )
+                        continue
+
+                    self.seen_pools[cache_key] = datetime.now(timezone.utc)
+
                     signal = PoolSignal(
                         pool=pool,
                         signal_type="trending",
                         score=score,
                         reasons=reasons,
-                        timestamp=datetime.utcnow()
+                        timestamp=datetime.now(timezone.utc)
                     )
-                    
+
                     self.logger.info(f"[POOL] 🔥 TRENDING POOL on {chain.upper()}")
                     self.logger.info(f"[POOL]    {pool.base_token}/{pool.quote_token}")
                     self.logger.info(f"[POOL]    24h: {pool.price_change_24h:+.1f}% | Vol: ${pool.volume_24h:,.0f}")
                     self.logger.info(f"[POOL]    Score: {score:.0f}/100")
-                    
+
                     await self._emit_signal(signal)
                     
         except Exception as e:

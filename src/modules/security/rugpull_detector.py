@@ -23,7 +23,7 @@ class RugPullDetector:
     
     # APIs
     DEXSCREENER_API = "https://api.dexscreener.com/latest/dex/tokens"
-    GOPLUS_API = "https://api.gopluslabs.io/api/v1/token_security"
+    GOPLUS_API = "https://api.gopluslabs.com/api/v1/token_security"
     
     # Thresholds
     MAX_TOP_HOLDER_PERCENT = 50  # Max % pour le top holder

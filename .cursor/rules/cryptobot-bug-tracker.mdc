@@ -41,18 +41,43 @@ alwaysApply: true
 | 2026-03-16 | risk_manager.py | risk_state.json dans data/ éphémère | Corrigé vers /data/ |
 | 2026-03-16 | metrics.py | metrics.json dans CWD éphémère | Corrigé vers /data/ |
 
+| 2026-03-19 | Dockerfile:13-16 | SIMULATION_MODE=false override config.py | Changed to SIMULATION_MODE=true, TRADING_MODE=SIMULATION |
+| 2026-03-19 | safety_manager.py:252 | Prix natifs hardcodés BSC=$660 ETH=$2100 | Fetch live Binance API + cache 5min + fallback |
+| 2026-03-19 | safety_manager.py | auto_evolve() pas persisté au restart | Sauvegarde/restauration dans stats JSON |
+| 2026-03-19 | safety_manager.py (partout) | datetime.utcnow() deprecated Python 3.12+ | Remplacé par datetime.now(timezone.utc) |
+| 2026-03-19 | orchestrator.py:547 | DEXTrader() au lieu de get_dex_trader() singleton | Remplacé par get_dex_trader() |
+| 2026-03-19 | orchestrator.py (partout) | datetime.utcnow() deprecated (8 occurrences) | datetime.now(timezone.utc) |
+| 2026-03-19 | orchestrator.py:494,522,812,840 | Division par zéro entry_price/detect_price/last_price | Guards ajoutés |
+| 2026-03-19 | risk_manager.py (partout) | datetime.utcnow() deprecated (5 occurrences) | datetime.now(timezone.utc) |
+| 2026-03-19 | risk_manager.py:143,158 | Division par zéro daily_start/peak_capital | Guards ajoutés |
+| 2026-03-19 | risk_manager.py:159 | Drawdown 30% log only, no action | Circuit breaker flag + block trades |
+| 2026-03-19 | dex_trader.py (partout) | datetime.utcnow() deprecated (~12 occurrences) | datetime.now(timezone.utc) |
+| 2026-03-19 | dex_trader.py:494 | Simulation floor max(x, 0.5*amount) trop optimiste | Removed artificial floor |
+| 2026-03-19 | grid_trader.py (partout) | datetime.utcnow() deprecated (~7 occurrences) | datetime.now(timezone.utc) |
+| 2026-03-19 | grid_trader.py:517 | record_sell signature mismatch (buy_price/sell_price) | Corrigé avec pnl_pct/pnl_usd |
+| 2026-03-19 | grid_trader.py:260 | Division par zéro old_price=0 | Guard ajouté |
+| 2026-03-19 | momentum_detector.py (partout) | datetime.utcnow() deprecated (~5 occurrences) | datetime.now(timezone.utc) |
+| 2026-03-19 | momentum_detector.py:150 | JUPUSDT en double dans whitelist | Dédupliqué |
+| 2026-03-19 | pool_detector.py (partout) | datetime.utcnow() deprecated (~9 occurrences) | datetime.now(timezone.utc) |
+| 2026-03-19 | pool_detector.py:170 | Score thresholds inconsistants (40/55 vs 45/60) | Standardisé à 45/60 |
+| 2026-03-19 | healthcheck.py | Pas d'authentification sur endpoints sensibles | Bearer token auth ajouté |
+| 2026-03-19 | healthcheck.py | /safety/reset et /evolve en GET (mutating) | Changé en POST |
+| 2026-03-19 | healthcheck.py (partout) | datetime.utcnow() et utcfromtimestamp deprecated | Remplacé par datetime.now(timezone.utc) |
+| 2026-03-19 | healthcheck.py:81 | Prix ETH/BNB hardcodés | Fetch Binance API + cache |
+| 2026-03-19 | telegram_bot.py (17 occurrences) | datetime.utcnow() deprecated | Remplacé par datetime.now(timezone.utc) |
+| 2026-03-19 | main.py:36,44,193 | print() au lieu de logger | Remplacé par logger |
+| 2026-03-19 | main.py:201 | Debug log en production | Supprimé |
+| 2026-03-19 | multiple files | ~5000 lignes de code mort (35 fichiers orphelins) | Fichiers supprimés |
+| 2026-03-19 | honeypot_detector.py | Mauvaise URL GoPlus (gopluslabs.io), nécessite web3, pas de tax check | Réécrit: GoPlus API only, module-level, cache 10min, fail-safe |
+| 2026-03-19 | pool_detector.py | Aucun check honeypot/scam avant signal | Ajouté honeypot_detector.check_token() avant chaque _emit_signal |
+| 2026-03-19 | dex_trader.py:sniper_buy | Aucun check honeypot avant achat sniper | Ajouté honeypot check comme safety gate avant buy() |
+
 ## BUGS ENCORE OUVERTS
 
 | Priorité | Fichier | Bug | Impact |
 |----------|---------|-----|--------|
 | MEDIUM | dexscreener_client.py:203 | enrich_pool écrase pool.address avec baseToken.address | Adresse pool incorrecte |
-| MEDIUM | ai/sentiment_analyzer.py:69,154 | .seconds au lieu de .total_seconds() | Cache TTL incorrect >24h |
-| LOW | trending_tracker.py:144,155 | Division par zéro si liquidity=0 ou total=0 | Crash potentiel |
-| LOW | dex_trader.py:1607 | Division par zéro si entry_price=0 | Crash potentiel |
-| LOW | dex_trader.py:504 | Division par zéro si amount_tokens=0 | Crash potentiel |
-| LOW | safety_manager.py:285 | Division par zéro si buy_price=0 | Crash potentiel |
-| LOW | grid_trader.py:260 | Division par zéro si old_price=0 | Crash potentiel |
+| LOW | dex_trader.py:504 | Division par zéro si amount_tokens=0 | Crash potentiel (guard partiel) |
 | INFO | risk_manager.py:150 | TODO: envoyer alerte Telegram | Feature manquante |
-| INFO | dex_trader.py (partout) | datetime.utcnow() deprecated Python 3.12+ | Avertissement futur |
 
 ## RÈGLE : quand tu fixes un bug, METS À JOUR ce fichier

@@ -11,7 +11,7 @@ Responsibilities:
 
 from decimal import Decimal
 from typing import Dict, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import asyncio
 
 from src.core.config import settings
@@ -44,7 +44,8 @@ class RiskManager:
         # Trading state
         self.trading_enabled = True
         self.daily_loss_exceeded = False
-        self.last_reset_date = datetime.utcnow().date()
+        self.circuit_breaker_active = False
+        self.last_reset_date = datetime.now(timezone.utc).date()
         
         # Open positions tracking
         self.open_positions: Dict[str, Dict] = {}
@@ -120,6 +121,10 @@ class RiskManager:
         if not self.trading_enabled:
             return False, "Trading globally disabled"
         
+        # Check circuit breaker (30% drawdown)
+        if self.circuit_breaker_active:
+            return False, "Circuit breaker active (>30% drawdown)"
+        
         # Check daily loss limit
         if self.daily_loss_exceeded:
             return False, f"Daily loss limit exceeded (-{self.max_daily_loss_pct}%)"
@@ -134,13 +139,16 @@ class RiskManager:
     async def check_global_limits(self):
         """Check global risk limits"""
         # Reset daily limits if new day
-        current_date = datetime.utcnow().date()
+        current_date = datetime.now(timezone.utc).date()
         if current_date > self.last_reset_date:
             await self._reset_daily_limits()
         
         # Check daily loss
         daily_pnl = self.current_capital - self.daily_start_capital
-        daily_pnl_pct = (daily_pnl / self.daily_start_capital) * Decimal("100")
+        if self.daily_start_capital > 0:
+            daily_pnl_pct = (daily_pnl / self.daily_start_capital) * Decimal("100")
+        else:
+            daily_pnl_pct = Decimal("0")
         
         if daily_pnl_pct <= -self.max_daily_loss_pct:
             if not self.daily_loss_exceeded:
@@ -148,17 +156,20 @@ class RiskManager:
                 self.trading_enabled = False
                 self.logger.critical(f"[ALERT] DAILY LOSS LIMIT EXCEEDED: {daily_pnl_pct:.2f}%")
                 self.logger.critical("[HALTED] TRADING HALTED UNTIL TOMORROW")
-                # TODO: Send alert (Telegram, email, etc.)
         
         # Update peak capital (for drawdown calc)
         if self.current_capital > self.peak_capital:
             self.peak_capital = self.current_capital
         
         # Calculate max drawdown
-        drawdown = ((self.peak_capital - self.current_capital) / self.peak_capital) * Decimal("100")
-        if drawdown > Decimal("30"):  # 30% max drawdown threshold
+        if self.peak_capital > 0:
+            drawdown = ((self.peak_capital - self.current_capital) / self.peak_capital) * Decimal("100")
+        else:
+            drawdown = Decimal("0")
+        if drawdown > Decimal("30"):
             self.logger.critical(f"[ALERT] MAX DRAWDOWN EXCEEDED: {drawdown:.2f}%")
-            # Circuit breaker logic here
+            self.circuit_breaker_active = True
+            self.trading_enabled = False
     
     async def _reset_daily_limits(self):
         """Reset daily tracking at start of new day"""
@@ -166,7 +177,7 @@ class RiskManager:
         self.daily_start_capital = self.current_capital
         self.daily_loss_exceeded = False
         self.trading_enabled = True
-        self.last_reset_date = datetime.utcnow().date()
+        self.last_reset_date = datetime.now(timezone.utc).date()
     
     def register_position(self, position_id: str, strategy: str, symbol: str, 
                          amount: Decimal, entry_price: Decimal, side: str):
@@ -177,7 +188,7 @@ class RiskManager:
             "amount": amount,
             "entry_price": entry_price,
             "side": side,
-            "opened_at": datetime.utcnow(),
+            "opened_at": datetime.now(timezone.utc),
             "stop_loss": self._calculate_stop_loss(entry_price, side),
         }
         
@@ -255,7 +266,7 @@ class RiskManager:
                     k: {**v, "opened_at": v["opened_at"].isoformat()}
                     for k, v in self.open_positions.items()
                 },
-                "saved_at": datetime.utcnow().isoformat()
+                "saved_at": datetime.now(timezone.utc).isoformat()
             }
             
             _persist = "/data" if os.path.isdir("/data") else "data"

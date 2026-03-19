@@ -10,10 +10,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENV SIMULATION_MODE=false \
+ENV SIMULATION_MODE=true \
     DRY_RUN=false \
     USE_TESTNET=false \
-    TRADING_MODE=REAL
+    TRADING_MODE=SIMULATION
 
 EXPOSE 8080
 

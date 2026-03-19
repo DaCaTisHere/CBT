@@ -9,6 +9,5 @@ Provides access to real-time DEX data across 200+ chains:
 
 from src.modules.geckoterminal.gecko_client import GeckoTerminalClient
 from src.modules.geckoterminal.pool_detector import PoolDetector
-from src.modules.geckoterminal.trending_tracker import TrendingTracker
 
-__all__ = ['GeckoTerminalClient', 'PoolDetector', 'TrendingTracker']
+__all__ = ['GeckoTerminalClient', 'PoolDetector']

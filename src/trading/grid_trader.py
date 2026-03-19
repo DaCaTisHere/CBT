@@ -19,7 +19,7 @@ import asyncio
 import time
 from typing import Dict, List, Optional
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 from src.utils.logger import get_logger
@@ -257,11 +257,14 @@ class GridTrader:
         recent = history[-60:] if len(history) >= 60 else history
         old_price = recent[0]
         new_price = recent[-1]
-        raw_momentum = ((new_price - old_price) / old_price) * 100
-        momentum_pct = max(-100.0, min(raw_momentum, 200.0))
+        if old_price > 0:
+            raw_momentum = ((new_price - old_price) / old_price) * 100
+            momentum_pct = max(-100.0, min(raw_momentum, 200.0))
+        else:
+            momentum_pct = 0.0
 
-        # ATR-like volatility: average of absolute % changes
-        changes = [abs(recent[i] - recent[i - 1]) / recent[i - 1] * 100 for i in range(1, len(recent))]
+        changes = [abs(recent[i] - recent[i - 1]) / recent[i - 1] * 100
+                   for i in range(1, len(recent)) if recent[i - 1] > 0]
         avg_volatility = sum(changes) / len(changes) if changes else 0
 
         bull_thresh = 5.0
@@ -409,10 +412,10 @@ class GridTrader:
         if is_sim:
             level.filled = True
             level.fill_price = current_price
-            level.fill_time = datetime.utcnow()
+            level.fill_time = datetime.now(timezone.utc)
             self.active_buys[pair_id].append({
                 "buy_price": current_price,
-                "buy_time": datetime.utcnow(),
+                "buy_time": datetime.now(timezone.utc),
                 "amount_usd": level.amount_usd,
                 "gas_cost": gas,
                 "level_price": level.price,
@@ -432,7 +435,7 @@ class GridTrader:
                         level.filled = True
                         level.fill_price = current_price
                         self.active_buys[pair_id].append({
-                            "buy_price": current_price, "buy_time": datetime.utcnow(),
+                            "buy_price": current_price, "buy_time": datetime.now(timezone.utc),
                             "amount_usd": level.amount_usd, "gas_cost": gas, "level_price": level.price,
                         })
                         self.logger.info(f"[GRID] REAL BUY {config.base_symbol} @ ${current_price:,.2f}")
@@ -489,7 +492,7 @@ class GridTrader:
                         break
 
             cycle = GridCycle(buy_price=buy_price, sell_price=current_price, amount_usd=amount_usd,
-                              profit_usd=profit_usd, profit_pct=profit_pct, closed_at=datetime.utcnow())
+                              profit_usd=profit_usd, profit_pct=profit_pct, closed_at=datetime.now(timezone.utc))
             self.completed_cycles[pair_id].append(cycle)
             self.total_cycles += 1
             self.total_profit_usd += profit_usd
@@ -515,8 +518,8 @@ class GridTrader:
 
             if self.safety:
                 self.safety.record_sell(token=f"GRID_{config.base_symbol}", network=config.network,
-                                        amount_usd=amount_usd, buy_price=buy_price, sell_price=current_price,
-                                        pnl_pct=profit_pct, is_sim=True)
+                                        amount_usd=amount_usd, pnl_pct=profit_pct, pnl_usd=profit_usd,
+                                        is_sim=True)
         else:
             if self.dex_trader and buy_price > 0:
                 try:
@@ -534,7 +537,7 @@ class GridTrader:
                             self.losses += 1
                         self.completed_cycles[pair_id].append(GridCycle(
                             buy_price=buy_price, sell_price=current_price, amount_usd=amount_usd,
-                            profit_usd=profit_usd, profit_pct=profit_pct, closed_at=datetime.utcnow()))
+                            profit_usd=profit_usd, profit_pct=profit_pct, closed_at=datetime.now(timezone.utc)))
                 except Exception as e:
                     self.logger.error(f"[GRID] Sell error: {e}")
 
@@ -561,12 +564,12 @@ class GridTrader:
             self.losses += 1
             self.completed_cycles[pair_id].append(GridCycle(
                 buy_price=buy_price, sell_price=current_price, amount_usd=amount_usd,
-                profit_usd=pnl_usd, profit_pct=pnl_pct, closed_at=datetime.utcnow()))
+                profit_usd=pnl_usd, profit_pct=pnl_pct, closed_at=datetime.now(timezone.utc)))
 
             if self.safety:
                 self.safety.record_sell(token=f"GRID_{config.base_symbol}", network=config.network,
-                                        amount_usd=amount_usd, buy_price=buy_price, sell_price=current_price,
-                                        pnl_pct=pnl_pct, is_sim=is_sim)
+                                        amount_usd=amount_usd, pnl_pct=pnl_pct, pnl_usd=pnl_usd,
+                                        is_sim=is_sim)
 
             self.logger.warning(f"[GRID] EMERGENCY SELL {config.base_symbol} @ ${current_price:,.2f} | P&L: ${pnl_usd:+.2f}")
 

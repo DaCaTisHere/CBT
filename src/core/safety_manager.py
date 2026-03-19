@@ -15,7 +15,7 @@ NO MANUAL INTERVENTION NEEDED. The bot proves itself before spending money.
 import json
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass, asdict
 
@@ -102,13 +102,17 @@ class SafetyManager:
     
     CONSECUTIVE_LOSS_LIMIT = 3
     LOSS_COOLDOWN_SECONDS = 1800  # 30 min pause after 3 consecutive losses
-    
+
+    PRICE_CACHE_TTL = 300
+    NATIVE_FALLBACK: Dict[str, float] = {"bsc": 660.0, "base": 2100.0}
+
     def __init__(self):
         self.stats = SafetyStats()
         self.trade_history: List[TradeRecord] = []
         self._notifier = None
         self._consecutive_losses = 0
         self._cooldown_until = 0.0
+        self._native_price_cache: Dict[str, Tuple[float, float]] = {}
         self._load_stats()
         self.recalculate_pnl()
 
@@ -142,16 +146,24 @@ class SafetyManager:
                 self.stats = SafetyStats(**{k: v for k, v in data.get("stats", {}).items() if k in SafetyStats.__dataclass_fields__})
                 for t in data.get("trades", [])[-200:]:
                     self.trade_history.append(TradeRecord(**{k: v for k, v in t.items() if k in TradeRecord.__dataclass_fields__}))
+                evolved_trade = data.get("evolved_max_trade_usd")
+                if evolved_trade is not None:
+                    self.MAX_TRADE_USD = evolved_trade
+                evolved_loss = data.get("evolved_max_daily_loss_usd")
+                if evolved_loss is not None:
+                    self.MAX_DAILY_LOSS_USD = evolved_loss
                 logger.info(f"[SAFETY] Loaded stats: {self.stats.sim_trades_total} sim trades, {self.stats.real_trades_total} real trades")
         except Exception as e:
             logger.warning(f"[SAFETY] Could not load stats: {e}")
     
     def _save_stats(self):
         try:
-            self.stats.last_updated = datetime.utcnow().isoformat()
+            self.stats.last_updated = datetime.now(timezone.utc).isoformat()
             data = {
                 "stats": asdict(self.stats),
-                "trades": [asdict(t) for t in self.trade_history[-200:]]
+                "trades": [asdict(t) for t in self.trade_history[-200:]],
+                "evolved_max_trade_usd": self.MAX_TRADE_USD,
+                "evolved_max_daily_loss_usd": self.MAX_DAILY_LOSS_USD,
             }
             with open(STATS_FILE, 'w') as f:
                 json.dump(data, f, indent=2)
@@ -159,7 +171,7 @@ class SafetyManager:
             logger.warning(f"[SAFETY] Could not save stats: {e}")
     
     def _reset_daily_if_needed(self):
-        today = datetime.utcnow().strftime("%Y-%m-%d")
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         if self.stats.daily_reset_date != today:
             if self.stats.daily_pnl_usd != 0:
                 logger.info(f"[SAFETY] Daily reset: yesterday P&L was ${self.stats.daily_pnl_usd:.2f}")
@@ -235,8 +247,44 @@ class SafetyManager:
     
     MIN_WALLET_USD_FOR_REAL = 30.0
 
+    async def _get_native_price(self, network: str) -> float:
+        import time
+        symbol_map = {"bsc": "BNBUSDT", "base": "ETHUSDT"}
+        symbol = symbol_map.get(network)
+        if not symbol:
+            return self.NATIVE_FALLBACK.get(network, 0.0)
+
+        cached = self._native_price_cache.get(network)
+        if cached and (time.time() - cached[1]) < self.PRICE_CACHE_TTL:
+            return cached[0]
+
+        try:
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        price = float(data["price"])
+                        self._native_price_cache[network] = (price, time.time())
+                        return price
+        except Exception as e:
+            logger.debug(f"[SAFETY] Binance price fetch failed for {network}: {e}")
+
+        if cached:
+            return cached[0]
+        return self.NATIVE_FALLBACK.get(network, 0.0)
+
+    def _get_cached_native_price(self, network: str) -> float:
+        import time
+        cached = self._native_price_cache.get(network)
+        if cached and (time.time() - cached[1]) < self.PRICE_CACHE_TTL:
+            return cached[0]
+        if cached:
+            return cached[0]
+        return self.NATIVE_FALLBACK.get(network, 0.0)
+
     def _get_wallet_balance_usd(self) -> float:
-        """Quick check of wallet balance across funded chains."""
         try:
             from web3 import Web3
             from src.core.config import settings
@@ -249,15 +297,16 @@ class SafetyManager:
 
             total = 0.0
             rpcs = {
-                "bsc": (getattr(settings, "BSC_RPC_URL", None), 660),
-                "base": (getattr(settings, "BASE_RPC_URL", None), 2100),
+                "bsc": getattr(settings, "BSC_RPC_URL", None),
+                "base": getattr(settings, "BASE_RPC_URL", None),
             }
-            for net, (rpc, native_usd) in rpcs.items():
+            for net, rpc in rpcs.items():
                 if not rpc:
                     continue
                 try:
                     w3 = Web3(Web3.HTTPProvider(rpc, request_kwargs={"timeout": 5}))
                     bal = w3.eth.get_balance(addr) / 1e18
+                    native_usd = self._get_cached_native_price(net)
                     total += bal * native_usd
                 except Exception:
                     pass
@@ -293,7 +342,7 @@ class SafetyManager:
     
     def record_buy(self, token: str, network: str, amount_usd: float, price: float, is_sim: bool):
         record = TradeRecord(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             token=token,
             network=network,
             action="buy",
@@ -319,7 +368,7 @@ class SafetyManager:
             pnl_usd = amount_usd * (pnl_pct / 100)
 
         record = TradeRecord(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             token=token, network=network, action="sell",
             amount_usd=amount_usd, price=sell_price,
             is_simulation=is_sim, pnl_percent=pnl_pct, pnl_usd=pnl_usd,

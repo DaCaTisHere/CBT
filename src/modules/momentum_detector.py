@@ -22,7 +22,7 @@ SORTIE (backtest validé):
 import asyncio
 import aiohttp
 from typing import Dict, List, Optional, Any, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 
 from src.utils.logger import get_logger
@@ -148,7 +148,7 @@ class MomentumDetector:
         'FETUSDT', 'RENDERUSDT', 'ARUSDT', 'GRTUSDT', 'THETAUSDT',
         # Tier 3 - Popular momentum coins (added 15)
         'PEPEUSDT', 'WIFUSDT', 'BONKUSDT', 'FLOKIUSDT', 'SHIBUSDT',
-        'ORDIUSDT', 'KASUSDT', 'TAOUSDT', 'ENAUSDT', 'JUPUSDT',
+        'ORDIUSDT', 'KASUSDT', 'TAOUSDT', 'ENAUSDT',
         'STRKUSDT', 'ZETAUSDT', 'PYTHUSDT', 'MANTAUSDT', 'ONDOUSDT'
     ]
     USE_WHITELIST = True  # Keep whitelist but with 50 coins now
@@ -221,7 +221,7 @@ class MomentumDetector:
             return False
         
         cooldown = self.token_cooldowns[symbol]
-        elapsed = (datetime.utcnow() - cooldown.last_trade_time).total_seconds() / 3600
+        elapsed = (datetime.now(timezone.utc) - cooldown.last_trade_time).total_seconds() / 3600
         
         return elapsed < self.TOKEN_COOLDOWN_HOURS
     
@@ -253,13 +253,13 @@ class MomentumDetector:
         """Set cooldown for a token after trading it"""
         self.token_cooldowns[symbol] = TokenCooldown(
             symbol=symbol,
-            last_trade_time=datetime.utcnow(),
+            last_trade_time=datetime.now(timezone.utc),
             cooldown_hours=self.TOKEN_COOLDOWN_HOURS
         )
     
     async def _update_btc_trend(self):
         """Update BTC trend every 5 minutes"""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if self.last_btc_check and (now - self.last_btc_check).total_seconds() < 300:
             return  # Use cached value
         
@@ -498,7 +498,7 @@ class MomentumDetector:
                         continue
                     
                     # Check if not recently signaled
-                    signal_key = f"{symbol}_{datetime.utcnow().strftime('%Y%m%d%H')}"
+                    signal_key = f"{symbol}_{datetime.now(timezone.utc).strftime('%Y%m%d%H')}"
                     if signal_key in self.processed_symbols:
                         continue
                     
@@ -542,7 +542,7 @@ class MomentumDetector:
                             change_percent=change_pct,
                             volume_usd=volume,
                             score=score,
-                            timestamp=datetime.utcnow(),
+                            timestamp=datetime.now(timezone.utc),
                             rsi=rsi,
                             volatility=volatility,
                             stoch_rsi=stoch_rsi,
@@ -669,7 +669,7 @@ class MomentumDetector:
     
     def get_recent_signals(self, hours: int = 24) -> List[MomentumSignal]:
         """Get signals from the last N hours"""
-        cutoff = datetime.utcnow() - timedelta(hours=hours)
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
         return [s for s in self.signals if s.timestamp >= cutoff]
     
     def get_stats(self) -> Dict[str, Any]:

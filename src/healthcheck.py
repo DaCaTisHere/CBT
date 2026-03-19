@@ -3,12 +3,54 @@ from aiohttp import web
 import asyncio
 import logging
 import time
-import json
 import os
+import aiohttp
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
+
+DASHBOARD_TOKEN = os.getenv("DASHBOARD_TOKEN", "changeme")
+
+_price_cache: dict = {"prices": {}, "last_update": 0}
+
+
+async def _fetch_binance_prices() -> dict:
+    """Fetch ETH and BNB prices from Binance with 5-min cache."""
+    global _price_cache
+    if time.time() - _price_cache["last_update"] < 300 and _price_cache["prices"]:
+        return _price_cache["prices"]
+    fallback = {"ETHUSDT": 2050.0, "BNBUSDT": 635.0}
+    try:
+        async with aiohttp.ClientSession() as session:
+            prices = {}
+            for symbol in ("ETHUSDT", "BNBUSDT"):
+                async with session.get(
+                    f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}",
+                    timeout=aiohttp.ClientTimeout(total=5),
+                ) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        prices[symbol] = float(data["price"])
+                    else:
+                        prices[symbol] = fallback[symbol]
+            _price_cache["prices"] = prices
+            _price_cache["last_update"] = time.time()
+            return prices
+    except Exception:
+        _price_cache["prices"] = fallback
+        _price_cache["last_update"] = time.time()
+        return fallback
+
+
+def _check_auth(request) -> bool:
+    """Return True if the request carries a valid Bearer token."""
+    auth = request.headers.get("Authorization", "")
+    return auth == f"Bearer {DASHBOARD_TOKEN}"
+
+
+def _unauthorized():
+    return web.json_response({"error": "Unauthorized"}, status=401)
 
 # Ring buffer for the last 50 log entries exposed via /logs
 _log_buffer: deque = deque(maxlen=300)
@@ -19,7 +61,7 @@ class _DashboardLogHandler(logging.Handler):
     def emit(self, record):
         try:
             entry = {
-                "ts": datetime.utcfromtimestamp(record.created).strftime("%Y-%m-%d %H:%M:%S"),
+                "ts": datetime.fromtimestamp(record.created, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
                 "level": record.levelname,
                 "name": record.name,
                 "msg": self.format(record),
@@ -62,47 +104,46 @@ def get_trading_mode():
 # Cache for wallet balances (avoid fetching every request)
 _wallet_cache = {"balances": {}, "total_usd": 0, "last_update": 0}
 
-def get_real_wallet_balance():
+async def get_real_wallet_balance():
     """Get real wallet balance from DEX Trader"""
     global _wallet_cache
     try:
-        # Cache for 60 seconds
         if time.time() - _wallet_cache["last_update"] < 60 and _wallet_cache["total_usd"] > 0:
             return _wallet_cache["balances"], _wallet_cache["total_usd"]
-        
-        # Try to get from DEX Trader stats
-        from src.trading.dex_trader import DEXTrader
-        import asyncio
-        
-        # Read balances from web3 directly
+
         try:
             from web3 import Web3
             from src.core.config import settings as _cfg
-            prices = {"eth": 2050, "bsc": 635, "base": 2050, "arbitrum": 2050}
+
+            binance = await _fetch_binance_prices()
+            eth_price = binance.get("ETHUSDT", 2050.0)
+            bnb_price = binance.get("BNBUSDT", 635.0)
+            prices = {"base": eth_price, "bsc": bnb_price, "arbitrum": eth_price}
+
             rpcs = {
                 "BASE": ("base", getattr(_cfg, 'BASE_RPC_URL', None), "ETH"),
                 "BSC": ("bsc", getattr(_cfg, 'BSC_RPC_URL', None), "BNB"),
                 "ARBITRUM": ("arbitrum", getattr(_cfg, 'ARBITRUM_RPC_URL', None), "ETH"),
             }
             balances = {}
-            total_usd = 0
+            total_usd = 0.0
             pk = _cfg.WALLET_PRIVATE_KEY
             addr = Web3().eth.account.from_key(pk).address
             for label, (net, rpc, sym) in rpcs.items():
                 if rpc:
                     w3 = Web3(Web3.HTTPProvider(rpc))
                     bal = w3.eth.get_balance(addr) / 1e18
-                    usd = bal * prices.get(net, 2050)
+                    usd = bal * prices.get(net, eth_price)
                     balances[label] = {"symbol": sym, "balance": round(bal, 6), "usd": round(usd, 2)}
                     total_usd += usd
         except Exception:
             balances = {}
-            total_usd = 0
-        
+            total_usd = 0.0
+
         _wallet_cache["balances"] = balances
         _wallet_cache["total_usd"] = total_usd
         _wallet_cache["last_update"] = time.time()
-        
+
         return balances, total_usd
     except Exception as e:
         logger.error(f"Error getting wallet balance: {e}")
@@ -158,7 +199,7 @@ def get_trading_stats():
                                 'trailing_activated': True,
                                 'tp1_hit': pos.get("tp1_hit", False),
                                 'tp2_hit': pos.get("tp2_hit", False),
-                                'entry_time': pos.get("entry_time", datetime.utcnow()).isoformat() if hasattr(pos.get("entry_time"), 'isoformat') else None,
+                                'entry_time': pos.get("entry_time", datetime.now(timezone.utc)).isoformat() if hasattr(pos.get("entry_time"), 'isoformat') else None,
                                 'network': pos.get("network", ""),
                             }
                         break
@@ -254,11 +295,13 @@ async def health(request):
 
 async def status(request):
     """Status endpoint - returns bot info as JSON"""
+    if not _check_auth(request):
+        return _unauthorized()
     uptime = time.time() - _start_time
     trading_stats = get_trading_stats()
     ml_info = get_ml_info()
     mode_name, _ = get_trading_mode()
-    wallet_balances, wallet_total_usd = get_real_wallet_balance()
+    wallet_balances, wallet_total_usd = await get_real_wallet_balance()
     
     # Debug: show actual settings value vs env var
     try:
@@ -296,8 +339,7 @@ async def index(request):
     stats = get_trading_stats()
     mode_name, mode_color = get_trading_mode()
     
-    # Get real wallet balance if in REAL mode
-    wallet_balances, wallet_total_usd = get_real_wallet_balance()
+    wallet_balances, wallet_total_usd = await get_real_wallet_balance()
     is_real_mode = mode_name == "REAL"
     
     # Format trading stats
@@ -990,7 +1032,7 @@ async def index(request):
         </div>
         
         <footer>
-            Auto-refresh every 15 seconds &bull; {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC
+            Auto-refresh every 15 seconds &bull; {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC
         </footer>
     </div>
 </body>
@@ -1039,7 +1081,9 @@ async def safety_status(request):
 
 
 async def safety_reset(request):
-    """Reset simulation stats for new strategy test"""
+    """Reset simulation stats for new strategy test (POST only)"""
+    if not _check_auth(request):
+        return _unauthorized()
     try:
         from src.core.safety_manager import get_safety_manager
         sm = get_safety_manager()
@@ -1050,7 +1094,9 @@ async def safety_reset(request):
 
 
 async def evolve_status(request):
-    """Auto-evolution status and trigger"""
+    """Auto-evolution status and trigger (POST only)"""
+    if not _check_auth(request):
+        return _unauthorized()
     try:
         from src.core.safety_manager import get_safety_manager
         sm = get_safety_manager()
@@ -1062,6 +1108,8 @@ async def evolve_status(request):
 
 async def dex_status(request):
     """DEX Trader status"""
+    if not _check_auth(request):
+        return _unauthorized()
     try:
         from src.trading.dex_trader import DEXTrader
         from src.core.orchestrator import Orchestrator
@@ -1130,11 +1178,15 @@ async def grid_backtest(request):
 
 async def logs_endpoint(request):
     """Return the last 50 log entries as JSON."""
+    if not _check_auth(request):
+        return _unauthorized()
     return web.json_response(list(_log_buffer))
 
 
 async def positions_endpoint(request):
     """Return current sniper (DEX) positions with live PnL."""
+    if not _check_auth(request):
+        return _unauthorized()
     result = {"sniper_positions": [], "paper_positions": []}
     try:
         from src.trading.dex_trader import DEXTrader
@@ -1203,8 +1255,8 @@ async def start_healthcheck_server(port=8080):
     app.router.add_get('/preflight', preflight)
     app.router.add_get('/dex', dex_status)
     app.router.add_get('/safety', safety_status)
-    app.router.add_get('/safety/reset', safety_reset)
-    app.router.add_get('/evolve', evolve_status)
+    app.router.add_post('/safety/reset', safety_reset)
+    app.router.add_post('/evolve', evolve_status)
     app.router.add_get('/grid', grid_status)
     app.router.add_get('/backtest', grid_backtest)
     app.router.add_get('/logs', logs_endpoint)

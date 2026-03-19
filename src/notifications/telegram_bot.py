@@ -35,7 +35,7 @@ Sends real-time notifications for:
 import asyncio
 import aiohttp
 from typing import Optional, Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass
 
 from src.core.config import settings
@@ -158,7 +158,7 @@ class TelegramBot:
             f"💰 Montant: ${amount:.2f}\n"
             f"📊 Prix: ${price:.8f}\n"
             f"📝 Raison: {reason}\n\n"
-            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+            f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
         )
         await self.send_message(msg)
 
@@ -173,7 +173,7 @@ class TelegramBot:
             f"Exit: ${exit_price:.8f}\n"
             f"{pnl_emoji} P&L: ${pnl:+.2f} ({pnl_pct:+.1f}%)\n"
             f"📝 {reason}\n\n"
-            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+            f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
         )
         await self.send_message(msg)
     
@@ -184,7 +184,7 @@ class TelegramBot:
             f"Type: {signal_type}\n"
             f"24h: {change_pct:+.1f}% | Vol: ${volume/1e6:.1f}M\n"
             f"Score: {score:.0f}/100\n\n"
-            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+            f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
         )
         await self.send_message(msg, silent=True)
 
@@ -194,7 +194,7 @@ class TelegramBot:
             f"Token: {symbol}\n"
             f"Exchange: {exchange}\n"
             f"Info: {title}\n\n"
-            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+            f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
         )
         await self.send_message(msg)
     
@@ -210,7 +210,7 @@ class TelegramBot:
             f"Total: ${total_pnl:+.2f} ({total_pnl_pct:+.1f}%)\n\n"
             f"Trades: {trades_today} | WR: {win_rate:.1f}%\n"
             f"Positions: {open_positions}\n\n"
-            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+            f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
         )
         await self.send_message(msg)
     
@@ -222,7 +222,7 @@ class TelegramBot:
             pnl = p.get("pnl_pct", 0)
             emoji = "🟢" if pnl >= 0 else "🔴"
             lines.append(f"{emoji} {p.get('symbol', '?')}: {pnl:+.1f}% | ${p.get('value', 0):.2f}")
-        lines.append(f"\n<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>")
+        lines.append(f"\n<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>")
         await self.send_message("\n".join(lines), silent=True)
 
     async def notify_mode_change(self, old_mode: str, new_mode: str, reason: str = ""):
@@ -233,14 +233,14 @@ class TelegramBot:
                 f"Il est maintenant en mode <b>REEL</b>.\n\n"
                 f"<b>Raison:</b> {reason or 'Criteres de simulation atteints'}\n\n"
                 f"⚠️ Assure-toi d'avoir approvisionne le wallet avec des fonds.\n\n"
-                f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+                f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
             )
         else:
             message = (
                 f"⚠️ <b>Retour en SIMULATION</b>\n\n"
                 f"Mode: {old_mode} → {new_mode}\n"
                 f"Raison: {reason or 'Criteres non remplis'}\n\n"
-                f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+                f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
             )
         await self.send_message(message, silent=False)
 
@@ -250,7 +250,7 @@ class TelegramBot:
             f"Le bot a ete arrete automatiquement.\n"
             f"<b>Raison:</b> {reason}\n\n"
             f"Le bot repassera en simulation au prochain cycle.\n\n"
-            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+            f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
         )
         await self.send_message(msg, silent=False)
 
@@ -258,7 +258,7 @@ class TelegramBot:
         msg = (
             f"🔓 <b>Arret d'urgence leve</b>\n\n"
             f"Nouveau jour, le bot reprend en mode simulation.\n\n"
-            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+            f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
         )
         await self.send_message(msg)
 
@@ -268,7 +268,7 @@ class TelegramBot:
             f"24h: {change_pct:+.1f}% | Liq: ${liquidity:,.0f}\n"
             f"Score: {score:.0f}/100\n"
             f"En attente de confirmation momentum...\n\n"
-            f"<i>{datetime.utcnow().strftime('%H:%M')} UTC</i>"
+            f"<i>{datetime.now(timezone.utc).strftime('%H:%M')} UTC</i>"
         )
         await self.send_message(msg, silent=True)
 
@@ -277,7 +277,7 @@ class TelegramBot:
             f"🤖❌ <b>AI Block: {symbol}</b>\n\n"
             f"Momentum: {change_pct:+.1f}% mais bloque par l'IA\n"
             f"Raison: {reason}\n\n"
-            f"<i>{datetime.utcnow().strftime('%H:%M')} UTC</i>"
+            f"<i>{datetime.now(timezone.utc).strftime('%H:%M')} UTC</i>"
         )
         await self.send_message(msg, silent=True)
 
@@ -288,7 +288,7 @@ class TelegramBot:
             f"{emoji} <b>Regime: {pair}</b>\n\n"
             f"{old_regime.upper()} → <b>{new_regime.upper()}</b>\n"
             f"Prix: ${price:,.2f}\n\n"
-            f"<i>{datetime.utcnow().strftime('%H:%M')} UTC</i>"
+            f"<i>{datetime.now(timezone.utc).strftime('%H:%M')} UTC</i>"
         )
         await self.send_message(msg, silent=True)
 
@@ -296,7 +296,7 @@ class TelegramBot:
         msg = (
             f"⚠️ <b>Erreur: {error_type}</b>\n\n"
             f"{message}\n\n"
-            f"<i>{datetime.utcnow().strftime('%H:%M')} UTC</i>"
+            f"<i>{datetime.now(timezone.utc).strftime('%H:%M')} UTC</i>"
         )
         await self.send_message(msg, silent=True)
     
@@ -304,7 +304,7 @@ class TelegramBot:
         msg = (
             f"🚨 <b>CRITIQUE</b>\n\n"
             f"{message}\n\n"
-            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+            f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
         )
         await self.send_message(msg, silent=False)
 
@@ -312,7 +312,7 @@ class TelegramBot:
         msg = (
             f"🤖 <b>Cryptobot demarre</b>\n\n"
             f"Le bot est en ligne et operationnel.\n\n"
-            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+            f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
         )
         await self.send_message(msg)
 
@@ -320,7 +320,7 @@ class TelegramBot:
         msg = (
             f"🛑 <b>Cryptobot arrete</b>\n\n"
             f"Raison: {reason}\n\n"
-            f"<i>{datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC</i>"
+            f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
         )
         await self.send_message(msg)
     

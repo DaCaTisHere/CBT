@@ -27,13 +27,9 @@ from src.core.orchestrator import Orchestrator
 from src.core.config import settings
 from src.utils.logger import get_logger
 
-# Import autonomous systems
-try:
-    from src.core.autonomous_manager import AutonomousManager
-    AUTONOMOUS_AVAILABLE = True
-except ImportError as e:
-    AUTONOMOUS_AVAILABLE = False
-    print(f"[WARN] Autonomous systems not available: {e}")
+logger = get_logger(__name__)
+
+AUTONOMOUS_AVAILABLE = False
 
 # Import trading mode manager for preflight checks
 try:
@@ -41,9 +37,7 @@ try:
     TRADING_MODE_AVAILABLE = True
 except ImportError as e:
     TRADING_MODE_AVAILABLE = False
-    print(f"[WARN] Trading mode manager not available: {e}")
-
-logger = get_logger(__name__)
+    logger.warning(f"Trading mode manager not available: {e}")
 
 
 @click.command()
@@ -190,15 +184,11 @@ def print_banner():
     ||                                                        ||
     ============================================================
     """
-    print(banner)
+    logger.info(banner)
 
 
 def display_config():
     """Display current configuration"""
-    import os
-    # Debug: show raw env variable vs parsed setting
-    raw_sim = os.getenv("SIMULATION_MODE", "NOT SET")
-    logger.info(f"[DEBUG] Raw SIMULATION_MODE env: '{raw_sim}' -> parsed: {settings.SIMULATION_MODE} (type: {type(settings.SIMULATION_MODE).__name__})")
     logger.info("[CONFIG] Configuration:")
     logger.info(f"   Environment: {settings.ENVIRONMENT.value}")
     logger.info(f"   Testnet: {settings.USE_TESTNET}")
@@ -206,21 +196,6 @@ def display_config():
     logger.info(f"   Dry Run: {settings.DRY_RUN}")
     logger.info(f"   Log Level: {settings.LOG_LEVEL.value}")
     logger.info("")
-    logger.info("[MODULES] Enabled Modules:")
-    if settings.ENABLE_SNIPER:
-        logger.info("   [OK] Sniper Bot")
-    if settings.ENABLE_NEWS_TRADER:
-        logger.info("   [OK] News Trader")
-    if settings.ENABLE_SENTIMENT:
-        logger.info("   [OK] Sentiment Analyzer")
-    if settings.ENABLE_ML_PREDICTOR:
-        logger.info("   [OK] ML Predictor")
-    if settings.ENABLE_ARBITRAGE:
-        logger.info("   [OK] Arbitrage Engine")
-    if settings.ENABLE_DEFI_OPTIMIZER:
-        logger.info("   [OK] DeFi Optimizer")
-    if settings.ENABLE_COPY_TRADING:
-        logger.info("   [OK] Copy Trading")
     logger.info("")
 
 

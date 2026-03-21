@@ -100,11 +100,13 @@ alwaysApply: true
 | 2026-03-19 | orchestrator.py | Pas d'auto-retrain ML | train() appelé toutes les 2h dans auto_evolve |
 | 2026-03-19 | orchestrator.py | Pas d'analyse portfolio IA | OpenAI review toutes les 6h |
 
+| 2026-03-21 | trade_recorder.py | Connexion PostgreSQL directe impossible (IPv6/pooler) | Réécrit en Supabase REST API (aiohttp) |
+| 2026-03-21 | orchestrator.py | Database class inutile, init bloquante | Supprimée, remplacée par init_recorder() REST |
+
 ## BUGS ENCORE OUVERTS
 
 | Priorité | Fichier | Bug | Impact |
 |----------|---------|-----|--------|
-| HIGH | Railway env | DATABASE_URL pointe encore vers SQLite | Bot n'écrit pas en Supabase (besoin password DB) |
 | MEDIUM | dexscreener_client.py:203 | enrich_pool écrase pool.address avec baseToken.address | Adresse pool incorrecte |
 | LOW | dex_trader.py:504 | Division par zéro si amount_tokens=0 | Crash potentiel (guard partiel) |
 | INFO | risk_manager.py:150 | TODO: envoyer alerte Telegram | Feature manquante |

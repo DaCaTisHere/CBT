@@ -69,16 +69,18 @@ class Orchestrator:
         self.logger.info("[INIT] Initializing system components...")
         
         try:
-            # Initialize database
+            # Initialize database (PostgreSQL/Supabase)
             try:
                 self.database = Database()
                 await self.database.connect()
-                self.logger.info("[OK] Database connected")
+                self.logger.info("[OK] Database connected (PostgreSQL)")
                 
                 from src.data.storage.trade_recorder import init_recorder
                 await init_recorder()
             except Exception as e:
-                self.logger.warning(f"[WARN] Database connection failed (trades saved to JSON only): {e}")
+                self.database = None
+                self.logger.warning(f"[WARN] Database unavailable: {e}")
+                self.logger.warning("[WARN] Trades will be saved to JSON only. Set DATABASE_URL to a PostgreSQL connection string.")
             
             # Initialize risk manager
             await self.risk_manager.initialize()

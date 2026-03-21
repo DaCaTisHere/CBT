@@ -9,7 +9,6 @@ Vérifie :
 5. Historique du créateur
 """
 import asyncio
-import ssl
 from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime, timezone
 import aiohttp
@@ -247,13 +246,9 @@ class RugPullDetector:
             return {"error": f"Chain {chain} not supported"}
             
         try:
-            ssl_ctx = ssl.create_default_context()
-            ssl_ctx.check_hostname = False
-            ssl_ctx.verify_mode = ssl.CERT_NONE
-            connector = aiohttp.TCPConnector(ssl=ssl_ctx)
-            async with aiohttp.ClientSession(connector=connector) as session:
+            async with aiohttp.ClientSession() as session:
                 url = f"{self.GOPLUS_API}/{chain_id}?contract_addresses={token_address}"
-                async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=10), ssl=False) as response:
                     if response.status == 200:
                         data = await response.json()
                         result = data.get("result", {}).get(token_address.lower(), {})

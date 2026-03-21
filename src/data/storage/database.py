@@ -72,8 +72,15 @@ def get_database_url() -> str:
     """
     Get database URL with async driver.
     Converts standard PostgreSQL URL to asyncpg version.
+    Raises ValueError if URL is not PostgreSQL.
     """
     url = settings.DATABASE_URL
+    
+    if "sqlite" in url:
+        raise ValueError(
+            "SQLite is no longer supported. Set DATABASE_URL to a PostgreSQL connection string "
+            "(e.g. postgresql://user:pass@host:5432/dbname)"
+        )
     
     if url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)

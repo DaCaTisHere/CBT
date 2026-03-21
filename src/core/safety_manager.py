@@ -358,6 +358,15 @@ class SafetyManager:
             logger.info(f"[SAFETY] REAL buy recorded: {token} ${amount_usd:.2f}")
         
         self._save_stats()
+        
+        try:
+            from src.data.storage.trade_recorder import record_trade, fire_and_forget
+            fire_and_forget(record_trade(
+                strategy="sniper", side="BUY", symbol=token, chain=network,
+                amount_usd=amount_usd, price=price, is_simulation=is_sim,
+            ))
+        except Exception:
+            pass
     
     def record_sell(self, token: str, network: str, amount_usd: float,
                     pnl_pct: float = 0.0, pnl_usd: float = 0.0, is_sim: bool = True,

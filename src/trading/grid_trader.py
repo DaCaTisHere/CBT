@@ -325,7 +325,7 @@ class GridTrader:
                         center = self.center_prices.get(pair_id, current_price)
                         regime = self._current_regime.get(pair_id, MarketRegime.RANGE)
                         active = len(self.active_buys.get(pair_id, []))
-                        dev = abs(current_price - center) / center * 100
+                        dev = abs(current_price - center) / center * 100 if center > 0 else 0.0
                         self.logger.info(f"[GRID] {config.base_symbol}: ${current_price:,.2f} (center ${center:,.2f}, dev {dev:.1f}%) | "
                                          f"regime={regime.value} | buys={active} | cycles={self.total_cycles}")
 
@@ -461,7 +461,7 @@ class GridTrader:
             bp = candidate["buy_price"]
             amt = candidate["amount_usd"]
             tg = candidate.get("gas_cost", 0) + gas
-            pp = ((current_price - bp) / bp) * 100
+            pp = ((current_price - bp) / bp) * 100 if bp > 0 else 0.0
             pu = amt * (pp / 100) - tg
             if pu >= min_net_profit and pu > best_profit_usd:
                 best_idx = idx
@@ -592,7 +592,7 @@ class GridTrader:
         for buy in self.active_buys.get(pair_id, []):
             bp = buy.get("level_price", buy["buy_price"])
             for lv in self.grids[pair_id]:
-                if lv.side == "buy" and abs(lv.price - bp) / bp < 0.02:
+                if lv.side == "buy" and bp > 0 and abs(lv.price - bp) / bp < 0.02:
                     lv.filled = True
                     break
 

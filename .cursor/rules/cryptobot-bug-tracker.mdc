@@ -102,6 +102,16 @@ alwaysApply: true
 
 | 2026-03-21 | trade_recorder.py | Connexion PostgreSQL directe impossible (IPv6/pooler) | Réécrit en Supabase REST API (aiohttp) |
 | 2026-03-21 | orchestrator.py | Database class inutile, init bloquante | Supprimée, remplacée par init_recorder() REST |
+| 2026-03-21 | dex_trader.py:1602 | Division par zéro ATR si atr_prices[i-1]=0 | Guard atr_prices[i-1] > 0 |
+| 2026-03-21 | dex_trader.py:1617 | Division par zéro si entry_price=0 | Guard entry_price > 0 |
+| 2026-03-21 | paper_trader.py:134 | Division par zéro si initial_capital=0 | Guard initial_capital > 0 |
+| 2026-03-21 | paper_trader.py:216 | Division par zéro si price=0 dans buy() | Guard price <= 0 return None |
+| 2026-03-21 | paper_trader.py:308,383,476 | Division par zéro si entry_price=0 dans sell/check | Guard entry_price > 0 |
+| 2026-03-21 | grid_trader.py:464 | Division par zéro bp dans _try_sell_cycle | Guard bp > 0 |
+| 2026-03-21 | grid_trader.py:328 | Division par zéro center dans status log | Guard center > 0 |
+| 2026-03-21 | grid_trader.py:595 | Division par zéro bp dans rebalance | Guard bp > 0 |
+| 2026-03-21 | safety_manager.py | record_buy n'écrit pas en Supabase | Ajouté fire_and_forget(record_trade()) |
+| 2026-03-21 | healthcheck.py | Dashboard dit "0 restants" quand lock par PnL négatif | Affiche "PnL negatif" |
 
 ## BUGS ENCORE OUVERTS
 

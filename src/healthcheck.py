@@ -478,6 +478,8 @@ async def index(request):
     is_unlocked = stats.get('is_unlocked', False) if stats else False
     needed = stats.get('needed_for_unlock', 20) if stats else 20
     progress_pct = min(100, (total_trades / 20) * 100) if total_trades else 0
+    unlock_reason = stats.get('unlock_reason', '') if stats else ''
+    locked_by_pnl = needed == 0 and not is_unlocked and total_pnl < 0
 
     html = f"""<!DOCTYPE html>
 <html lang="fr">
@@ -581,7 +583,7 @@ footer{{text-align:center;padding:20px;color:var(--dim);font-size:.7rem}}
 <div class="card card-sm">
   <div class="card-head">
     <span class="card-label">{"Mode reel actif" if is_unlocked else "Progression vers mode reel"}</span>
-    <span class="pill {"pill-green" if is_unlocked else "pill-yellow"}">{"UNLOCKED" if is_unlocked else f"{needed} restants"}</span>
+    <span class="pill {"pill-green" if is_unlocked else "pill-yellow"}">{"UNLOCKED" if is_unlocked else ("PnL negatif" if locked_by_pnl else f"{needed} restants")}</span>
   </div>
   {"" if is_unlocked else f'<div class="prog-outer"><div class="prog-inner" style="width:{progress_pct:.0f}%">{total_trades}/20</div></div>'}
   <div class="grid-5" style="margin-top:10px">

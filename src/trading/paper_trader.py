@@ -131,7 +131,7 @@ class Portfolio:
     @property
     def total_pnl_percent(self) -> float:
         """Total profit/loss percentage"""
-        return (self.total_pnl / self.initial_capital) * 100
+        return (self.total_pnl / self.initial_capital) * 100 if self.initial_capital > 0 else 0.0
     
     @property
     def win_rate(self) -> float:
@@ -212,6 +212,9 @@ class PaperTrader:
         """
         # Calculate position size
         if amount is None:
+            if price <= 0:
+                self.logger.warning(f"[PAPER] Invalid price {price} for {symbol}")
+                return None
             max_value = self.portfolio.cash * self.max_position_size
             amount = max_value / price
         
@@ -305,7 +308,7 @@ class PaperTrader:
         exit_value = price * position.amount
         entry_value = position.entry_price * position.amount
         pnl = exit_value - entry_value
-        pnl_percent = ((price - position.entry_price) / position.entry_price) * 100
+        pnl_percent = ((price - position.entry_price) / position.entry_price) * 100 if position.entry_price > 0 else 0.0
         
         # Update portfolio
         self.portfolio.cash += exit_value
@@ -380,7 +383,7 @@ class PaperTrader:
                 continue
                 
             current_price = prices[symbol]
-            pnl_pct = ((current_price - position.entry_price) / position.entry_price) * 100
+            pnl_pct = ((current_price - position.entry_price) / position.entry_price) * 100 if position.entry_price > 0 else 0.0
             
             # Initialize original amount if not set
             if position.original_amount is None:
@@ -473,7 +476,7 @@ class PaperTrader:
         exit_value = price * amount
         entry_value = position.entry_price * amount
         pnl = exit_value - entry_value
-        pnl_percent = ((price - position.entry_price) / position.entry_price) * 100
+        pnl_percent = ((price - position.entry_price) / position.entry_price) * 100 if position.entry_price > 0 else 0.0
         
         # Update portfolio
         self.portfolio.cash += exit_value

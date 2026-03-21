@@ -1600,7 +1600,7 @@ class DEXTrader:
                 
                 if len(atr_prices) >= 5:
                     changes = [abs(atr_prices[i] - atr_prices[i-1]) / atr_prices[i-1] * 100
-                               for i in range(1, len(atr_prices))]
+                               for i in range(1, len(atr_prices)) if atr_prices[i-1] > 0]
                     atr_pct = sum(changes) / len(changes)
                     adaptive_trail = max(8.0, min(atr_pct * 2.5, 25.0))  # 8%-25% range for volatile new tokens
                     pos["trailing_pct"] = adaptive_trail
@@ -1614,8 +1614,8 @@ class DEXTrader:
                         pos["sl_price"] = new_sl
                         self.logger.info(f"[SNIPER] 📈 {symbol} trailing SL raised: ${old_sl:.8f} → ${new_sl:.8f} (trail:{trailing_pct:.1f}% ATR-based)")
                 
-                pnl_pct = ((current_price - entry_price) / entry_price) * 100
-                remaining_usd = float(pos.get("amount_remaining", pos.get("amount", 0))) * entry_price
+                pnl_pct = ((current_price - entry_price) / entry_price) * 100 if entry_price > 0 else 0.0
+                remaining_usd = float(pos.get("amount_remaining", pos.get("amount", 0))) * entry_price if entry_price > 0 else 0.0
                 
                 should_close = False
                 close_reason = ""

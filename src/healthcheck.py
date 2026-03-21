@@ -315,7 +315,7 @@ async def status(request):
         "status": "running",
         "uptime_seconds": int(uptime),
         "uptime_hours": round(uptime / 3600, 2),
-        "version": "9.3-AUDIT-FIX",
+        "version": "10.0",
         "mode": mode_name.lower(),
         "debug": {
             "env_SIMULATION_MODE": os.getenv("SIMULATION_MODE", "NOT_SET"),
@@ -449,572 +449,198 @@ async def index(request):
     else:
         positions_html = '<div class="no-positions">No open positions</div>'
     
+    # ML info
+    ml_info = get_ml_info()
+    ml_trained = ml_info.get("is_trained", False) if ml_info else False
+    ml_records = ml_info.get("total_records", 0) if ml_info else 0
+
+    # Momentum info
+    mom_info = get_momentum_stats()
+    btc_trend = mom_info.get("btc_trend", "neutral") if mom_info else "neutral"
+    btc_color = "#00ff88" if btc_trend == "bullish" else "#ff4444" if btc_trend == "bearish" else "#ffaa00"
+
+    # Grid stats
+    grid_trades = stats.get('grid_trades', 0) if stats else 0
+    grid_wr = stats.get('grid_wr', '0%') if stats else '0%'
+    grid_pnl = stats.get('grid_pnl', '$0') if stats else '$0'
+    mom_trades = stats.get('mom_trades', 0) if stats else 0
+    mom_wr = stats.get('mom_wr', '0%') if stats else '0%'
+    mom_pnl = stats.get('mom_pnl', '$0') if stats else '$0'
+
+    # Wallet rows
+    wallet_rows = ""
+    if wallet_balances:
+        for label, info in wallet_balances.items():
+            wallet_rows += f'<div class="wallet-row"><span class="wallet-chain">{label}</span><span class="wallet-bal">{info["balance"]:.4f} {info["symbol"]}</span><span class="wallet-usd">${info["usd"]:.0f}</span></div>'
+    else:
+        wallet_rows = '<div class="wallet-row" style="color:#555;">No wallet connected</div>'
+
+    is_unlocked = stats.get('is_unlocked', False) if stats else False
+    needed = stats.get('needed_for_unlock', 20) if stats else 20
+    progress_pct = min(100, (total_trades / 20) * 100) if total_trades else 0
+
     html = f"""<!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cryptobot Ultimate - Dashboard</title>
-    <meta http-equiv="refresh" content="15">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        
-        body {{ 
-            font-family: 'Outfit', sans-serif;
-            background: #0a0a0f;
-            color: #e0e0e0;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }}
-        
-        .bg-grid {{
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-image: 
-                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
-            background-size: 50px 50px;
-            pointer-events: none;
-            z-index: 0;
-        }}
-        
-        .container {{
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 30px 20px;
-            position: relative;
-            z-index: 1;
-        }}
-        
-        header {{
-            text-align: center;
-            margin-bottom: 40px;
-        }}
-        
-        .logo {{
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #00d4ff, #00ff88);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -1px;
-        }}
-        
-        .subtitle {{
-            color: #666;
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }}
-        
-        .status-bar {{
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }}
-        
-        .status-pill {{
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255,255,255,0.05);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-        }}
-        
-        .pulse {{
-            width: 10px; height: 10px;
-            background: #00ff88;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-            box-shadow: 0 0 10px #00ff88;
-        }}
-        
-        @keyframes pulse {{
-            0%, 100% {{ opacity: 1; transform: scale(1); }}
-            50% {{ opacity: 0.5; transform: scale(0.9); }}
-        }}
-        
-        .card {{
-            background: linear-gradient(135deg, rgba(20,20,30,0.9), rgba(15,15,25,0.95));
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 20px;
-            backdrop-filter: blur(10px);
-        }}
-        
-        .card-header {{
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }}
-        
-        .card-title {{
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #888;
-        }}
-        
-        .card-badge {{
-            font-size: 0.7rem;
-            padding: 4px 10px;
-            border-radius: 10px;
-            font-weight: 600;
-        }}
-        
-        .portfolio-value {{
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 3rem;
-            font-weight: 700;
-            color: {pnl_color};
-            line-height: 1;
-        }}
-        
-        .portfolio-change {{
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.2rem;
-            color: {pnl_color};
-            margin-top: 5px;
-        }}
-        
-        .stats-grid {{
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-top: 25px;
-        }}
-        
-        .stat-item {{
-            text-align: center;
-            padding: 15px 10px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 12px;
-        }}
-        
-        .stat-value {{
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #fff;
-        }}
-        
-        .stat-label {{
-            font-size: 0.75rem;
-            color: #666;
-            margin-top: 5px;
-            text-transform: uppercase;
-        }}
-        
-        .modules-grid {{
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }}
-        
-        .module-item {{
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 15px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 10px;
-            font-size: 0.9rem;
-        }}
-        
-        .module-icon {{
-            width: 8px; height: 8px;
-            background: #00ff88;
-            border-radius: 50%;
-        }}
-        
-        .module-icon.warning {{ background: #ffaa00; }}
-        .module-icon.error {{ background: #ff4444; }}
-        
-        .positions-list {{
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }}
-        
-        .position-item {{
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            background: rgba(0, 212, 255, 0.05);
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            border-radius: 10px;
-            gap: 15px;
-        }}
-        
-        .position-left {{
-            min-width: 120px;
-        }}
-        
-        .position-symbol {{
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 700;
-            color: #00d4ff;
-            font-size: 1rem;
-        }}
-        
-        .position-badges {{
-            display: flex;
-            gap: 5px;
-            margin-top: 5px;
-        }}
-        
-        .badge {{
-            font-size: 0.6rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 600;
-        }}
-        
-        .badge-green {{ background: #00ff8822; color: #00ff88; }}
-        .badge-blue {{ background: #00d4ff22; color: #00d4ff; }}
-        .badge-purple {{ background: #aa66ff22; color: #aa66ff; }}
-        
-        .position-center {{
-            flex: 1;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-        }}
-        
-        .position-prices {{
-            color: #888;
-            margin-bottom: 4px;
-        }}
-        
-        .price-label {{ color: #666; }}
-        .price-arrow {{ color: #444; margin: 0 5px; }}
-        
-        .position-sltp {{
-            display: flex;
-            gap: 15px;
-        }}
-        
-        .sl {{ color: #ff4444; }}
-        .tp {{ color: #00ff88; }}
-        
-        .position-right {{
-            text-align: right;
-            min-width: 80px;
-        }}
-        
-        .position-pnl {{
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.2rem;
-            font-weight: 700;
-        }}
-        
-        .position-value {{ 
-            color: #888; 
-            font-size: 0.8rem;
-            font-family: 'JetBrains Mono', monospace;
-        }}
-        
-        .no-positions {{
-            text-align: center;
-            color: #666;
-            padding: 20px;
-            font-style: italic;
-        }}
-        
-        .ml-status {{
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }}
-        
-        .ml-badge {{
-            background: #ffaa0022;
-            color: #ffaa00;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }}
-        
-        .ml-stats {{
-            display: flex;
-            gap: 20px;
-            margin-top: 15px;
-        }}
-        
-        .ml-stat {{
-            text-align: center;
-        }}
-        
-        .ml-stat-value {{
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #00d4ff;
-        }}
-        
-        .ml-stat-label {{
-            font-size: 0.7rem;
-            color: #666;
-            text-transform: uppercase;
-        }}
-        
-        .strategy-grid {{
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }}
-        
-        .strategy-section {{
-            background: rgba(255,255,255,0.02);
-            padding: 15px;
-            border-radius: 10px;
-        }}
-        
-        .strategy-title {{
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #fff;
-        }}
-        
-        .indicator-list {{
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }}
-        
-        .indicator {{
-            background: #00d4ff22;
-            color: #00d4ff;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-family: 'JetBrains Mono', monospace;
-        }}
-        
-        .filter-list {{
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }}
-        
-        .filter-item {{
-            font-size: 0.8rem;
-            color: #aaa;
-            font-family: 'JetBrains Mono', monospace;
-        }}
-        
-        footer {{
-            text-align: center;
-            margin-top: 30px;
-            padding: 20px;
-            color: #444;
-            font-size: 0.8rem;
-        }}
-        
-        @media (max-width: 600px) {{
-            .stats-grid {{ grid-template-columns: repeat(2, 1fr); }}
-            .modules-grid {{ grid-template-columns: 1fr; }}
-            .portfolio-value {{ font-size: 2rem; }}
-        }}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cryptobot Dashboard</title>
+<meta http-equiv="refresh" content="15">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{{margin:0;padding:0;box-sizing:border-box}}
+:root{{--bg:#08090d;--card:#0f1117;--border:#1a1d28;--text:#c8ccd4;--dim:#555b6e;--accent:#3b82f6;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--mono:'IBM Plex Mono',monospace;--sans:'Inter',sans-serif}}
+body{{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}}
+.wrap{{max-width:880px;margin:0 auto;padding:24px 16px}}
+header{{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}}
+.logo{{font-family:var(--mono);font-size:1.1rem;font-weight:700;color:#fff;letter-spacing:-.5px}}
+.pills{{display:flex;gap:8px;flex-wrap:wrap}}
+.pill{{font-size:.72rem;padding:5px 11px;border-radius:6px;font-weight:600;background:rgba(255,255,255,.05);border:1px solid var(--border)}}
+.pill-green{{color:var(--green);border-color:rgba(34,197,94,.3)}}
+.pill-yellow{{color:var(--yellow);border-color:rgba(234,179,8,.3)}}
+.pill-blue{{color:var(--accent);border-color:rgba(59,130,246,.3)}}
+.grid-2{{display:grid;grid-template-columns:1fr 1fr;gap:14px}}
+.grid-3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}}
+.grid-5{{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}}
+.card{{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px}}
+.card-sm{{padding:14px}}
+.card-head{{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}}
+.card-label{{font-size:.7rem;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);font-weight:600}}
+.big-num{{font-family:var(--mono);font-size:2.4rem;font-weight:700;line-height:1}}
+.big-sub{{font-family:var(--mono);font-size:1rem;margin-top:4px}}
+.s-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}}
+.s-item{{text-align:center;padding:10px 6px;background:rgba(255,255,255,.02);border-radius:8px}}
+.s-val{{font-family:var(--mono);font-size:1.15rem;font-weight:700;color:#fff}}
+.s-lbl{{font-size:.65rem;color:var(--dim);margin-top:3px;text-transform:uppercase}}
+.prog-outer{{background:rgba(255,255,255,.05);border-radius:6px;height:22px;overflow:hidden;margin:10px 0}}
+.prog-inner{{height:100%;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.7rem;font-weight:700;color:#000;background:linear-gradient(90deg,var(--accent),var(--green))}}
+.strat-card{{background:rgba(255,255,255,.02);border-radius:8px;padding:14px}}
+.strat-title{{font-size:.8rem;font-weight:600;color:#fff;margin-bottom:10px;display:flex;align-items:center;gap:6px}}
+.strat-row{{display:flex;justify-content:space-between;padding:4px 0;font-size:.78rem;font-family:var(--mono)}}
+.strat-row span:first-child{{color:var(--dim)}}
+.strat-row span:last-child{{color:#fff;font-weight:600}}
+.pos-item{{display:flex;align-items:center;justify-content:space-between;padding:12px;background:rgba(59,130,246,.04);border:1px solid rgba(59,130,246,.15);border-radius:8px;margin-bottom:8px}}
+.pos-sym{{font-family:var(--mono);font-weight:700;color:var(--accent);font-size:.9rem}}
+.pos-meta{{font-size:.7rem;color:var(--dim);font-family:var(--mono)}}
+.pos-pnl{{font-family:var(--mono);font-size:1.1rem;font-weight:700;text-align:right}}
+.pos-val{{font-size:.7rem;color:var(--dim);font-family:var(--mono);text-align:right}}
+.no-pos{{text-align:center;color:var(--dim);padding:16px;font-size:.85rem}}
+.mod-item{{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,.02);border-radius:6px;font-size:.8rem}}
+.dot{{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}}
+.dot-warn{{background:var(--yellow)}}
+.wallet-row{{display:flex;justify-content:space-between;padding:5px 0;font-size:.78rem;font-family:var(--mono)}}
+.wallet-chain{{color:var(--dim);min-width:70px}}
+.wallet-bal{{color:var(--text)}}
+.wallet-usd{{color:#fff;font-weight:600;min-width:50px;text-align:right}}
+footer{{text-align:center;padding:20px;color:var(--dim);font-size:.7rem}}
+@media(max-width:640px){{.s-grid,.grid-2,.grid-3{{grid-template-columns:1fr 1fr}}.grid-5{{grid-template-columns:repeat(3,1fr)}}.big-num{{font-size:1.8rem}}header{{flex-direction:column;align-items:flex-start}}}}
+</style>
 </head>
 <body>
-    <div class="bg-grid"></div>
-    
-    <div class="container">
-        <header>
-            <div class="logo">CRYPTOBOT ULTIMATE</div>
-            <div class="subtitle">v9.3-AI - SNIPER MODE (BSC + Base + AI Security + KyberSwap)</div>
-        </header>
-        
-        <div class="status-bar">
-            <div class="status-pill">
-                <div class="pulse"></div>
-                <span style="color: #00ff88; font-weight: 600;">RUNNING</span>
-            </div>
-            <div class="status-pill">
-                <span style="color: #888;">Mode:</span>
-                <span style="color: {mode_color}; font-weight: 600;">{mode_name}</span>
-            </div>
-            <div class="status-pill">
-                <span style="color: #888;">Uptime:</span>
-                <span style="color: #fff;">{uptime_str}</span>
-            </div>
-        </div>
-        
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">Portfolio Value</span>
-                <span class="card-badge" style="background: {pnl_color}22; color: {pnl_color};">
-                    {pnl_sign}{total_pnl_pct:.2f}%
-                </span>
-            </div>
-            <div class="portfolio-value">${portfolio_value:,.2f}</div>
-            <div class="portfolio-change">{pnl_sign}${total_pnl:,.2f} PnL</div>
-            
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-value">{total_trades}</div>
-                    <div class="stat-label">Trades</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" style="color: #00ff88;">{winning}</div>
-                    <div class="stat-label">Wins</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" style="color: #ff4444;">{losing}</div>
-                    <div class="stat-label">Losses</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">{win_rate:.1f}%</div>
-                    <div class="stat-label">Win Rate</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">{"MODE RÉEL ACTIF" if stats.get('is_unlocked') else "Progression vers mode REEL"}</span>
-                <span class="card-badge" style="background: {"#00ff8822; color: #00ff88;" if stats.get('is_unlocked') else "#ffaa0022; color: #ffaa00;"}>
-                    {"UNLOCKED" if stats.get('is_unlocked') else f"{stats.get('needed_for_unlock', 20)} trades restants"}
-                </span>
-            </div>
-            {"" if stats.get('is_unlocked') else f'''<div style="background: rgba(255,255,255,0.05); border-radius: 10px; height: 30px; overflow: hidden; margin-bottom: 15px;">
-                <div style="background: linear-gradient(90deg, #00d4ff, #00ff88); height: 100%; width: {min(100, (total_trades / 20) * 100):.0f}%; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: JetBrains Mono, monospace; font-size: 0.8rem; font-weight: 700; color: #000;">
-                    {total_trades}/20
-                </div>
-            </div>'''}
-            <div class="ml-stats">
-                <div class="ml-stat">
-                    <div class="ml-stat-value">{stats.get('mom_trades', 0)}</div>
-                    <div class="ml-stat-label">Momentum</div>
-                </div>
-                <div class="ml-stat">
-                    <div class="ml-stat-value">{stats.get('mom_wr', '0%')}</div>
-                    <div class="ml-stat-label">Mom WR</div>
-                </div>
-                <div class="ml-stat">
-                    <div class="ml-stat-value">{stats.get('grid_trades', 0)}</div>
-                    <div class="ml-stat-label">Grid</div>
-                </div>
-                <div class="ml-stat">
-                    <div class="ml-stat-value">{stats.get('avg_win', '+0%')}</div>
-                    <div class="ml-stat-label">Gain moyen</div>
-                </div>
-                <div class="ml-stat">
-                    <div class="ml-stat-value">{stats.get('avg_loss', '0%')}</div>
-                    <div class="ml-stat-label">Perte moy.</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">Open Positions ({open_positions})</span>
-                <span class="card-badge" style="background: #00d4ff22; color: #00d4ff;">LIVE</span>
-            </div>
-            <div class="positions-list">
-                {positions_html}
-            </div>
-        </div>
-        
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">SNIPER v9.0-AI - REAL TRADING</span>
-                <span class="card-badge" style="background: #ff444422; color: #ff4444;">AGGRESSIVE</span>
-            </div>
-            <div class="strategy-grid">
-                <div class="strategy-section">
-                    <div class="strategy-title">🎯 GeckoTerminal Sniper</div>
-                    <div class="filter-list">
-                        <div class="filter-item">FUNDED: BSC + Base (KyberSwap)</div>
-                        <div class="filter-item">New pools: $5k+ liquidity</div>
-                        <div class="filter-item">Buy ratio: &gt; 50%</div>
-                        <div class="filter-item">Min transactions: 20/24h</div>
-                        <div class="filter-item">Price change: +5% to +1000%</div>
-                    </div>
-                </div>
-                <div class="strategy-section">
-                    <div class="strategy-title">🤖 AI Security Checks</div>
-                    <div class="filter-list">
-                        <div class="filter-item">Honeypot detection (3 APIs)</div>
-                        <div class="filter-item">Rug pull analysis</div>
-                        <div class="filter-item">Liquidity lock check</div>
-                        <div class="filter-item">Contract verification</div>
-                        <div class="filter-item">Whale concentration</div>
-                    </div>
-                </div>
-                <div class="strategy-section">
-                    <div class="strategy-title">Sortie rapide</div>
-                    <div class="filter-list">
-                        <div class="filter-item">SL: -20% (trailing ATR)</div>
-                        <div class="filter-item">TP1: +30% (vente 33%)</div>
-                        <div class="filter-item">TP2: +75% (vente 50%)</div>
-                        <div class="filter-item">TP3: +150% (vente 100%)</div>
-                        <div class="filter-item">Max hold: 30 min</div>
-                    </div>
-                </div>
-                <div class="strategy-section">
-                    <div class="strategy-title">💰 Your Wallet</div>
-                    <div class="filter-list">
-                        <div class="filter-item" style="color: #00ff88; font-weight: bold;">TOTAL: ${wallet_total_usd:.2f} USD</div>
-                        {''.join(f'<div class="filter-item">{label}: {info["balance"]:.4f} {info["symbol"]} (~${info["usd"]:.0f})</div>' for label, info in wallet_balances.items()) if wallet_balances else '<div class="filter-item">Loading...</div>'}
-                        <div class="filter-item">Mode: {mode_name}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">Active Modules</span>
-                <span class="card-badge" style="background: #00ff8822; color: #00ff88;">AI-POWERED</span>
-            </div>
-            <div class="modules-grid">
-                <div class="module-item">
-                    <div class="module-icon"></div>
-                    <span>📈 Grid Trader (ETH/BNB)</span>
-                </div>
-                <div class="module-item">
-                    <div class="module-icon"></div>
-                    <span>🎯 Pool Detector (BSC + Base)</span>
-                </div>
-                <div class="module-item">
-                    <div class="module-icon"></div>
-                    <span>📊 Momentum Detector</span>
-                </div>
-                <div class="module-item">
-                    <div class="module-icon"></div>
-                    <span>🤖 AI Trading Engine</span>
-                </div>
-                <div class="module-item">
-                    <div class="module-icon"></div>
-                    <span>🛡️ Safety Manager</span>
-                </div>
-                <div class="module-item">
-                    <div class="module-icon"></div>
-                    <span>📱 Telegram Bot</span>
-                </div>
-                <div class="module-item">
-                    <div class="module-icon"></div>
-                    <span>🔒 Honeypot Detector</span>
-                </div>
-            </div>
-        </div>
-        
-        <footer>
-            Auto-refresh every 15 seconds &bull; {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC
-        </footer>
+<div class="wrap">
+
+<header>
+  <div class="logo">CRYPTOBOT</div>
+  <div class="pills">
+    <span class="pill pill-green">RUNNING {uptime_str}</span>
+    <span class="pill" style="color:{mode_color};border-color:{mode_color}33;">{mode_name}</span>
+    <span class="pill" style="color:{btc_color};border-color:{btc_color}33;">BTC {btc_trend.upper()}</span>
+  </div>
+</header>
+
+<div class="card">
+  <div class="card-head">
+    <span class="card-label">Portfolio</span>
+    <span class="pill" style="color:{pnl_color};border-color:{pnl_color}33;font-family:var(--mono)">{pnl_sign}{total_pnl_pct:.2f}%</span>
+  </div>
+  <div class="big-num" style="color:{pnl_color}">${portfolio_value:,.2f}</div>
+  <div class="big-sub" style="color:{pnl_color}">{pnl_sign}${total_pnl:,.2f}</div>
+  <div class="s-grid">
+    <div class="s-item"><div class="s-val">{total_trades}</div><div class="s-lbl">Trades</div></div>
+    <div class="s-item"><div class="s-val" style="color:var(--green)">{winning}</div><div class="s-lbl">Wins</div></div>
+    <div class="s-item"><div class="s-val" style="color:var(--red)">{losing}</div><div class="s-lbl">Losses</div></div>
+    <div class="s-item"><div class="s-val">{win_rate:.1f}%</div><div class="s-lbl">Win Rate</div></div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card card-sm">
+    <div class="card-head"><span class="card-label">Grid Trading (80%)</span><span class="pill pill-blue">ETH + BNB</span></div>
+    <div class="strat-row"><span>Trades</span><span>{grid_trades}</span></div>
+    <div class="strat-row"><span>Win Rate</span><span>{grid_wr}</span></div>
+    <div class="strat-row"><span>PnL</span><span>{grid_pnl}</span></div>
+  </div>
+  <div class="card card-sm">
+    <div class="card-head"><span class="card-label">Momentum (20%)</span><span class="pill pill-blue">50 PAIRS</span></div>
+    <div class="strat-row"><span>Trades</span><span>{mom_trades}</span></div>
+    <div class="strat-row"><span>Win Rate</span><span>{mom_wr}</span></div>
+    <div class="strat-row"><span>PnL</span><span>{mom_pnl}</span></div>
+  </div>
+</div>
+
+<div class="card card-sm">
+  <div class="card-head">
+    <span class="card-label">{"Mode reel actif" if is_unlocked else "Progression vers mode reel"}</span>
+    <span class="pill {"pill-green" if is_unlocked else "pill-yellow"}">{"UNLOCKED" if is_unlocked else f"{needed} restants"}</span>
+  </div>
+  {"" if is_unlocked else f'<div class="prog-outer"><div class="prog-inner" style="width:{progress_pct:.0f}%">{total_trades}/20</div></div>'}
+  <div class="grid-5" style="margin-top:10px">
+    <div class="s-item"><div class="s-val" style="font-size:.95rem">{stats.get('avg_win', '+0%') if stats else '+0%'}</div><div class="s-lbl">Avg Win</div></div>
+    <div class="s-item"><div class="s-val" style="font-size:.95rem">{stats.get('avg_loss', '0%') if stats else '0%'}</div><div class="s-lbl">Avg Loss</div></div>
+    <div class="s-item"><div class="s-val" style="font-size:.95rem">{grid_wr}</div><div class="s-lbl">Grid WR</div></div>
+    <div class="s-item"><div class="s-val" style="font-size:.95rem">{'Yes' if ml_trained else 'No'}</div><div class="s-lbl">ML</div></div>
+    <div class="s-item"><div class="s-val" style="font-size:.95rem">{ml_records}</div><div class="s-lbl">Samples</div></div>
+  </div>
+</div>
+
+<div class="card card-sm">
+  <div class="card-head">
+    <span class="card-label">Positions ({open_positions})</span>
+    <span class="pill pill-blue">LIVE</span>
+  </div>
+  {positions_html if positions_html != '<div class="no-positions">No open positions</div>' else '<div class="no-pos">Aucune position ouverte</div>'}
+</div>
+
+<div class="grid-2">
+  <div class="card card-sm">
+    <div class="card-head"><span class="card-label">Sniper Config</span></div>
+    <div class="strat-row"><span>Chains</span><span>BSC + Base</span></div>
+    <div class="strat-row"><span>Liq. min</span><span>$10k</span></div>
+    <div class="strat-row"><span>Confirm</span><span>+8% x3</span></div>
+    <div class="strat-row"><span>TP</span><span>30 / 75 / 150%</span></div>
+    <div class="strat-row"><span>SL</span><span>-20% trailing</span></div>
+    <div class="strat-row"><span>Max hold</span><span>30 min</span></div>
+  </div>
+  <div class="card card-sm">
+    <div class="card-head"><span class="card-label">Wallet</span><span class="pill pill-green">${wallet_total_usd:.2f}</span></div>
+    {wallet_rows}
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+      <div class="strat-row"><span>Mode</span><span>{mode_name}</span></div>
     </div>
+  </div>
+</div>
+
+<div class="card card-sm">
+  <div class="card-head"><span class="card-label">Modules actifs</span></div>
+  <div class="grid-3">
+    <div class="mod-item"><div class="dot"></div>Grid Trader</div>
+    <div class="mod-item"><div class="dot"></div>Pool Detector</div>
+    <div class="mod-item"><div class="dot"></div>Momentum</div>
+    <div class="mod-item"><div class="dot"></div>AI Engine + OpenAI</div>
+    <div class="mod-item"><div class="dot"></div>Safety Manager</div>
+    <div class="mod-item"><div class="dot"></div>Telegram</div>
+    <div class="mod-item"><div class="dot"></div>Honeypot (GoPlus)</div>
+    <div class="mod-item"><div class="dot"></div>Rugpull Detector</div>
+    <div class="mod-item"><div class="dot {"dot-warn" if not ml_trained else ""}"></div>ML AutoLearner</div>
+    <div class="mod-item"><div class="dot"></div>Binance WS</div>
+    <div class="mod-item"><div class="dot"></div>Supabase DB</div>
+    <div class="mod-item"><div class="dot"></div>DEX Trader</div>
+  </div>
+</div>
+
+<footer>Auto-refresh 15s &middot; {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC</footer>
+
+</div>
 </body>
 </html>"""
     return web.Response(text=html, content_type='text/html')

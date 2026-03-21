@@ -97,13 +97,13 @@ class MomentumDetector:
     MIN_PULLBACK_FROM_HIGH = 3.0   # Deeper pullback (3% from high)
     MAX_PULLBACK_FROM_HIGH = 12.0  # But not dumping (max 12%)
     
-    # RSI thresholds - BALANCED (not too strict, not too loose)
-    RSI_OVERBOUGHT = 50            # Back to backtest value for more trades
+    # RSI thresholds - STRICT for quality entries
+    RSI_OVERBOUGHT = 45            # Strict: no entries above RSI 45
     RSI_OVERSOLD = 30              # Ideal entry zone
-    RSI_NEUTRAL_HIGH = 45          # OK zone
+    RSI_NEUTRAL_HIGH = 40          # OK zone
     
-    # Stochastic RSI thresholds - RELAXED for more trades
-    STOCH_RSI_OVERBOUGHT = 60      # Relaxed from 55
+    # Stochastic RSI thresholds - STRICT
+    STOCH_RSI_OVERBOUGHT = 50      # Strict: no entries above StochRSI 50
     STOCH_RSI_OVERSOLD = 30        # Good entry
     
     # Volatility filter
@@ -114,10 +114,10 @@ class MomentumDetector:
     REQUIRE_BTC_ALIGNMENT = False  # Disabled - trade even in bearish markets (sniper opportunities)
     
     # Cooldown settings
-    TOKEN_COOLDOWN_HOURS = 4.0     # Reduced from 8h for more opportunities
+    TOKEN_COOLDOWN_HOURS = 6.0     # 6h cooldown between trades on same token
     
     # Score requirements
-    MIN_ADVANCED_SCORE = 50        # Lowered from 70 for more trades
+    MIN_ADVANCED_SCORE = 65        # Higher bar for quality trades only
     
     # DISABLE volume_spike - 0% success rate in backtesting
     ENABLE_VOLUME_SPIKE = False

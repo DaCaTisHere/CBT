@@ -62,12 +62,12 @@ class Position:
     take_profit: Optional[float] = None
     # SWING TRADE STRATEGY v6.0 - BACKTESTED (94.7% win rate)
     highest_price: Optional[float] = None  # Track highest price seen
-    trailing_stop_pct: float = 0.03  # 3% trailing stop (wider for swing trades)
-    trailing_activated: bool = False  # Activated after +5% profit
-    # Scaled take-profits - SWING TRADE v6.0 (from backtest: TP=10%, SL=5%)
-    tp1_hit: bool = False  # +4% - sell 20%
-    tp2_hit: bool = False  # +7% - sell 30%
-    tp3_hit: bool = False  # +10% - sell remaining (backtest validated)
+    trailing_stop_pct: float = 0.02  # 2% trailing stop (tight to lock profits)
+    trailing_activated: bool = False  # Activated after +2.5% profit
+    # Scaled take-profits - OPTIMIZED for better risk/reward
+    tp1_hit: bool = False  # +2.5% - sell 30%
+    tp2_hit: bool = False  # +4% - sell 40%
+    tp3_hit: bool = False  # +7% - sell remaining
     original_amount: Optional[float] = None  # Track original amount
     # Timeout for stagnant positions
     last_movement_time: Optional[datetime] = None  # Track last significant price movement
@@ -158,10 +158,10 @@ class PaperTrader:
         self.price_cache: Dict[str, float] = {}
         self.trade_counter = 0
         
-        # Trading parameters - OPTIMIZED for quality over quantity
-        self.max_position_size = 0.08  # 8% of portfolio per trade
-        self.default_stop_loss = 0.03  # 3% stop loss (plus serré, était 4%)
-        self.default_take_profit = 0.10  # 10% take profit target
+        # Trading parameters - TIGHT risk management for profitability
+        self.max_position_size = 0.06  # 6% of portfolio per trade (less exposure)
+        self.default_stop_loss = 0.025  # 2.5% stop loss (tight, fast exit on losers)
+        self.default_take_profit = 0.07  # 7% take profit target
         
         # Auto-learning system
         self.auto_learner: Optional[AutoLearner] = None
@@ -346,6 +346,20 @@ class PaperTrader:
                 exit_reason=reason
             )
         
+        # Record in safety_manager for global stats tracking
+        try:
+            from src.core.safety_manager import get_safety_manager
+            safety = get_safety_manager()
+            safety.record_sell(
+                token=symbol, network="binance",
+                amount_usd=abs(entry_value),
+                pnl_pct=pnl_percent, pnl_usd=pnl,
+                is_sim=True, buy_price=position.entry_price,
+                sell_price=price
+            )
+        except Exception:
+            pass
+        
         self.portfolio.trade_history.append(trade)
         
         # Log result
@@ -397,12 +411,11 @@ class PaperTrader:
             if abs(pnl_pct) > 1.0:
                 position.last_movement_time = datetime.now(timezone.utc)
             
-            # ===== TIMEOUT FOR STAGNANT POSITIONS - SWING TRADE v6.0 =====
-            # Swing trades can hold longer - 12h timeout (was 3h)
+            # ===== TIMEOUT FOR STAGNANT POSITIONS =====
             time_since_movement = (datetime.now(timezone.utc) - position.last_movement_time).total_seconds()
             hours_since_movement = time_since_movement / 3600
             
-            if hours_since_movement >= 12 and abs(pnl_pct) < 1.5:  # 12h timeout, 1.5% threshold
+            if hours_since_movement >= 4 and abs(pnl_pct) < 1.0:  # 4h timeout, 1% threshold
                 positions_to_close.append((symbol, current_price, f"Timeout: stagnant for {hours_since_movement:.1f}h (PnL: {pnl_pct:.2f}%)"))
                 continue  # Skip other checks
             
@@ -410,42 +423,40 @@ class PaperTrader:
             if position.highest_price is None or current_price > position.highest_price:
                 position.highest_price = current_price
             
-            # ===== TRAILING STOP-LOSS - SWING TRADE v6.0 (BACKTESTED) =====
-            # Activate trailing stop after +5% profit (wider for swing trades)
-            if pnl_pct >= 5.0 and not position.trailing_activated:
+            # ===== TRAILING STOP-LOSS =====
+            # Activate trailing stop after +2.5% profit (lock in gains early)
+            if pnl_pct >= 2.5 and not position.trailing_activated:
                 position.trailing_activated = True
-                self.logger.info(f"[SWING] 🔒 Trailing stop activated for {symbol} at +{pnl_pct:.1f}%")
+                self.logger.info(f"[TRADE] Trailing stop activated for {symbol} at +{pnl_pct:.1f}%")
             
-            # Calculate trailing stop level (3% from highest for swing trades)
+            # Calculate trailing stop level (2% from highest)
             if position.trailing_activated and position.highest_price:
                 trailing_stop_price = position.highest_price * (1 - position.trailing_stop_pct)
                 
-                # Update stop-loss to trailing level if higher
                 if trailing_stop_price > (position.stop_loss or 0):
                     old_sl = position.stop_loss
                     position.stop_loss = trailing_stop_price
-                    self.logger.debug(f"[SWING] 📈 {symbol} SL moved: ${old_sl:.6f} → ${trailing_stop_price:.6f}")
+                    self.logger.debug(f"[TRADE] {symbol} SL moved: ${old_sl:.6f} -> ${trailing_stop_price:.6f}")
             
-            # ===== SCALED TAKE-PROFITS - SWING TRADE v6.0 (BACKTESTED) =====
-            # From backtest: TP=10%, SL=5% gives 94.7% win rate
+            # ===== SCALED TAKE-PROFITS - OPTIMIZED =====
             
-            # TP1: +4% - Sell 20% (lock early profits)
-            if pnl_pct >= 4.0 and not position.tp1_hit and position.amount > 0:
-                sell_amount = position.original_amount * 0.20
-                if sell_amount > 0 and position.amount >= sell_amount:
-                    partial_sells.append((symbol, current_price, sell_amount, "TP1 (+4%)", 1))
-                    position.tp1_hit = True
-            
-            # TP2: +7% - Sell 30% of original
-            if pnl_pct >= 7.0 and not position.tp2_hit and position.amount > 0:
+            # TP1: +2.5% - Sell 30% (lock early profits fast)
+            if pnl_pct >= 2.5 and not position.tp1_hit and position.amount > 0:
                 sell_amount = position.original_amount * 0.30
                 if sell_amount > 0 and position.amount >= sell_amount:
-                    partial_sells.append((symbol, current_price, sell_amount, "TP2 (+7%)", 2))
+                    partial_sells.append((symbol, current_price, sell_amount, "TP1 (+2.5%)", 1))
+                    position.tp1_hit = True
+            
+            # TP2: +4% - Sell 40% of original
+            if pnl_pct >= 4.0 and not position.tp2_hit and position.amount > 0:
+                sell_amount = position.original_amount * 0.40
+                if sell_amount > 0 and position.amount >= sell_amount:
+                    partial_sells.append((symbol, current_price, sell_amount, "TP2 (+4%)", 2))
                     position.tp2_hit = True
             
-            # TP3: +10% - Sell remaining (backtest validated target)
-            if pnl_pct >= 10.0 and not position.tp3_hit and position.amount > 0:
-                positions_to_close.append((symbol, current_price, "TP3 (+10%) - Full Exit"))
+            # TP3: +7% - Sell remaining
+            if pnl_pct >= 7.0 and not position.tp3_hit and position.amount > 0:
+                positions_to_close.append((symbol, current_price, "TP3 (+7%) - Full Exit"))
                 position.tp3_hit = True
                 continue  # Skip stop-loss check
             

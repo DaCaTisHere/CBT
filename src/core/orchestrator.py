@@ -10,6 +10,7 @@ Responsibilities:
 """
 
 import asyncio
+import os
 import signal
 import aiohttp
 from typing import Dict, Optional, Any
@@ -245,9 +246,8 @@ class Orchestrator:
                         
                         # --- BACKTEST VALIDATED FILTERS ONLY ---
                         
-                        # 1. RSI: Back to backtest value for more trades
-                        # Was < 45 (too strict), now < 50 (backtest validated)
-                        rsi_ok = signal.rsi < 50  # Don't buy above RSI 50
+                        # 1. RSI: strict filter for quality entries only
+                        rsi_ok = signal.rsi < 45  # Don't buy above RSI 45
                         
                         # 2. Volume: $500k minimum (from backtest)
                         min_volume = 500000
@@ -259,17 +259,25 @@ class Orchestrator:
                         # 4. BTC Correlation: Trade WITH the market (from backtest)
                         btc_ok = signal.btc_correlation > 0
                         
-                        # 5. Basic score filter (relaxed for more trades)
-                        MIN_SCORE = 50  # Lowered from 60 for more opportunities
+                        # 5. Score filter (strict for quality)
+                        MIN_SCORE = 65  # High bar: only trade strong setups
                         has_good_score = signal.score >= MIN_SCORE
                         
-                        # === DECISION - BACKTEST ALIGNED ===
+                        # 6. MACD must not be bearish (avoid falling knives)
+                        macd_ok = signal.macd_signal != "bearish"
+                        
+                        # 7. EMA trend must not be bearish (avoid downtrends)
+                        ema_ok = signal.ema_trend not in ["bearish", "bearish_cross"]
+                        
+                        # === DECISION - STRICT QUALITY FILTERS ===
                         should_trade = (
                             rsi_ok and
                             volume_ok and
                             change_ok and
                             btc_ok and
-                            has_good_score
+                            has_good_score and
+                            macd_ok and
+                            ema_ok
                         )
                         
                         # === CORRELATION CHECK ===
@@ -310,11 +318,10 @@ class Orchestrator:
                                 f"MACD: {signal.macd_signal}"
                             )
                             
-                            # SWING TRADE SL - from backtest: SL=5% gives 94.7% win rate
-                            base_sl = 0.05  # 5% default (backtest validated)
+                            # Tight SL for favorable risk/reward
+                            base_sl = 0.025  # 2.5% default (matching paper_trader)
                             if signal.atr_percent > 0:
-                                # Use 1.5x ATR as stop-loss, but minimum 4%, maximum 6%
-                                dynamic_sl = max(0.04, min(0.06, signal.atr_percent * 1.5 / 100))
+                                dynamic_sl = max(0.02, min(0.04, signal.atr_percent * 1.2 / 100))
                             else:
                                 dynamic_sl = base_sl
                             
@@ -353,10 +360,9 @@ class Orchestrator:
                             else:
                                 self.logger.warning(f"[TRADE] ❌ Échec achat {signal.symbol}")
                         else:
-                            # Log pourquoi on skip (backtest-aligned filters only)
                             reasons = []
                             if not rsi_ok:
-                                reasons.append(f"RSI={signal.rsi:.0f} (>50)")
+                                reasons.append(f"RSI={signal.rsi:.0f} (>45)")
                             if not volume_ok:
                                 reasons.append(f"Vol=${signal.volume_usd/1000:.0f}k (<$500k)")
                             if not change_ok:
@@ -365,6 +371,10 @@ class Orchestrator:
                                 reasons.append("BTC bearish")
                             if not has_good_score:
                                 reasons.append(f"score={signal.score:.0f} (<{MIN_SCORE})")
+                            if not macd_ok:
+                                reasons.append(f"MACD={signal.macd_signal}")
+                            if not ema_ok:
+                                reasons.append(f"EMA={signal.ema_trend}")
                             
                             if reasons:
                                 self.logger.debug(f"[TRADE] Skip {signal.symbol}: {', '.join(reasons)}")
@@ -465,6 +475,35 @@ class Orchestrator:
                 # Initialize Safety Manager
                 from src.core.safety_manager import get_safety_manager
                 safety = get_safety_manager()
+                
+                # Auto-reset stats when strategy version changes
+                _STRATEGY_VERSION = "v11.0"
+                _persist = "/data" if os.path.isdir("/data") else "/tmp"
+                _version_file = os.path.join(_persist, ".strategy_version")
+                _prev_version = ""
+                try:
+                    if os.path.exists(_version_file):
+                        with open(_version_file) as _vf:
+                            _prev_version = _vf.read().strip()
+                except Exception:
+                    pass
+                if _prev_version != _STRATEGY_VERSION:
+                    self.logger.info(f"[RESET] Strategy changed {_prev_version} -> {_STRATEGY_VERSION}, resetting sim stats")
+                    safety.reset_simulation()
+                    _cap = paper_trader.portfolio.initial_capital
+                    paper_trader.portfolio.cash = _cap
+                    paper_trader.portfolio.positions.clear()
+                    paper_trader.portfolio.trade_history.clear()
+                    paper_trader.portfolio.total_trades = 0
+                    paper_trader.portfolio.winning_trades = 0
+                    paper_trader.portfolio.losing_trades = 0
+                    paper_trader.trade_counter = 0
+                    try:
+                        with open(_version_file, "w") as _vf:
+                            _vf.write(_STRATEGY_VERSION)
+                    except Exception:
+                        pass
+                
                 safety_status = safety.get_status()
                 self.logger.info(f"[SAFETY] Safety Manager initialized")
                 self.logger.info(f"[SAFETY] Mode: {'SIMULATION' if safety.is_simulation_mode() else 'REAL'}")
@@ -810,7 +849,7 @@ class Orchestrator:
                                     # Risk-based position sizing: risk 1% of capital per trade
                                     # Size = (capital * risk%) / stop_loss%
                                     RISK_PER_TRADE_PCT = 2.0
-                                    sl_pct_val = 20.0  # matching the sniper_buy sl_pct
+                                    sl_pct_val = 8.0  # matching the sniper_buy sl_pct
                                     if safety.is_simulation_mode():
                                         capital = paper_trader.portfolio.initial_capital if hasattr(paper_trader, 'portfolio') else 10000
                                         position_size = (capital * RISK_PER_TRADE_PCT / 100) / (sl_pct_val / 100)
@@ -830,11 +869,11 @@ class Orchestrator:
                                         token_address=addr,
                                         amount_usd=position_size,
                                         token_symbol=token["symbol"],
-                                        tp1_pct=30.0,
-                                        tp2_pct=75.0,
-                                        tp3_pct=150.0,
-                                        sl_pct=20.0,
-                                        max_hold_hours=0.5
+                                        tp1_pct=10.0,
+                                        tp2_pct=30.0,
+                                        tp3_pct=60.0,
+                                        sl_pct=8.0,
+                                        max_hold_hours=1.0
                                     )
                                     if trade:
                                         safety.record_buy(

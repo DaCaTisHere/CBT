@@ -315,7 +315,7 @@ async def status(request):
         "status": "running",
         "uptime_seconds": int(uptime),
         "uptime_hours": round(uptime / 3600, 2),
-        "version": "10.0",
+        "version": "11.0",
         "mode": mode_name.lower(),
         "debug": {
             "env_SIMULATION_MODE": os.getenv("SIMULATION_MODE", "NOT_SET"),

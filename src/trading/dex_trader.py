@@ -1468,11 +1468,11 @@ class DEXTrader:
         token_address: str,
         amount_usd: float,
         token_symbol: str = None,
-        tp1_pct: float = 20,    # Take profit 1 at +20%
-        tp2_pct: float = 50,    # Take profit 2 at +50%
-        tp3_pct: float = 100,   # Take profit 3 at +100%
-        sl_pct: float = 15,     # Stop loss at -15%
-        max_hold_hours: float = 24
+        tp1_pct: float = 10,    # Take profit 1 at +10%
+        tp2_pct: float = 30,    # Take profit 2 at +30%
+        tp3_pct: float = 60,    # Take profit 3 at +60%
+        sl_pct: float = 8,      # Stop loss at -8%
+        max_hold_hours: float = 1
     ) -> Optional[DEXTrade]:
         """
         SNIPER BUY - Quick entry with predefined exit strategy
@@ -1574,7 +1574,7 @@ class DEXTrader:
                             self.logger.warning(f"[SNIPER] No price for {symbol} after 10 tries — recording as stop-loss exit")
                             entry_price = pos.get("entry_price", 0)
                             remaining_usd = float(pos.get("amount_remaining", pos.get("amount", 0))) * entry_price if entry_price > 0 else 0
-                            sl_pct = pos.get("trailing_pct", 20.0)
+                            sl_pct = pos.get("trailing_pct", 10.0)
                             self.safety.record_sell(symbol, pos["network"], remaining_usd, -sl_pct, -(remaining_usd * sl_pct / 100), self.safety.is_simulation_mode())
                             positions_to_close.append(token_address)
                             continue
@@ -1602,12 +1602,12 @@ class DEXTrader:
                     changes = [abs(atr_prices[i] - atr_prices[i-1]) / atr_prices[i-1] * 100
                                for i in range(1, len(atr_prices)) if atr_prices[i-1] > 0]
                     atr_pct = sum(changes) / len(changes)
-                    adaptive_trail = max(8.0, min(atr_pct * 2.5, 25.0))  # 8%-25% range for volatile new tokens
+                    adaptive_trail = max(5.0, min(atr_pct * 2.0, 12.0))  # 5%-12% range, tighter for better risk/reward
                     pos["trailing_pct"] = adaptive_trail
                 
                 if current_price > pos.get("highest_price", entry_price):
                     pos["highest_price"] = current_price
-                    trailing_pct = pos.get("trailing_pct", 15)
+                    trailing_pct = pos.get("trailing_pct", 8)
                     new_sl = current_price * (1 - trailing_pct / 100)
                     if new_sl > pos["sl_price"]:
                         old_sl = pos["sl_price"]
@@ -1620,7 +1620,7 @@ class DEXTrader:
                 should_close = False
                 close_reason = ""
 
-                HARD_STOP_LOSS_PCT = -30.0  # Hard floor for new token volatility
+                HARD_STOP_LOSS_PCT = -15.0  # Hard floor: cap max loss at 15%
 
                 if pnl_pct <= HARD_STOP_LOSS_PCT:
                     close_reason = f"HARD STOP-LOSS ({pnl_pct:+.1f}% <= {HARD_STOP_LOSS_PCT}%)"
@@ -1631,9 +1631,9 @@ class DEXTrader:
                 elif datetime.now(timezone.utc) >= pos["max_hold_until"]:
                     close_reason = f"MAX HOLD ({pnl_pct:+.1f}%)"
                     should_close = True
-                elif pnl_pct < -10.0:
+                elif pnl_pct < -5.0:
                     hold_minutes = (datetime.now(timezone.utc) - pos["entry_time"]).total_seconds() / 60
-                    if hold_minutes >= 15:
+                    if hold_minutes >= 10:
                         close_reason = f"TIME+LOSS EXIT ({pnl_pct:+.1f}% after {hold_minutes:.0f}min)"
                         should_close = True
                 elif not pos["tp3_hit"] and current_price >= pos["tp3_price"]:
@@ -1652,7 +1652,7 @@ class DEXTrader:
                             self.logger.error(f"[SNIPER] Sell returned None for {symbol} (attempt {pos['_sell_retries']})")
                             if pos["_sell_retries"] >= 3:
                                 self.logger.error(f"[SNIPER] Max retries for {symbol} — recording as stop-loss exit")
-                                sl_pct = pos.get("trailing_pct", 20.0)
+                                sl_pct = pos.get("trailing_pct", 10.0)
                                 self.safety.record_sell(symbol, pos["network"], remaining_usd, -sl_pct, -(remaining_usd * sl_pct / 100), self.safety.is_simulation_mode())
                                 positions_to_close.append(token_address)
                             continue
@@ -1661,7 +1661,7 @@ class DEXTrader:
                         self.logger.error(f"[SNIPER] Sell failed for {symbol} (attempt {pos['_sell_retries']}): {sell_err}")
                         if pos["_sell_retries"] >= 3:
                             self.logger.error(f"[SNIPER] Max retries for {symbol} — recording as stop-loss exit")
-                            sl_pct = pos.get("trailing_pct", 20.0)
+                            sl_pct = pos.get("trailing_pct", 10.0)
                             self.safety.record_sell(symbol, pos["network"], remaining_usd, -sl_pct, -(remaining_usd * sl_pct / 100), self.safety.is_simulation_mode())
                             positions_to_close.append(token_address)
                         continue

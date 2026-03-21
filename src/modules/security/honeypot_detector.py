@@ -176,12 +176,18 @@ def _parse_tax(val) -> float:
 
 
 def _fail_safe(reason: str) -> Dict[str, Any]:
-    """Return a fail-safe (unsafe) result when verification is impossible."""
+    """
+    Return a permissive result when verification is impossible.
+    
+    Rationale: if GoPlus API is unreachable (SSL/network issues on Railway),
+    blocking ALL tokens would paralyze the sniper strategy entirely.
+    The token still passes through rugpull_detector, AI engine, and liquidity checks.
+    """
     return {
-        "is_safe": False,
+        "is_safe": True,
         "risk_level": "unknown",
-        "reasons": [f"check_failed: {reason}"],
-        "details": {"error": reason},
+        "reasons": [f"check_skipped: {reason}"],
+        "details": {"error": reason, "api_unreachable": True},
     }
 
 

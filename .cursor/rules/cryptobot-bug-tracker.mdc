@@ -117,10 +117,21 @@ alwaysApply: true
 | 2026-03-21 | pool_detector.py + orchestrator.py | honeypot check + watchlist utilisent pool.address au lieu de token_address | Utilise pool.token_address or pool.address |
 | 2026-03-21 | risk_manager.py:150 | Pas d'alerte Telegram sur daily loss/drawdown | _send_telegram_alert() ajouté |
 
+| 2026-03-21 | dex_trader.py | SL 15% trop large, trailing 8-25% trop lache | SL 8%, trailing 5-12%, hard stop 15% |
+| 2026-03-21 | dex_trader.py | TIME+LOSS exit -10%/15min trop lent | -5%/10min |
+| 2026-03-21 | dex_trader.py | API failure fallback 20% | Réduit à 10% |
+| 2026-03-21 | orchestrator.py | Sniper TP 30/75/150% irréaliste | TP 10/30/60% |
+| 2026-03-21 | orchestrator.py | Sniper SL 20% trop large | SL 8% |
+| 2026-03-21 | orchestrator.py | Pas de filtre MACD/EMA sur momentum | MACD + EMA filters ajoutés |
+| 2026-03-21 | orchestrator.py | RSI<50 trop permissif, score min 50 trop bas | RSI<45, score min 65 |
+| 2026-03-21 | paper_trader.py | SL 3% avec TP 4/7/10% = mauvais R/R | SL 2.5%, TP 2.5/4/7% |
+| 2026-03-21 | paper_trader.py | Trailing 3% activé à +5% trop tard | Trailing 2% activé à +2.5% |
+| 2026-03-21 | paper_trader.py | Timeout stagnant 12h trop long | Réduit à 4h |
+| 2026-03-21 | paper_trader.py | Sells non enregistrés dans safety_manager | Ajouté record_sell() via get_safety_manager() |
+| 2026-03-21 | momentum_detector.py | RSI 50, StochRSI 60, score min 50 trop permissifs | RSI 45, StochRSI 50, score 65 |
+
 ## BUGS ENCORE OUVERTS
 
 Aucun bug connu.
-
-## RÈGLE : quand tu fixes un bug, METS À JOUR ce fichier
 
 ## RÈGLE : quand tu fixes un bug, METS À JOUR ce fichier

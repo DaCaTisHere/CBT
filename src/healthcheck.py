@@ -609,9 +609,9 @@ footer{{text-align:center;padding:20px;color:var(--dim);font-size:.7rem}}
     <div class="strat-row"><span>Chains</span><span>BSC + Base</span></div>
     <div class="strat-row"><span>Liq. min</span><span>$10k</span></div>
     <div class="strat-row"><span>Confirm</span><span>+8% x3</span></div>
-    <div class="strat-row"><span>TP</span><span>30 / 75 / 150%</span></div>
-    <div class="strat-row"><span>SL</span><span>-20% trailing</span></div>
-    <div class="strat-row"><span>Max hold</span><span>30 min</span></div>
+    <div class="strat-row"><span>TP</span><span>10 / 30 / 60%</span></div>
+    <div class="strat-row"><span>SL</span><span>-8% trailing</span></div>
+    <div class="strat-row"><span>Max hold</span><span>1h</span></div>
   </div>
   <div class="card card-sm">
     <div class="card-head"><span class="card-label">Wallet</span><span class="pill pill-green">${wallet_total_usd:.2f}</span></div>

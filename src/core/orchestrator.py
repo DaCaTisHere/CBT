@@ -947,7 +947,7 @@ class Orchestrator:
                 self.logger.info("[STRATEGY] DUAL STRATEGY ACTIVE:")
                 self.logger.info("[STRATEGY]   1. REGIME-ADAPTIVE GRID on ETH/USDC + BNB/USDT (80% capital)")
                 self.logger.info("[STRATEGY]   2. NEW TOKEN SNIPER on BSC + Base (20% capital)")
-                self.logger.info(f"[STRATEGY]   Sniper: +{MOMENTUM_CONFIRM_PCT}% + {CONFIRMS_NEEDED} confirms | TP 30/75/150% | SL 20% | MaxHold 30min")
+                self.logger.info(f"[STRATEGY]   Sniper: +{MOMENTUM_CONFIRM_PCT}% + {CONFIRMS_NEEDED} confirms | TP 10/30/60% | SL 8% | MaxHold 1h")
                 self.logger.info(f"[STRATEGY]   Max {5} positions | Check every 30s | BTC trend gate | Min liq $10k")
                 self.logger.info("=" * 60)
                 self.logger.info("[AI]   ✓ Position Sizer - Dynamic risk management")

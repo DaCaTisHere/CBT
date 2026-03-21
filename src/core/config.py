@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     # ==========================================
     # DATABASE
     # ==========================================
-    DATABASE_URL: str = Field(default="sqlite+aiosqlite:///./cryptobot.db")
+    DATABASE_URL: str = Field(default="postgresql://localhost:5432/cryptobot")
     
     # ==========================================
     # RISK MANAGEMENT

@@ -70,17 +70,17 @@ _async_session_factory: async_sessionmaker[AsyncSession] | None = None
 
 def get_database_url() -> str:
     """
-    Get database URL with async driver
-    
-    Converts standard PostgreSQL URL to async version.
+    Get database URL with async driver.
+    Converts standard PostgreSQL URL to asyncpg version.
     """
     url = settings.DATABASE_URL
     
-    # Convert to async URL if needed
     if url.startswith("postgresql://"):
-        url = url.replace("postgresql://", "postgresql+asyncpg://")
-    elif url.startswith("sqlite://"):
-        url = url.replace("sqlite://", "sqlite+aiosqlite://")
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif "asyncpg" not in url and "postgresql" in url:
+        pass
     
     return url
 
@@ -92,23 +92,17 @@ def get_engine() -> AsyncEngine:
     if _engine is None:
         url = get_database_url()
         
-        # SQLite doesn't support pool_size/max_overflow
-        if "sqlite" in url:
-            _engine = create_async_engine(
-                url,
-                echo=settings.LOG_LEVEL.value == "DEBUG",
-            )
-        else:
-            _engine = create_async_engine(
-                url,
-                echo=settings.LOG_LEVEL.value == "DEBUG",
-                pool_size=10,
-                max_overflow=20,
-                pool_pre_ping=True,
-                pool_recycle=3600,
-            )
+        _engine = create_async_engine(
+            url,
+            echo=settings.LOG_LEVEL.value == "DEBUG",
+            pool_size=10,
+            max_overflow=20,
+            pool_pre_ping=True,
+            pool_recycle=3600,
+        )
         
-        logger.info(f"Database engine created: {url.split('@')[-1] if '@' in url else url}")
+        safe_url = url.split('@')[-1] if '@' in url else url
+        logger.info(f"Database engine created: {safe_url}")
     
     return _engine
 
@@ -164,14 +158,10 @@ async def init_database():
         engine = get_engine()
         url = get_database_url()
         
-        # Create schemas if using PostgreSQL (SQLite doesn't support schemas)
-        if "postgresql" in url:
-            async with engine.begin() as conn:
-                await conn.execute(text("CREATE SCHEMA IF NOT EXISTS trading"))
-                await conn.execute(text("CREATE SCHEMA IF NOT EXISTS analytics"))
-                logger.info("Database schemas created")
-        else:
-            logger.info("Using SQLite - schemas not needed")
+        async with engine.begin() as conn:
+            await conn.execute(text("CREATE SCHEMA IF NOT EXISTS trading"))
+            await conn.execute(text("CREATE SCHEMA IF NOT EXISTS analytics"))
+            logger.info("Database schemas ensured")
         
         # Create tables
         async with engine.begin() as conn:

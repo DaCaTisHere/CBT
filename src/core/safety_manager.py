@@ -429,6 +429,17 @@ class SafetyManager:
         
         self._check_unlock_status()
         self._save_stats()
+        
+        try:
+            from src.data.storage.trade_recorder import record_trade, fire_and_forget
+            strategy = "grid" if is_grid else "momentum"
+            fire_and_forget(record_trade(
+                strategy=strategy, side="SELL", symbol=token, chain=network,
+                amount_usd=amount_usd, price=sell_price, status="SUCCESS",
+                pnl_usd=pnl_usd, pnl_pct=pnl_pct, is_simulation=is_sim,
+            ))
+        except Exception:
+            pass
     
     def _recalc_sim_stats(self):
         if self.stats.sim_trades_total > 0:

@@ -75,7 +75,7 @@ class AutoLearner:
     """
     
     # Configuration
-    DATA_DIR = "/data/ml" if os.path.isdir("/data") else "data/ml"
+    DATA_DIR = "/data/ml" if os.path.isdir("/data") else "/tmp/ml"
     TRADES_FILE = "trade_records.json"
     MODEL_FILE = "learned_patterns.json"
     MIN_TRADES_FOR_TRAINING = 20  # Minimum trades before model is useful
@@ -697,4 +697,21 @@ class AutoLearner:
                 )[:3]
             }
         }
+
+
+_singleton: Optional["AutoLearner"] = None
+
+
+def get_auto_learner() -> "AutoLearner":
+    """Get or create the AutoLearner singleton."""
+    global _singleton
+    if _singleton is None:
+        _singleton = AutoLearner()
+    return _singleton
+
+
+def set_auto_learner(instance: "AutoLearner"):
+    """Set an existing AutoLearner instance as the singleton (used by PaperTrader)."""
+    global _singleton
+    _singleton = instance
 

@@ -285,6 +285,27 @@ class AITradingEngine:
             
             await asyncio.gather(_check_sentiment(), _check_whales(), _check_entry())
             
+            # ====== 5.5 LLM ANALYSIS (OpenAI) ======
+            try:
+                from .openai_analyzer import analyze_token_with_llm
+                llm_adj, llm_verdict, llm_reasons = await analyze_token_with_llm(
+                    token_symbol=token_symbol,
+                    chain=chain,
+                    current_price=current_price,
+                    liquidity_usd=liquidity_usd,
+                    volume_24h=volume_24h,
+                    security_score=security_score,
+                    sentiment_score=sentiment_score,
+                    entry_score=entry_score,
+                    reasoning=reasoning,
+                    warnings=warnings,
+                )
+                if llm_adj != 0.0:
+                    confidence += llm_adj
+                    reasoning.extend(llm_reasons)
+            except Exception as e:
+                logger.debug(f"LLM analysis skipped: {e}")
+            
             # ====== 6. POSITION SIZING ======
             recommended_amount = 50.0
             stop_loss = 10.0  # Cut losses faster

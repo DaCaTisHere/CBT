@@ -36,8 +36,8 @@ def setup_logging():
     Setup structured logging with structlog
     """
     # Create logs directory if it doesn't exist
-    log_dir = Path("logs")
-    log_dir.mkdir(exist_ok=True)
+    log_dir = Path("/data/logs") if Path("/data").is_dir() else Path("/tmp/logs")
+    log_dir.mkdir(parents=True, exist_ok=True)
     
     # Configure standard logging
     logging.basicConfig(

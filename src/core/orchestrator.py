@@ -69,13 +69,16 @@ class Orchestrator:
         self.logger.info("[INIT] Initializing system components...")
         
         try:
-            # Initialize database (optional in simulation mode)
-            if not settings.SIMULATION_MODE or settings.DATABASE_URL:
+            # Initialize database
+            try:
                 self.database = Database()
                 await self.database.connect()
                 self.logger.info("[OK] Database connected")
-            else:
-                self.logger.warning("[WARN] Database skipped (simulation mode)")
+                
+                from src.data.storage.trade_recorder import init_recorder
+                await init_recorder()
+            except Exception as e:
+                self.logger.warning(f"[WARN] Database connection failed (trades saved to JSON only): {e}")
             
             # Initialize risk manager
             await self.risk_manager.initialize()
@@ -280,9 +283,28 @@ class Orchestrator:
                         if signal.symbol in btc_correlated and correlated_count >= 3:
                             should_trade = False  # Max 3 BTC-correlated positions
                         
-                        # === ML DISABLED - Was trained on bad data (40.9% win rate) ===
-                        # Will be re-enabled after collecting good trades with new filters
-                        # TODO: Reset ML data and retrain after 50+ trades with new filters
+                        # === ML FILTER (re-enabled when model is trained with good data) ===
+                        if should_trade:
+                            try:
+                                from src.ml.auto_learner import get_auto_learner
+                                ml = get_auto_learner()
+                                if ml.is_trained and ml.patterns.get("win_rate", 0) >= 0.50:
+                                    ml_ok, ml_conf, ml_reasons = ml.predict_success(
+                                        signal_type=signal.signal_type,
+                                        signal_score=signal.score,
+                                        rsi=signal.rsi,
+                                        stoch_rsi=signal.stoch_rsi,
+                                        macd_signal=signal.macd_signal,
+                                        ema_trend=signal.ema_trend,
+                                        volume_usd=signal.volume_usd,
+                                        change_percent=signal.change_percent,
+                                        btc_correlation=signal.btc_correlation,
+                                    )
+                                    if not ml_ok:
+                                        should_trade = False
+                                        self.logger.info(f"[ML] Blocked {signal.symbol}: confidence {ml_conf:.0%}")
+                            except Exception:
+                                pass
                         
                         if should_trade:
                             self.logger.info(f"[SWING] 🎯 Signal VALIDÉ: {signal.symbol} (Score: {signal.score:.0f}/100)")
@@ -943,11 +965,20 @@ class Orchestrator:
                             self.logger.info(f"[EVOLVE] Bot evolved: {evolve_result['changes']}")
                     except Exception as e:
                         self.logger.warning(f"[EVOLVE] Error: {e}")
+                    
+                    try:
+                        from src.ml.auto_learner import get_auto_learner
+                        ml = get_auto_learner()
+                        await ml.train()
+                    except Exception as e:
+                        self.logger.debug(f"[ML] Auto-retrain skipped: {e}")
 
-                # Periodic Telegram report
+                # Periodic Telegram report + OpenAI portfolio analysis
                 if now - _last_daily_report > DAILY_REPORT_INTERVAL:
                     _last_daily_report = now
                     await self._send_telegram_report()
+                    await self._run_ai_portfolio_review()
+                    await self._save_daily_stats_to_db()
 
                 await asyncio.sleep(10)
                 
@@ -997,6 +1028,74 @@ class Orchestrator:
         except Exception as e:
             self.logger.warning(f"[TELEGRAM] Report error: {e}")
     
+    async def _run_ai_portfolio_review(self):
+        """Ask OpenAI to review portfolio performance and suggest improvements."""
+        try:
+            from src.modules.ai.openai_analyzer import analyze_portfolio_performance
+            from src.core.safety_manager import get_safety_manager
+            safety = get_safety_manager()
+            status = safety.get_status()
+            sim = status["simulation"]
+            
+            total_trades = sim.get("trades", 0)
+            if total_trades < 5:
+                return
+            
+            wr_str = sim.get("win_rate", "0%").replace("%", "")
+            try:
+                win_rate = float(wr_str)
+            except ValueError:
+                win_rate = 0.0
+            
+            pnl_str = sim.get("total_pnl", "$0").replace("$", "").replace("+", "")
+            try:
+                total_pnl = float(pnl_str)
+            except ValueError:
+                total_pnl = 0.0
+            
+            advice = await analyze_portfolio_performance(
+                total_trades=total_trades,
+                win_rate=win_rate,
+                total_pnl_usd=total_pnl,
+                avg_win_pct=safety.stats.sim_avg_win_pct,
+                avg_loss_pct=safety.stats.sim_avg_loss_pct,
+                active_strategies=["grid", "momentum", "sniper"],
+            )
+            if advice:
+                self.logger.info(f"[AI] Portfolio review:\n{advice}")
+                from src.data.storage.trade_recorder import record_system_event, fire_and_forget
+                fire_and_forget(record_system_event(
+                    event_type="ai_portfolio_review",
+                    severity="INFO",
+                    message=advice,
+                ))
+        except Exception as e:
+            self.logger.debug(f"[AI] Portfolio review skipped: {e}")
+
+    async def _save_daily_stats_to_db(self):
+        """Save daily performance stats to PostgreSQL."""
+        try:
+            from src.core.safety_manager import get_safety_manager
+            from src.data.storage.trade_recorder import record_daily_stats, fire_and_forget
+            safety = get_safety_manager()
+            
+            for strategy, trades, wins, pnl in [
+                ("grid", safety.stats.grid_trades_total, safety.stats.grid_trades_won, safety.stats.grid_total_pnl_usd),
+                ("momentum", safety.stats.momentum_trades_total, safety.stats.momentum_trades_won, safety.stats.momentum_total_pnl_usd),
+            ]:
+                if trades > 0:
+                    wr = (wins / trades) * 100
+                    fire_and_forget(record_daily_stats(
+                        strategy=strategy,
+                        total_trades=trades,
+                        profitable_trades=wins,
+                        losing_trades=trades - wins,
+                        total_pnl_usd=pnl,
+                        win_rate=wr,
+                    ))
+        except Exception as e:
+            self.logger.debug(f"[DB] Daily stats save skipped: {e}")
+
     async def _health_check(self):
         """Perform health check on all components"""
         # Check database connection

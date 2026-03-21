@@ -11,6 +11,7 @@ Checks before trading:
 GoPlus API is free, no key needed.
 """
 
+import ssl
 import time
 from typing import Dict, Any
 
@@ -63,7 +64,11 @@ async def check_token(token_address: str, chain: str) -> Dict[str, Any]:
 
     try:
         url = f"{GOPLUS_BASE_URL}/{chain_id}?contract_addresses={token_address}"
-        async with aiohttp.ClientSession() as session:
+        ssl_ctx = ssl.create_default_context()
+        ssl_ctx.check_hostname = False
+        ssl_ctx.verify_mode = ssl.CERT_NONE
+        connector = aiohttp.TCPConnector(ssl=ssl_ctx)
+        async with aiohttp.ClientSession(connector=connector) as session:
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
                 if resp.status != 200:
                     result = _fail_safe(f"GoPlus API HTTP {resp.status}")

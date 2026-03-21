@@ -20,7 +20,7 @@ from src.utils.logger import get_logger
 
 # Auto-learning system
 try:
-    from src.ml.auto_learner import AutoLearner
+    from src.ml.auto_learner import AutoLearner, get_auto_learner, set_auto_learner
     ML_AVAILABLE = True
 except ImportError:
     ML_AVAILABLE = False
@@ -166,8 +166,9 @@ class PaperTrader:
         # Auto-learning system
         self.auto_learner: Optional[AutoLearner] = None
         if ML_AVAILABLE:
-            self.auto_learner = AutoLearner()
-            self.logger.info("[PAPER] 🧠 Auto-learning system enabled")
+            self.auto_learner = get_auto_learner()
+            set_auto_learner(self.auto_learner)
+            self.logger.info("[PAPER] 🧠 Auto-learning system enabled (singleton)")
         
         self.logger.info(f"[PAPER] Paper Trader initialized with ${initial_capital:,.2f}")
     
@@ -722,7 +723,7 @@ class PaperTrader:
                 "saved_at": datetime.now(timezone.utc).isoformat()
             }
             
-            _persist = "/data" if os.path.isdir("/data") else "data"
+            _persist = "/data" if os.path.isdir("/data") else "/tmp"
             os.makedirs(_persist, exist_ok=True)
             with open(f"{_persist}/paper_portfolio.json", "w") as f:
                 json.dump(state, f, indent=2)
@@ -733,7 +734,7 @@ class PaperTrader:
     async def _load_state(self):
         """Load portfolio state from file"""
         try:
-            _persist = "/data" if os.path.isdir("/data") else "data"
+            _persist = "/data" if os.path.isdir("/data") else "/tmp"
             if not os.path.exists(f"{_persist}/paper_portfolio.json"):
                 return
 

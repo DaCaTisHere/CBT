@@ -2,6 +2,7 @@
 SQLAlchemy Models for Cryptobot Ultimate
 
 Database models for storing trading data, positions, and analytics.
+Uses PostgreSQL (Supabase) as the primary database.
 """
 
 from datetime import datetime
@@ -9,42 +10,16 @@ from decimal import Decimal
 from typing import Optional
 from sqlalchemy import (
     Column, String, Integer, Boolean, DateTime, Numeric, 
-    ForeignKey, Text, CheckConstraint, Index, Enum as SQLEnum, JSON
+    ForeignKey, Text, CheckConstraint, Index, Enum as SQLEnum
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship, declarative_base
 from sqlalchemy.sql import func
 import uuid
 import enum
-import os
 
 
 Base = declarative_base()
-
-
-def _is_sqlite():
-    """Check if using SQLite"""
-    db_url = os.getenv("DATABASE_URL", "sqlite")
-    return "sqlite" in db_url
-
-
-# Use String(36) for SQLite (UUID not supported), UUID for PostgreSQL  
-def get_uuid_column(**kwargs):
-    """Get appropriate UUID column type"""
-    if _is_sqlite():
-        return Column(String(36), default=lambda: str(uuid.uuid4()), **kwargs)
-    else:
-        from sqlalchemy.dialects.postgresql import UUID
-        return Column(UUID(as_uuid=True), default=uuid.uuid4, **kwargs)
-
-
-# Use JSON for SQLite, JSONB for PostgreSQL
-def get_json_type():
-    """Get appropriate JSON type based on database"""
-    if _is_sqlite():
-        return JSON
-    else:
-        return JSONB
 
 
 # ==========================================
@@ -93,7 +68,7 @@ class Token(Base):
         Index('idx_tokens_symbol', 'symbol'),
     )
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     address = Column(String(66), nullable=False)
     symbol = Column(String(20), nullable=False)
     name = Column(String(100))
@@ -101,8 +76,8 @@ class Token(Base):
     decimals = Column(Integer, nullable=False, default=18)
     is_verified = Column(Boolean, default=False)
     is_scam = Column(Boolean, default=False)
-    safety_score = Column(Integer)  # 0-100
-    token_metadata = Column(get_json_type())  # Additional token info
+    safety_score = Column(Integer)
+    token_metadata = Column(JSONB)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -126,15 +101,15 @@ class Pair(Base):
         Index('idx_pairs_tokens', 'token0_id', 'token1_id'),
     )
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     address = Column(String(66), nullable=False)
-    token0_id = Column(String(36), ForeignKey('tokens.id'))
-    token1_id = Column(String(36), ForeignKey('tokens.id'))
-    dex = Column(String(50), nullable=False)  # Uniswap, Sushiswap, etc.
+    token0_id = Column(UUID(as_uuid=True), ForeignKey('tokens.id'))
+    token1_id = Column(UUID(as_uuid=True), ForeignKey('tokens.id'))
+    dex = Column(String(50), nullable=False)
     chain = Column(String(20), nullable=False)
     liquidity_usd = Column(Numeric(20, 2))
     volume_24h = Column(Numeric(20, 2))
-    pair_metadata = Column(get_json_type())
+    pair_metadata = Column(JSONB)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -160,10 +135,10 @@ class Trade(Base):
         Index('idx_trades_token_id', 'token_id'),
     )
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    strategy = Column(String(50), nullable=False)  # sniper, news_trader, etc.
-    token_id = Column(String(36), ForeignKey('tokens.id'))
-    pair_id = Column(String(36), ForeignKey('pairs.id'))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    strategy = Column(String(50), nullable=False)
+    token_id = Column(UUID(as_uuid=True), ForeignKey('tokens.id'))
+    pair_id = Column(UUID(as_uuid=True), ForeignKey('pairs.id'))
     side = Column(String(10), nullable=False)
     amount = Column(Numeric(30, 18), nullable=False)
     price = Column(Numeric(30, 18), nullable=False)
@@ -173,7 +148,7 @@ class Trade(Base):
     tx_hash = Column(String(66))
     status = Column(String(20), nullable=False)
     error_message = Column(Text)
-    trade_metadata = Column(get_json_type())
+    trade_metadata = Column(JSONB)
     executed_at = Column(DateTime(timezone=True), server_default=func.now())
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -197,11 +172,11 @@ class Position(Base):
         Index('idx_positions_token_id', 'token_id'),
     )
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     strategy = Column(String(50), nullable=False)
-    token_id = Column(String(36), ForeignKey('tokens.id'))
-    entry_trade_id = Column(String(36), ForeignKey('trades.id'))
-    exit_trade_id = Column(String(36), ForeignKey('trades.id'), nullable=True)
+    token_id = Column(UUID(as_uuid=True), ForeignKey('tokens.id'))
+    entry_trade_id = Column(UUID(as_uuid=True), ForeignKey('trades.id'))
+    exit_trade_id = Column(UUID(as_uuid=True), ForeignKey('trades.id'), nullable=True)
     entry_price = Column(Numeric(30, 18), nullable=False)
     exit_price = Column(Numeric(30, 18))
     amount = Column(Numeric(30, 18), nullable=False)
@@ -210,7 +185,7 @@ class Position(Base):
     pnl_percent = Column(Numeric(10, 4))
     stop_loss_price = Column(Numeric(30, 18))
     take_profit_price = Column(Numeric(30, 18))
-    position_metadata = Column(get_json_type())
+    position_metadata = Column(JSONB)
     opened_at = Column(DateTime(timezone=True), server_default=func.now())
     closed_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -234,9 +209,9 @@ class OHLCV(Base):
     )
 
     time = Column(DateTime(timezone=True), primary_key=True, nullable=False)
-    token_id = Column(String(36), ForeignKey('tokens.id'), primary_key=True)
-    pair_id = Column(String(36), ForeignKey('pairs.id'))
-    timeframe = Column(String(10), primary_key=True, nullable=False)  # 1m, 5m, 1h, etc.
+    token_id = Column(UUID(as_uuid=True), ForeignKey('tokens.id'), primary_key=True)
+    pair_id = Column(UUID(as_uuid=True), ForeignKey('pairs.id'))
+    timeframe = Column(String(10), primary_key=True, nullable=False)
     open = Column(Numeric(30, 18), nullable=False)
     high = Column(Numeric(30, 18), nullable=False)
     low = Column(Numeric(30, 18), nullable=False)
@@ -296,11 +271,11 @@ class SystemEvent(Base):
         Index('idx_system_events_created_at', 'created_at'),
     )
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     event_type = Column(String(50), nullable=False)
     severity = Column(String(20), nullable=False)
     message = Column(Text, nullable=False)
-    event_metadata = Column(get_json_type())
+    event_metadata = Column(JSONB)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     def __repr__(self):

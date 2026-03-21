@@ -85,10 +85,26 @@ alwaysApply: true
 | 2026-03-19 | risk_manager.py:14-15 | import asyncio et timedelta inutilisés | Supprimés |
 | 2026-03-19 | risk_manager.py:256 | os.makedirs("data") redondant (path géré après) | Supprimé |
 
+| 2026-03-19 | honeypot_detector.py | GoPlus SSL TLSV1_UNRECOGNIZED_NAME | SSL verify désactivé pour GoPlus uniquement |
+| 2026-03-19 | rugpull_detector.py | GoPlus SSL même erreur + datetime naive + import web3 | SSL fix + datetime.now(timezone.utc) + import web3 supprimé |
+| 2026-03-19 | rugpull_detector.py:260,269 | float() crash sur valeurs non-numériques API | _safe_float() avec try/except |
+| 2026-03-19 | config.py:73 | DATABASE_URL=sqlite éphémère | Changé default vers PostgreSQL |
+| 2026-03-19 | models.py | String(36) UUIDs + JSON pour SQLite compat | UUID natif + JSONB PostgreSQL |
+| 2026-03-19 | database.py | Code SQLite inutile (branching, pas de pool) | Supprimé, PostgreSQL uniquement |
+| 2026-03-19 | requirements.txt | aiosqlite inutile, supabase SDK jamais utilisé | aiosqlite→asyncpg, supabase retiré |
+| 2026-03-19 | 8 fichiers | Fallback "data" (éphémère) au lieu de "/tmp" | Tous corrigés vers "/tmp" |
+| 2026-03-19 | orchestrator.py:283 | ML désactivé (mauvais WR historique 40.9%) | Réactivé avec guard WR>=50% |
+| 2026-03-19 | auto_learner.py | Pas de singleton, chaque module crée une instance | get_auto_learner() + set_auto_learner() |
+| 2026-03-19 | trading_engine.py | Pas d'analyse LLM, AI = règles heuristiques | OpenAI GPT intégré via openai_analyzer.py |
+| 2026-03-19 | orchestrator.py | Aucun trade écrit en DB, tout en JSON | trade_recorder.py branché dans safety_manager |
+| 2026-03-19 | orchestrator.py | Pas d'auto-retrain ML | train() appelé toutes les 2h dans auto_evolve |
+| 2026-03-19 | orchestrator.py | Pas d'analyse portfolio IA | OpenAI review toutes les 6h |
+
 ## BUGS ENCORE OUVERTS
 
 | Priorité | Fichier | Bug | Impact |
 |----------|---------|-----|--------|
+| HIGH | Railway env | DATABASE_URL pointe encore vers SQLite | Bot n'écrit pas en Supabase (besoin password DB) |
 | MEDIUM | dexscreener_client.py:203 | enrich_pool écrase pool.address avec baseToken.address | Adresse pool incorrecte |
 | LOW | dex_trader.py:504 | Division par zéro si amount_tokens=0 | Crash potentiel (guard partiel) |
 | INFO | risk_manager.py:150 | TODO: envoyer alerte Telegram | Feature manquante |

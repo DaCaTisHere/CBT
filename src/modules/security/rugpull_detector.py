@@ -9,13 +9,14 @@ Vérifie :
 5. Historique du créateur
 """
 import asyncio
-import logging
+import ssl
 from typing import Optional, Dict, Any, List, Tuple
-from datetime import datetime, timedelta
-from web3 import Web3
+from datetime import datetime, timezone
 import aiohttp
 
-logger = logging.getLogger(__name__)
+from src.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class RugPullDetector:
@@ -86,7 +87,7 @@ class RugPullDetector:
                 # Check token age
                 created_at = dex_data.get("created_at")
                 if created_at:
-                    age_hours = (datetime.now() - created_at).total_seconds() / 3600
+                    age_hours = (datetime.now(timezone.utc) - created_at).total_seconds() / 3600
                     if age_hours < self.MIN_TOKEN_AGE_HOURS:
                         risk_score += 20
                         details["risk_factors"].append(f"Very new token: {age_hours:.1f}h old")
@@ -199,7 +200,7 @@ class RugPullDetector:
         try:
             async with aiohttp.ClientSession() as session:
                 url = f"{self.DEXSCREENER_API}/{token_address}"
-                async with session.get(url, timeout=10) as response:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
                     if response.status == 200:
                         data = await response.json()
                         pairs = data.get("pairs", [])
@@ -212,7 +213,7 @@ class RugPullDetector:
                         
                         created_at = None
                         if main_pair.get("pairCreatedAt"):
-                            created_at = datetime.fromtimestamp(main_pair["pairCreatedAt"] / 1000)
+                            created_at = datetime.fromtimestamp(main_pair["pairCreatedAt"] / 1000, tz=timezone.utc)
                         
                         return {
                             "liquidity_usd": main_pair.get("liquidity", {}).get("usd", 0),
@@ -246,9 +247,13 @@ class RugPullDetector:
             return {"error": f"Chain {chain} not supported"}
             
         try:
-            async with aiohttp.ClientSession() as session:
+            ssl_ctx = ssl.create_default_context()
+            ssl_ctx.check_hostname = False
+            ssl_ctx.verify_mode = ssl.CERT_NONE
+            connector = aiohttp.TCPConnector(ssl=ssl_ctx)
+            async with aiohttp.ClientSession(connector=connector) as session:
                 url = f"{self.GOPLUS_API}/{chain_id}?contract_addresses={token_address}"
-                async with session.get(url, timeout=10) as response:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
                     if response.status == 200:
                         data = await response.json()
                         result = data.get("result", {}).get(token_address.lower(), {})
@@ -257,7 +262,10 @@ class RugPullDetector:
                         holders = result.get("holders", [])
                         top_holder_percent = 0
                         if holders:
-                            top_holder_percent = float(holders[0].get("percent", 0)) * 100
+                            try:
+                                top_holder_percent = float(holders[0].get("percent", 0)) * 100
+                            except (ValueError, TypeError):
+                                top_holder_percent = 0
                         
                         return {
                             "is_open_source": result.get("is_open_source") == "1",
@@ -266,7 +274,7 @@ class RugPullDetector:
                             "holder_percent": top_holder_percent,
                             "lp_holders": result.get("lp_holders", []),
                             "creator_address": result.get("creator_address"),
-                            "creator_percent": float(result.get("creator_percent", 0)) * 100,
+                            "creator_percent": _safe_float(result.get("creator_percent", 0)) * 100,
                             "total_supply": result.get("total_supply"),
                             "holder_count": result.get("holder_count"),
                         }
@@ -291,6 +299,13 @@ class RugPullDetector:
 
 # Singleton instance
 _detector: Optional[RugPullDetector] = None
+
+
+def _safe_float(val) -> float:
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return 0.0
 
 
 def get_rugpull_detector() -> RugPullDetector:

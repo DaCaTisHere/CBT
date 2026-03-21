@@ -61,8 +61,8 @@ class StateManager:
     - Multiple storage backends (file, database)
     """
     
-    STATE_FILE = "/data/bot_state.json" if os.path.isdir("/data") else "data/bot_state.json"
-    BACKUP_FILE = "/data/bot_state_backup.json" if os.path.isdir("/data") else "data/bot_state_backup.json"
+    STATE_FILE = "/data/bot_state.json" if os.path.isdir("/data") else "/tmp/bot_state.json"
+    BACKUP_FILE = "/data/bot_state_backup.json" if os.path.isdir("/data") else "/tmp/bot_state_backup.json"
     AUTO_SAVE_INTERVAL = 60  # seconds
     
     def __init__(self):
@@ -72,7 +72,7 @@ class StateManager:
         self._save_task: Optional[asyncio.Task] = None
         
         # Ensure data directory exists
-        os.makedirs("data", exist_ok=True)
+        os.makedirs(os.path.dirname(self.STATE_FILE), exist_ok=True)
         
         self.logger.info("[STATE] State Manager initialized")
     

@@ -113,12 +113,14 @@ alwaysApply: true
 | 2026-03-21 | safety_manager.py | record_buy n'écrit pas en Supabase | Ajouté fire_and_forget(record_trade()) |
 | 2026-03-21 | healthcheck.py | Dashboard dit "0 restants" quand lock par PnL négatif | Affiche "PnL negatif" |
 
+| 2026-03-21 | dexscreener_client.py:203 | enrich_pool écrase pool.address avec baseToken.address | Ajouté Pool.token_address, pool.address préservé |
+| 2026-03-21 | pool_detector.py + orchestrator.py | honeypot check + watchlist utilisent pool.address au lieu de token_address | Utilise pool.token_address or pool.address |
+| 2026-03-21 | risk_manager.py:150 | Pas d'alerte Telegram sur daily loss/drawdown | _send_telegram_alert() ajouté |
+
 ## BUGS ENCORE OUVERTS
 
-| Priorité | Fichier | Bug | Impact |
-|----------|---------|-----|--------|
-| MEDIUM | dexscreener_client.py:203 | enrich_pool écrase pool.address avec baseToken.address | Adresse pool incorrecte |
-| LOW | dex_trader.py:504 | Division par zéro si amount_tokens=0 | Crash potentiel (guard partiel) |
-| INFO | risk_manager.py:150 | TODO: envoyer alerte Telegram | Feature manquante |
+Aucun bug connu.
+
+## RÈGLE : quand tu fixes un bug, METS À JOUR ce fichier
 
 ## RÈGLE : quand tu fixes un bug, METS À JOUR ce fichier

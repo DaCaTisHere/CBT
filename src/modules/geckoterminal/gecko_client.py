@@ -38,6 +38,7 @@ class Pool:
     transactions_24h: int = 0
     buys_24h: int = 0
     sells_24h: int = 0
+    token_address: Optional[str] = None
 
 
 @dataclass

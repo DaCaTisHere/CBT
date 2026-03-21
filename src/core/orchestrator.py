@@ -574,7 +574,8 @@ class Orchestrator:
                         if pool.network not in FUNDED_CHAINS:
                             self.logger.debug(f"[FILTER] {pool.base_token} rejected: network {pool.network} not funded")
                             return
-                        if pool.address in _watchlist or pool.address in dex_trader.sniper_positions:
+                        _token_addr = pool.token_address or pool.address
+                        if _token_addr in _watchlist or _token_addr in dex_trader.sniper_positions:
                             return
                         if len(_watchlist) >= WATCHLIST_MAX_SIZE:
                             self.logger.debug(f"[FILTER] {pool.base_token} rejected: watchlist full ({len(_watchlist)})")
@@ -617,16 +618,16 @@ class Orchestrator:
                             return
                         
                         # Check creator/pair cooldown to avoid repeated rug-pulls
-                        pair_key = pool.address
+                        pair_key = _token_addr
                         if pair_key in _creator_cooldowns:
                             if _time.time() - _creator_cooldowns[pair_key] < CREATOR_COOLDOWN_SECONDS:
                                 return
                         
                         # ADD TO WATCHLIST — don't buy yet!
-                        _watchlist[pool.address] = {
+                        _watchlist[_token_addr] = {
                             "symbol": pool.base_token,
                             "network": pool.network,
-                            "address": pool.address,
+                            "address": _token_addr,
                             "detect_price": pool.price_usd,
                             "detect_time": _time.time(),
                             "score": signal.score,

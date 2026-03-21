@@ -199,8 +199,7 @@ class DexScreenerClient:
             pool.dex = best_pair.get("dexId", pool.dex)
             pool.name = f"{pool.base_token}/{pool.quote_token}"
             
-            # Get the actual pool address
-            pool.address = best_pair.get("baseToken", {}).get("address", pool.address)
+            pool.token_address = best_pair.get("baseToken", {}).get("address", pool.address)
             
         except Exception as e:
             self.logger.debug(f"[DEXSCREENER] Enrich error: {e}")

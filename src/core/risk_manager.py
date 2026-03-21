@@ -155,6 +155,7 @@ class RiskManager:
                 self.trading_enabled = False
                 self.logger.critical(f"[ALERT] DAILY LOSS LIMIT EXCEEDED: {daily_pnl_pct:.2f}%")
                 self.logger.critical("[HALTED] TRADING HALTED UNTIL TOMORROW")
+                self._send_telegram_alert(f"DAILY LOSS LIMIT {daily_pnl_pct:.2f}% — TRADING HALTED")
         
         # Update peak capital (for drawdown calc)
         if self.current_capital > self.peak_capital:
@@ -169,7 +170,21 @@ class RiskManager:
             self.logger.critical(f"[ALERT] MAX DRAWDOWN EXCEEDED: {drawdown:.2f}%")
             self.circuit_breaker_active = True
             self.trading_enabled = False
+            self._send_telegram_alert(f"MAX DRAWDOWN {drawdown:.2f}% — CIRCUIT BREAKER ACTIVE")
     
+    def _send_telegram_alert(self, message: str):
+        """Fire-and-forget Telegram alert for critical risk events."""
+        try:
+            import asyncio
+            from src.notifications.telegram_bot import get_telegram_bot
+            bot = get_telegram_bot()
+            if bot:
+                asyncio.get_running_loop().create_task(
+                    bot.send_message(f"🚨 <b>RISK ALERT</b>\n{message}")
+                )
+        except Exception:
+            pass
+
     async def _reset_daily_limits(self):
         """Reset daily tracking at start of new day"""
         self.logger.info("[DAILY] New day - resetting daily limits")

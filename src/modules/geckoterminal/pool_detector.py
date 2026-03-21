@@ -157,8 +157,9 @@ class PoolDetector:
             await asyncio.sleep(0.5)
             
             self.seen_pools[original_address] = datetime.now(timezone.utc)
-            if pool.address != original_address:
-                self.seen_pools[pool.address] = datetime.now(timezone.utc)
+            token_addr = pool.token_address or pool.address
+            if token_addr != original_address:
+                self.seen_pools[token_addr] = datetime.now(timezone.utc)
             self.pools_scanned += 1
             
             # Score based on signal type
@@ -171,7 +172,7 @@ class PoolDetector:
                 min_score = 45 if is_sniper else 60
             
             if score >= min_score:
-                safety_check = await honeypot_detector.check_token(pool.address, pool.network)
+                safety_check = await honeypot_detector.check_token(pool.token_address or pool.address, pool.network)
                 if not safety_check["is_safe"]:
                     self.logger.warning(
                         f"[POOL] 🍯 BLOCKED {pool.base_token} on {pool.network.upper()}: "
@@ -318,7 +319,7 @@ class PoolDetector:
                 min_score = 45 if is_sniper_opportunity else 60
                 
                 if score >= min_score:
-                    safety_check = await honeypot_detector.check_token(pool.address, pool.network)
+                    safety_check = await honeypot_detector.check_token(pool.token_address or pool.address, pool.network)
                     if not safety_check["is_safe"]:
                         self.logger.warning(
                             f"[POOL] 🍯 BLOCKED {pool.base_token} on {chain.upper()}: "
@@ -367,7 +368,7 @@ class PoolDetector:
                         continue
                         
                 if score >= 50:
-                    safety_check = await honeypot_detector.check_token(pool.address, pool.network)
+                    safety_check = await honeypot_detector.check_token(pool.token_address or pool.address, pool.network)
                     if not safety_check["is_safe"]:
                         self.logger.warning(
                             f"[POOL] 🍯 BLOCKED trending {pool.base_token} on {chain.upper()}: "

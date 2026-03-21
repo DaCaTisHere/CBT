@@ -17,7 +17,6 @@ from datetime import datetime, timezone
 from src.core.config import settings
 from src.core.risk_manager import RiskManager
 from src.utils.logger import get_logger
-from src.data.storage.database import Database
 
 from src.execution.order_engine import OrderEngine
 from src.execution.wallet_manager import WalletManager
@@ -37,7 +36,7 @@ class Orchestrator:
         """Initialize orchestrator"""
         self.logger = logger
         self.risk_manager = RiskManager()
-        self.database: Optional[Database] = None
+        self._initialized = False
         
         # Execution components
         self.order_engine: Optional[OrderEngine] = None
@@ -69,18 +68,12 @@ class Orchestrator:
         self.logger.info("[INIT] Initializing system components...")
         
         try:
-            # Initialize database (PostgreSQL/Supabase)
+            # Initialize Supabase trade recorder (REST API)
             try:
-                self.database = Database()
-                await self.database.connect()
-                self.logger.info("[OK] Database connected (PostgreSQL)")
-                
                 from src.data.storage.trade_recorder import init_recorder
                 await init_recorder()
             except Exception as e:
-                self.database = None
-                self.logger.warning(f"[WARN] Database unavailable: {e}")
-                self.logger.warning("[WARN] Trades will be saved to JSON only. Set DATABASE_URL to a PostgreSQL connection string.")
+                self.logger.warning(f"[WARN] Trade recorder unavailable: {e}")
             
             # Initialize risk manager
             await self.risk_manager.initialize()
@@ -98,6 +91,7 @@ class Orchestrator:
             # Initialize strategy modules based on feature flags
             await self._initialize_modules()
             
+            self._initialized = True
             self.logger.info("[OK] All components initialized successfully")
             
         except Exception as e:
@@ -116,7 +110,7 @@ class Orchestrator:
         
         try:
             # Initialize if not already done
-            if self.database is None:
+            if not self._initialized:
                 await self.initialize()
             
             self.is_running = True
@@ -1100,11 +1094,6 @@ class Orchestrator:
 
     async def _health_check(self):
         """Perform health check on all components"""
-        # Check database connection
-        if self.database:
-            if not await self.database.is_healthy():
-                self.logger.warning("[WARN]  Database health check failed")
-        
         # Check each module
         for name, module in self.modules.items():
             if module is not None:
@@ -1160,11 +1149,6 @@ class Orchestrator:
                         await module.stop()
                     except Exception as e:
                         self.logger.error(f"Error stopping {name}: {e}")
-            
-            # Close database connection
-            if self.database:
-                await self.database.disconnect()
-                self.logger.info("[OK] Database disconnected")
             
             # Final statistics
             if self.start_time:

@@ -430,8 +430,8 @@ class Orchestrator:
                 await pool_detector.initialize()
                 
                 # Initialize DEX trader for real trading
-                dex_trader = get_dex_trader()
-                dex_initialized = await dex_trader.initialize()
+                dex_trader = await get_dex_trader()
+                dex_initialized = True
                 
                 # Initialize AI Trading Engine
                 try:

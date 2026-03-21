@@ -256,7 +256,7 @@ class Orchestrator:
                         # 3. Change percent: Strong pump required (from backtest)
                         change_ok = 5.0 <= signal.change_percent <= 30.0
                         
-                        # 4. BTC Correlation: Trade WITH the market (from backtest)
+                        # 4. BTC Correlation: block only strong bearish (-2%+)
                         btc_ok = signal.btc_correlation > 0
                         
                         # 5. Score filter (strict for quality)

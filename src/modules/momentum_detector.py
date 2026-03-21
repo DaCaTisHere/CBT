@@ -357,11 +357,12 @@ class MomentumDetector:
             score -= 10  # Downtrend
         
         # 7. BTC alignment (-15 to +10)
-        if btc_aligned:
-            if self.btc_trend in ["strong_bullish", "bullish"]:
-                score += 10
-        else:
-            score -= 15  # Against BTC = bad
+        if self.btc_trend in ["strong_bullish", "bullish"]:
+            score += 10
+        elif self.btc_trend == "bearish":
+            score -= 5  # Mild penalty for mild bearish
+        elif not btc_aligned:
+            score -= 15  # Strong bearish = big penalty
         
         # 8. Volatility (0 to -10)
         effective_vol = max(volatility, atr_percent)
@@ -514,8 +515,8 @@ class MomentumDetector:
                     if stoch_rsi > self.STOCH_RSI_OVERBOUGHT:
                         continue
                     
-                    # Check BTC alignment
-                    btc_aligned = self.btc_trend in ["bullish", "strong_bullish", "neutral"]
+                    # Check BTC alignment (only block on strong bearish -2%+)
+                    btc_aligned = self.btc_trend != "strong_bearish"
                     
                     # Calculate score with pullback bonus
                     score = self._calculate_pullback_score(

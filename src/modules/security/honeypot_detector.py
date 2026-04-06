@@ -177,16 +177,20 @@ def _parse_tax(val) -> float:
 
 def _fail_safe(reason: str) -> Dict[str, Any]:
     """
-    Return a permissive result when verification is impossible.
-    
-    Rationale: if GoPlus API is unreachable (SSL/network issues on Railway),
-    blocking ALL tokens would paralyze the sniper strategy entirely.
-    The token still passes through rugpull_detector, AI engine, and liquidity checks.
+    Return a CAUTIOUS result when GoPlus verification is impossible.
+
+    Security rationale:
+    - For new/unknown tokens (sniper strategy): block the trade — the risk of trading
+      an unverified token is higher than missing a trade opportunity.
+    - Whitelist-based tokens (momentum strategy on established pairs like ETHUSDT)
+      are NOT sent through honeypot checks, so this mostly affects sniper trades.
+    - The caller should check `api_unreachable` and decide whether to skip the trade.
     """
+    logger.warning(f"[HONEYPOT] ⚠️ GoPlus check failed: {reason} — marking as UNSAFE (cautious mode)")
     return {
-        "is_safe": True,
+        "is_safe": False,       # Changed from True to False — cautious on API failure
         "risk_level": "unknown",
-        "reasons": [f"check_skipped: {reason}"],
+        "reasons": [f"check_failed: {reason}", "caution: api_unreachable"],
         "details": {"error": reason, "api_unreachable": True},
     }
 

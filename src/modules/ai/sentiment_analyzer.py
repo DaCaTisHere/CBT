@@ -220,24 +220,54 @@ class SentimentAnalyzer:
             return {"error": str(e)}
     
     async def _analyze_social_volume(self, symbol: str) -> Dict[str, Any]:
-        """Analyse le volume social et les mentions."""
-        # For now, we'll use keyword-based analysis
-        # In production, you'd connect to Twitter API, Reddit API, etc.
-        
-        # Simulate social data analysis (in production, fetch real data)
-        bullish_found = []
-        bearish_found = []
-        
-        # This would be replaced with real social media API calls
-        # For now, return neutral
+        """
+        Analyse le volume social via CryptoCompare (gratuit, sans clé API).
+        Endpoint: /data/v2/news/?categories=<symbol>
+        """
+        base = symbol.replace("USDT", "").replace("BTC", "").replace("ETH", "").upper()
+        bullish_found: List[str] = []
+        bearish_found: List[str] = []
+        mention_count = 0
+
+        try:
+            url = f"https://min-api.cryptocompare.com/data/v2/news/?categories={base}&excludeCategories=Sponsored"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        articles = data.get("Data", [])[:15]  # Take latest 15 articles
+                        mention_count = len(articles)
+
+                        # Analyse text of recent articles
+                        for article in articles:
+                            text = (article.get("title", "") + " " + article.get("body", "")[:200]).lower()
+                            for kw in self.BULLISH_KEYWORDS:
+                                if kw in text and kw not in bullish_found:
+                                    bullish_found.append(kw)
+                            for kw in self.BEARISH_KEYWORDS:
+                                if kw in text and kw not in bearish_found:
+                                    bearish_found.append(kw)
+
+            total_keywords = len(bullish_found) + len(bearish_found)
+            if total_keywords > 0:
+                sentiment_score = (len(bullish_found) - len(bearish_found)) / total_keywords
+            elif mention_count > 5:
+                sentiment_score = 0.05  # Many articles = slightly positive attention
+            else:
+                sentiment_score = 0.0
+
+        except Exception as e:
+            logger.debug(f"[SENTIMENT] CryptoCompare news failed for {base}: {e}")
+            sentiment_score = 0.0
+
         return {
-            "sentiment_score": 0.0,
+            "sentiment_score": round(sentiment_score, 3),
             "keywords_found": {
-                "bullish": bullish_found,
-                "bearish": bearish_found,
+                "bullish": bullish_found[:8],
+                "bearish": bearish_found[:8],
             },
-            "mention_count": 0,
-            "note": "Social API integration pending - using neutral score",
+            "mention_count": mention_count,
+            "source": "cryptocompare_news",
         }
     
     def analyze_text(self, text: str) -> Tuple[float, Dict[str, Any]]:

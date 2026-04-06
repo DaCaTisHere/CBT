@@ -177,11 +177,13 @@ class DynamicPositionSizer:
         avg_w = avg_win if avg_win else self._avg_win
         avg_l = avg_loss if avg_loss else self._avg_loss
         
-        if avg_l == 0:
+        if avg_l == 0 or avg_w == 0:
             return 0.0
-        
+
         # Kelly = W - (1-W)/R where R = avg_win/avg_loss
         r = avg_w / avg_l
+        if r == 0:
+            return 0.0
         kelly = w - ((1 - w) / r)
         
         # Use half-Kelly for safety

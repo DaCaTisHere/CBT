@@ -573,7 +573,7 @@ footer{{text-align:center;padding:20px;color:var(--dim);font-size:.7rem}}
     <div class="strat-row"><span>PnL</span><span>{grid_pnl}</span></div>
   </div>
   <div class="card card-sm">
-    <div class="card-head"><span class="card-label">Momentum (20%)</span><span class="pill pill-blue">50 PAIRS</span></div>
+    <div class="card-head"><span class="card-label">Momentum (20%)</span><span class="pill pill-blue">80 PAIRS</span></div>
     <div class="strat-row"><span>Trades</span><span>{mom_trades}</span></div>
     <div class="strat-row"><span>Win Rate</span><span>{mom_wr}</span></div>
     <div class="strat-row"><span>PnL</span><span>{mom_pnl}</span></div>
@@ -639,6 +639,8 @@ footer{{text-align:center;padding:20px;color:var(--dim);font-size:.7rem}}
     <div class="mod-item"><div class="dot"></div>DEX Trader</div>
   </div>
 </div>
+
+{_get_charity_html()}
 
 <footer>Auto-refresh 15s &middot; {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC</footer>
 
@@ -853,6 +855,90 @@ async def positions_endpoint(request):
     return web.json_response(result)
 
 
+def _get_charity_html() -> str:
+    """Génère le bloc HTML de la section humanitaire pour le dashboard."""
+    try:
+        from src.modules.charity_tracker import get_charity_tracker, SUPPORTED_CHARITIES, CHARITY_RATE
+        tracker = get_charity_tracker()
+        stats = tracker.get_stats()
+
+        charity_total = stats["total_charity_usd"]
+        profit_total = stats["total_profit_usd"]
+        progress_pct = stats["progress_to_next_milestone_pct"]
+        next_m = stats["next_milestone"]
+        last_m = stats["last_milestone"]
+        impact_msg = tracker.get_impact_message()
+        is_sim = stats["is_simulation"]
+        sim_label = "(simulation)" if is_sim else "REEL"
+
+        charities_html = ""
+        for c in SUPPORTED_CHARITIES[:4]:
+            charities_html += f"""
+            <div class="mod-item" style="font-size:.75rem">
+              <div class="dot" style="background:#e84393;flex-shrink:0"></div>
+              <span>{c['emoji']} {c['name']}</span>
+            </div>"""
+
+        recent = stats.get("recent_contributions", [])[-5:]
+        contrib_html = ""
+        if recent:
+            for contrib in reversed(recent):
+                ts = contrib.get("ts", "")[:16].replace("T", " ")
+                contrib_html += f"""
+                <div class="strat-row">
+                  <span style="color:var(--dim)">{contrib.get('symbol','?')} {ts}</span>
+                  <span style="color:#e84393">+${contrib.get('charity_usd', 0):.4f}</span>
+                </div>"""
+        else:
+            contrib_html = '<div style="color:var(--dim);font-size:.78rem;padding:6px 0">Aucune contribution encore</div>'
+
+        return f"""
+<div class="card" style="border-color:rgba(232,67,147,.3);background:linear-gradient(135deg,#0f1117,#12081a)">
+  <div class="card-head">
+    <span class="card-label" style="color:#e84393">❤ Mission Humanitaire ({int(CHARITY_RATE*100)}% des profits)</span>
+    <span class="pill" style="color:#e84393;border-color:rgba(232,67,147,.3)">{sim_label}</span>
+  </div>
+  <div class="big-num" style="color:#e84393">${charity_total:.4f}</div>
+  <div class="big-sub" style="color:#e84393;opacity:.7">alloués aux associations</div>
+  <div style="margin:12px 0;font-size:.82rem;color:var(--text)">{impact_msg}</div>
+  <div style="margin:8px 0">
+    <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--dim);margin-bottom:4px">
+      <span>Prochain jalon: ${next_m}</span>
+      <span>{progress_pct:.0f}%</span>
+    </div>
+    <div class="prog-outer" style="background:rgba(232,67,147,.1)">
+      <div class="prog-inner" style="width:{progress_pct:.0f}%;background:linear-gradient(90deg,#e84393,#ff6b9d)">{progress_pct:.0f}%</div>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:12px;gap:10px">
+    <div>
+      <div style="font-size:.7rem;color:var(--dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px">Associations soutenues</div>
+      <div class="grid-2" style="gap:4px">{charities_html}</div>
+    </div>
+    <div>
+      <div style="font-size:.7rem;color:var(--dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px">Dernières contributions</div>
+      {contrib_html}
+    </div>
+  </div>
+  <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(232,67,147,.2);display:flex;justify-content:space-between;font-size:.75rem;color:var(--dim)">
+    <span>Profit total bot: <b style="color:var(--green)">${profit_total:.2f}</b></span>
+    <span>Trades profitables: <b style="color:#fff">{stats['profitable_trades']}/{stats['total_trades']}</b></span>
+  </div>
+</div>"""
+    except Exception as e:
+        return f'<div class="card card-sm" style="color:var(--dim)">Charity tracker: {e}</div>'
+
+
+async def charity_endpoint(request):
+    """Charity tracker status — public endpoint."""
+    try:
+        from src.modules.charity_tracker import get_charity_tracker
+        tracker = get_charity_tracker()
+        return web.json_response(tracker.get_stats())
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
 async def start_healthcheck_server(port=8080):
     """Start healthcheck server on specified port"""
     install_log_handler()
@@ -869,6 +955,7 @@ async def start_healthcheck_server(port=8080):
     app.router.add_get('/backtest', grid_backtest)
     app.router.add_get('/logs', logs_endpoint)
     app.router.add_get('/positions', positions_endpoint)
+    app.router.add_get('/charity', charity_endpoint)
     app.router.add_get('/', index)
     
     runner = web.AppRunner(app)

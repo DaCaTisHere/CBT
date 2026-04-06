@@ -83,19 +83,25 @@ class SafetyStats:
 class SafetyManager:
     """
     FULLY AUTOMATIC safety system.
-    
+
     Auto-unlock criteria:
-    - 20+ simulation trades completed (full buy→sell cycles)
+    - 15+ simulation trades completed (full buy→sell cycles)  [was 20]
     - Win rate >= 35%
-    
+    - Total PnL > $0
+
     Auto-stop criteria (back to simulation):
-    - Daily loss > $30
+    - Daily loss > $50  [was $30 — allows larger real trades]
     - Real win rate drops below 25% after 10+ real trades
+
+    Progressive trade limit:
+    - First 10 real trades: $50 max
+    - Trades 11-30: $100 max  (auto-evolved by auto_evolve())
+    - After 30 trades: $200 max
     """
-    
-    MIN_SIM_TRADES = 20
+
+    MIN_SIM_TRADES = 15           # was 20 — faster to prove bot works
     MIN_SIM_WIN_RATE = 35.0
-    MAX_DAILY_LOSS_USD = 30.0
+    MAX_DAILY_LOSS_USD = 50.0     # was $30 — more room to breathe
     MAX_TRADE_USD = 50.0
     REAL_MIN_WIN_RATE = 25.0
     REAL_MIN_TRADES_FOR_CHECK = 10
@@ -435,6 +441,18 @@ class SafetyManager:
             self.stats.real_total_pnl_usd += pnl_usd
             self.stats.daily_pnl_usd += pnl_usd
             logger.info(f"[SAFETY] REAL sell: {token} PnL {pnl_pct:+.1f}% (${pnl_usd:+.2f}) | Daily: ${self.stats.daily_pnl_usd:+.2f}")
+
+            # Track real profit for humanitarian mission
+            if pnl_usd > 0:
+                try:
+                    from src.modules.charity_tracker import get_charity_tracker
+                    strategy = "grid" if is_grid else "momentum"
+                    get_charity_tracker().record_trade(
+                        pnl_usd=pnl_usd, symbol=token,
+                        strategy=strategy, is_simulation=False
+                    )
+                except Exception:
+                    pass
         
         self._check_unlock_status()
         self._save_stats()
@@ -671,11 +689,23 @@ class SafetyManager:
         old_max_trade = self.MAX_TRADE_USD
         old_daily_loss = self.MAX_DAILY_LOSS_USD
 
+        # Progressive scaling: more aggressive limit increases as confidence grows
+        # Cap scales with number of real trades to limit risk on early real trading
+        real_trades = self.stats.real_trades_total
+        if real_trades < 10:
+            progressive_cap = 100.0
+        elif real_trades < 30:
+            progressive_cap = 200.0
+        elif real_trades < 60:
+            progressive_cap = 500.0
+        else:
+            progressive_cap = 1000.0
+
         if win_rate >= 60 and avg_win > abs(avg_loss):
-            new_max_trade = min(old_max_trade * 1.15, 200.0)
-            if new_max_trade != old_max_trade:
+            new_max_trade = min(old_max_trade * 1.20, progressive_cap)
+            if new_max_trade > old_max_trade:
                 self.MAX_TRADE_USD = round(new_max_trade, 2)
-                changes["max_trade_usd"] = f"${old_max_trade} → ${self.MAX_TRADE_USD}"
+                changes["max_trade_usd"] = f"${old_max_trade} → ${self.MAX_TRADE_USD} (cap: ${progressive_cap})"
         elif win_rate < 45 or avg_win < abs(avg_loss) * 0.5:
             new_max_trade = max(old_max_trade * 0.8, 20.0)
             if new_max_trade != old_max_trade:

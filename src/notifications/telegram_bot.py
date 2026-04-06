@@ -33,6 +33,7 @@ Sends real-time notifications for:
 """
 
 import asyncio
+import time
 import aiohttp
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
@@ -65,18 +66,25 @@ class TelegramBot:
     
     API_BASE = "https://api.telegram.org/bot"
     
+    # Rate limiting: max 1 message per 3 seconds to avoid Telegram flood limits
+    _RATE_LIMIT_SECONDS = 3.0
+
     def __init__(self, token: str = None, chat_id: str = None):
         self.logger = logger
         self.token = token or getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
         self.chat_id = chat_id or getattr(settings, 'TELEGRAM_CHAT_ID', None)
-        
+
         self.is_enabled = bool(self.token and self.chat_id)
         self.session: Optional[aiohttp.ClientSession] = None
-        
+
         # Stats
         self.messages_sent = 0
         self.errors = 0
-        
+
+        # Rate limiting state
+        self._last_send_time: float = 0.0
+        self._send_lock = asyncio.Lock()
+
         if self.is_enabled:
             self.logger.info("[TELEGRAM] Bot initialized")
         else:
@@ -123,26 +131,46 @@ class TelegramBot:
         if not self.session:
             self.logger.warning("[TELEGRAM] Session not initialized")
             return False
-        
+
+        # Rate limiting — avoid Telegram flood ban (429)
+        async with self._send_lock:
+            now = time.monotonic()
+            elapsed = now - self._last_send_time
+            if elapsed < self._RATE_LIMIT_SECONDS:
+                await asyncio.sleep(self._RATE_LIMIT_SECONDS - elapsed)
+            self._last_send_time = time.monotonic()
+
         try:
             url = f"{self.API_BASE}{self.token}/sendMessage"
             payload = {
                 "chat_id": self.chat_id,
-                "text": text,
+                "text": text[:4096],  # Telegram max message length
                 "parse_mode": parse_mode,
-                "disable_notification": silent
+                "disable_notification": silent,
             }
-            
-            async with self.session.post(url, json=payload) as response:
+
+            async with self.session.post(
+                url, json=payload, timeout=aiohttp.ClientTimeout(total=10)
+            ) as response:
                 if response.status == 200:
                     self.messages_sent += 1
                     return True
+                elif response.status == 429:
+                    retry_after = 5
+                    try:
+                        data = await response.json()
+                        retry_after = data.get("parameters", {}).get("retry_after", 5)
+                    except Exception:
+                        pass
+                    self.logger.warning(f"[TELEGRAM] Rate limited — retry in {retry_after}s")
+                    await asyncio.sleep(retry_after)
+                    return False
                 else:
                     error = await response.text()
-                    self.logger.error(f"[TELEGRAM] Send failed: {error}")
+                    self.logger.error(f"[TELEGRAM] Send failed ({response.status}): {error[:200]}")
                     self.errors += 1
                     return False
-                    
+
         except Exception as e:
             self.logger.error(f"[TELEGRAM] Error: {e}")
             self.errors += 1
@@ -323,6 +351,52 @@ class TelegramBot:
             f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
         )
         await self.send_message(msg)
+
+    # ==================== HUMANITAIRE ====================
+
+    async def notify_charity_milestone(self, milestone_usd: float, total_usd: float, is_simulation: bool = True):
+        """Notifie qu'un jalon humanitaire a été atteint."""
+        sim_label = " (simulation)" if is_simulation else " 🎉 REEL !"
+        msg = (
+            f"❤️ <b>JALON HUMANITAIRE ATTEINT{sim_label}</b>\n\n"
+            f"Le bot a généré assez de profits pour allouer\n"
+            f"<b>${milestone_usd:.0f}</b> aux associations humanitaires !\n\n"
+            f"💰 Total alloué à ce jour : <b>${total_usd:.2f}</b>\n\n"
+            f"🌍 Associations soutenues :\n"
+            f"  • 🏥 Médecins Sans Frontières\n"
+            f"  • 🧒 UNICEF\n"
+            f"  • 🍲 Action Contre la Faim\n"
+            f"  • 🔴 Croix-Rouge\n\n"
+            f"<i>10% de chaque profit va à la cause humanitaire</i>\n"
+            f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
+        )
+        await self.send_message(msg, silent=False)
+
+    async def notify_charity_daily(self, daily_profit: float, daily_charity: float,
+                                    total_charity: float, is_simulation: bool = True):
+        """Rapport quotidien humanitaire."""
+        sim_label = "(simulation)" if is_simulation else "REEL"
+        msg = (
+            f"❤️ <b>Rapport humanitaire quotidien</b> <i>{sim_label}</i>\n\n"
+            f"Profit du jour : <b>${daily_profit:+.2f}</b>\n"
+            f"Alloué aujourd'hui : <b>${daily_charity:.4f}</b>\n\n"
+            f"<b>Total cumulé pour les associations : ${total_charity:.2f}</b>\n\n"
+            f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
+        )
+        await self.send_message(msg, silent=True)
+
+    async def notify_mode_switch_to_real_charity(self, sim_charity_total: float):
+        """Message spécial quand le bot passe en mode réel — impact humanitaire potentiel."""
+        msg = (
+            f"🚀❤️ <b>PASSAGE EN MODE REEL - IMPACT HUMANITAIRE REEL</b>\n\n"
+            f"Le bot a prouvé son efficacité en simulation.\n"
+            f"En mode simulation, il avait déjà alloué virtuellement <b>${sim_charity_total:.2f}</b>.\n\n"
+            f"Maintenant en mode réel, chaque profit contribuera <b>réellement</b>\n"
+            f"aux associations humanitaires (10% des profits nets).\n\n"
+            f"🌍 <b>Merci de faire une différence !</b>\n\n"
+            f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
+        )
+        await self.send_message(msg, silent=False)
     
     # ==================== CLEANUP ====================
     

@@ -13,6 +13,7 @@ The bot learns from its own mistakes and successes!
 import asyncio
 import json
 import os
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field, asdict
@@ -29,35 +30,36 @@ class TradeRecord:
     # Trade info
     symbol: str
     entry_time: str
+    trade_id: str = ""          # Unique ID for reliable exit matching
     exit_time: Optional[str] = None
     entry_price: float = 0.0
     exit_price: float = 0.0
     pnl_percent: float = 0.0
     is_profitable: bool = False
     exit_reason: str = ""
-    
+
     # Signal features (captured at entry)
     signal_type: str = ""
     signal_score: float = 0.0
     change_percent: float = 0.0
     volume_usd: float = 0.0
-    
+
     # Technical indicators (captured at entry)
     rsi: float = 50.0
     stoch_rsi: float = 50.0
     macd_signal: str = "neutral"
     ema_trend: str = "neutral"
     atr_percent: float = 0.0
-    
+
     # Market context
     btc_correlation: float = 0.0
     volatility_24h: float = 0.0
     hour_of_day: int = 0
     day_of_week: int = 0
-    
+
     def to_dict(self) -> Dict:
         return asdict(self)
-    
+
     @classmethod
     def from_dict(cls, data: Dict) -> "TradeRecord":
         return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})
@@ -78,8 +80,8 @@ class AutoLearner:
     DATA_DIR = "/data/ml" if os.path.isdir("/data") else "/tmp/ml"
     TRADES_FILE = "trade_records.json"
     MODEL_FILE = "learned_patterns.json"
-    MIN_TRADES_FOR_TRAINING = 20  # Minimum trades before model is useful
-    RETRAIN_INTERVAL_HOURS = 6   # Re-train every 6 hours
+    MIN_TRADES_FOR_TRAINING = 15  # Minimum trades before model is useful (was 20)
+    RETRAIN_INTERVAL_HOURS = 3    # Re-train every 3 hours (was 6)
     
     # Strategy version - increment to force reset when strategy changes
     # v7.0 = Backtest-aligned filters (whitelist symbols, simplified filters)
@@ -214,12 +216,14 @@ class AutoLearner:
         btc_correlation: float = 0.0,
         volatility_24h: float = 0.0
     ) -> TradeRecord:
-        """Record a new trade entry with all features"""
+        """Record a new trade entry with all features. Returns record with unique trade_id."""
         now = datetime.now(timezone.utc)
-        
+        trade_id = str(uuid.uuid4())
+
         record = TradeRecord(
             symbol=symbol,
             entry_time=now.isoformat(),
+            trade_id=trade_id,
             entry_price=price,
             signal_type=signal_type,
             signal_score=signal_score,
@@ -235,47 +239,70 @@ class AutoLearner:
             hour_of_day=now.hour,
             day_of_week=now.weekday()
         )
-        
+
         self.trade_records.append(record)
-        self.logger.debug(f"[ML] Recorded entry: {symbol} @ ${price:.6f}")
-        
+        self.logger.debug(f"[ML] Recorded entry: {symbol} @ ${price:.6f} [id={trade_id[:8]}]")
+
         # Auto-save periodically
         if len(self.trade_records) % 10 == 0:
-            asyncio.create_task(self._save_data())
-        
+            try:
+                asyncio.get_running_loop().create_task(self._save_data())
+            except RuntimeError:
+                pass
+
         return record
-    
+
     def record_exit(
         self,
         symbol: str,
         exit_price: float,
         pnl_percent: float,
-        exit_reason: str
+        exit_reason: str,
+        trade_id: Optional[str] = None
     ):
-        """Record a trade exit and mark outcome"""
-        # Find the most recent open trade for this symbol
-        found = False
-        for record in reversed(self.trade_records):
-            if record.symbol == symbol and record.exit_time is None:
-                record.exit_time = datetime.now(timezone.utc).isoformat()
-                record.exit_price = exit_price
-                record.pnl_percent = pnl_percent
-                record.is_profitable = pnl_percent > 0
-                record.exit_reason = exit_reason
-                
-                self.logger.info(
-                    f"[ML] ✅ Recorded exit: {symbol} | "
-                    f"PnL: {'+' if pnl_percent > 0 else ''}{pnl_percent:.2f}% | "
-                    f"Reason: {exit_reason}"
-                )
-                
-                # Trigger save
-                asyncio.create_task(self._save_data())
-                found = True
-                break
-        
-        if not found:
-            self.logger.warning(f"[ML] ⚠️ No open entry found for {symbol} exit! This trade won't be learned from.")
+        """Record a trade exit and mark outcome.
+
+        Uses trade_id for O(1) exact lookup when available,
+        falls back to reverse symbol scan for backward compatibility.
+        """
+        target: Optional[TradeRecord] = None
+
+        # Fast path: exact match by trade_id
+        if trade_id:
+            for record in reversed(self.trade_records):
+                if record.trade_id == trade_id and record.exit_time is None:
+                    target = record
+                    break
+
+        # Fallback: most-recent open record for this symbol
+        if target is None:
+            for record in reversed(self.trade_records):
+                if record.symbol == symbol and record.exit_time is None:
+                    target = record
+                    break
+
+        if target is not None:
+            target.exit_time = datetime.now(timezone.utc).isoformat()
+            target.exit_price = exit_price
+            target.pnl_percent = pnl_percent
+            target.is_profitable = pnl_percent > 0
+            target.exit_reason = exit_reason
+
+            self.logger.info(
+                f"[ML] ✅ Recorded exit: {symbol} | "
+                f"PnL: {'+' if pnl_percent > 0 else ''}{pnl_percent:.2f}% | "
+                f"Reason: {exit_reason}"
+            )
+
+            try:
+                asyncio.get_running_loop().create_task(self._save_data())
+            except RuntimeError:
+                pass
+        else:
+            self.logger.warning(
+                f"[ML] ⚠️ No open entry found for {symbol} exit! "
+                "Trade won't be learned from. Check trade_id handoff."
+            )
     
     # ==================== TRAINING ====================
     
@@ -679,39 +706,53 @@ class AutoLearner:
     
     def get_stats(self) -> Dict[str, Any]:
         """Get learning statistics"""
+        completed = [t for t in self.trade_records if t.exit_time]
+        open_records = [t for t in self.trade_records if not t.exit_time]
+        profitable = [t for t in completed if t.is_profitable]
+
         return {
             "total_records": len(self.trade_records),
-            "completed_trades": len([t for t in self.trade_records if t.exit_time]),
+            "completed_trades": len(completed),
+            "open_trades": len(open_records),
+            "profitable_completed": len(profitable),
             "is_trained": self.is_trained,
+            "strategy_version": self.STRATEGY_VERSION,
+            "min_trades_needed": self.MIN_TRADES_FOR_TRAINING,
             "win_rate": f"{self.patterns.get('win_rate', 0) * 100:.1f}%",
             "avg_win": f"+{self.patterns.get('avg_win_pnl', 0):.2f}%",
             "avg_loss": f"{self.patterns.get('avg_loss_pnl', 0):.2f}%",
             "last_trained": self.patterns.get("last_trained"),
             "signal_success_rates": self.patterns.get("signal_type_success", {}),
+            "macd_success": self.patterns.get("macd_success", {}),
+            "ema_success": self.patterns.get("ema_success", {}),
+            "optimal_ranges": self.patterns.get("optimal_ranges", {}),
             "best_hours": {
-                h: f"{rate*100:.0f}%" 
+                h: f"{rate*100:.0f}%"
                 for h, rate in sorted(
                     self.patterns.get("hour_success", {}).items(),
                     key=lambda x: x[1],
                     reverse=True
-                )[:3]
-            }
+                )[:5]
+            },
+            "feature_weights": self.patterns.get("weights", {}),
         }
 
 
-_singleton: Optional["AutoLearner"] = None
+# ==================== SINGLETON ====================
+
+_auto_learner: Optional["AutoLearner"] = None
 
 
 def get_auto_learner() -> "AutoLearner":
-    """Get or create the AutoLearner singleton."""
-    global _singleton
-    if _singleton is None:
-        _singleton = AutoLearner()
-    return _singleton
+    global _auto_learner
+    if _auto_learner is None:
+        _auto_learner = AutoLearner()
+    return _auto_learner
 
 
 def set_auto_learner(instance: "AutoLearner"):
-    """Set an existing AutoLearner instance as the singleton (used by PaperTrader)."""
-    global _singleton
-    _singleton = instance
+    global _auto_learner
+    _auto_learner = instance
+
+
 

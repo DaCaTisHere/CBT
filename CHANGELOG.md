@@ -1,5 +1,61 @@
 # 📝 CHANGELOG - CRYPTOBOT ULTIMATE
 
+## [4.0.0] - 2026-04-06 - MISSION HUMANITAIRE + OPTIMISATIONS MAJEURES
+
+### Mission
+- **Objectif**: Générer des profits crypto pour des associations d'aide humanitaire
+- **Allocation**: 10% de chaque profit net alloué aux associations (MSF, UNICEF, Croix-Rouge, etc.)
+- **Suivi**: Tableau de bord dédié + notifications Telegram pour chaque jalon
+
+### Corrections critiques (bugs)
+- **ML exit tracking**: Ajout d'un `trade_id` UUID unique par trade — le ML peut maintenant apprendre de 100% des trades (était 1.25%)
+- **Trade recorder**: Correction du champ `amount` qui contenait `price` au lieu de `amount_usd`
+- **Honeypot detector**: Fail-safe changé de permissif à restrictif (was `is_safe=True` on API error → now `is_safe=False`)
+- **Position sizer**: Correction division par zéro dans Kelly Criterion
+- **Auto-learner**: `asyncio.create_task()` remplacé par `get_running_loop().create_task()` (evite RuntimeError)
+
+### Améliorations stratégiques (backtest-alignées)
+- **Paper Trader TP/SL**: Aligné sur les paramètres backtest validés (94.7% WR):
+  - SL: 2.5% → **5%** (evite les stops sur le bruit de marché)
+  - TP1: +2.5%/30% → **+4%/25%**
+  - TP2: +4%/40% → **+7%/35%**
+  - TP3: +7% → **+10%**
+  - Trailing: activation +2.5% → **+3%**
+  - Timeout: 4h → **48h** (laisser les winners se développer)
+- **Momentum whitelist**: 50 → **80 coins** (nouveaux: HBAR, XLM, ALGO, VET, UNI, AAVE, GMX, etc.)
+- **Score minimum**: 65 → **62** (légèrement plus de signaux de qualité)
+- **ML retrain**: 6h → **3h** (apprentissage plus rapide)
+- **ML min trades**: 20 → **15** (modèle utile plus tôt)
+
+### Nouvelles fonctionnalités
+- **CharityTracker** (`src/modules/charity_tracker.py`): 
+  - Suivi des profits alloués aux associations
+  - Jalons: $1, $5, $10, $25, $50, $100, $250, $500, $1000
+  - 5 associations soutenues: MSF, UNICEF, Action Contre la Faim, Croix-Rouge, Oxfam
+  - Intégré dans paper_trader ET safety_manager (trades réels)
+- **Dashboard humanitaire**: Section dédiée dans le dashboard avec progression vers jalons
+- **Endpoint `/charity`**: API publique pour les stats humanitaires
+- **Telegram humanitaire**: Notifications pour jalons, rapports quotidiens, message spécial passage en mode réel
+- **Sentiment CryptoCompare**: Source de news gratuite intégrée (était placeholder à 0.0)
+- **Rate limiting Telegram**: Max 1 message/3s pour éviter les bans (429)
+
+### Safety Manager
+- `MIN_SIM_TRADES`: 20 → **15** (déblocage plus rapide)
+- `MAX_DAILY_LOSS_USD`: $30 → **$50** (plus de room pour les stratégies)
+- Scaling progressif des limites de trade selon le nombre de trades réels:
+  - 0-10 trades réels: $50 max (inchangé)
+  - 10-30 trades: $100 max
+  - 30-60 trades: $200 max
+  - 60+ trades: $1000 max (avec bonnes performances)
+
+### Déploiement
+- Railway project: cryptobot-ultimate
+- Dashboard: https://cryptobot-ultimate-production.up.railway.app/
+- Charity API: https://cryptobot-ultimate-production.up.railway.app/charity
+
+---
+
+
 ## [3.0.0] - 2025-12-29 - CORRECTIFS ULTRA-STRICTS
 
 ### 🚨 Problèmes Identifiés

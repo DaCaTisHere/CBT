@@ -99,7 +99,7 @@ async def record_trade(
         "side": side,
         "symbol": symbol,
         "chain": chain,
-        "amount": price,
+        "amount": amount_usd,
         "price": price,
         "value_usd": amount_usd,
         "status": status,
@@ -155,7 +155,7 @@ async def record_daily_stats(
         "losing_trades": losing_trades,
         "win_rate": round(win_rate, 4),
         "total_pnl_usd": round(total_pnl_usd, 2),
-        "net_pnl_usd": round(total_pnl_usd, 2),
+        "net_pnl_usd": round(total_pnl_usd * 0.998, 2),  # ~0.2% fees estimation
     }
     await _post("daily_stats", row)
 

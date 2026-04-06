@@ -486,7 +486,7 @@ async def index(request):
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cryptobot Dashboard</title>
+<title>Cryptobot — Association Netero</title>
 <meta http-equiv="refresh" content="15">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -542,7 +542,7 @@ footer{{text-align:center;padding:20px;color:var(--dim);font-size:.7rem}}
 <div class="wrap">
 
 <header>
-  <div class="logo">CRYPTOBOT</div>
+  <div class="logo">CRYPTOBOT <span style="color:#e84393;font-size:.8rem;font-weight:400">/ Association Netero</span></div>
   <div class="pills">
     <span class="pill pill-green">RUNNING {uptime_str}</span>
     <span class="pill" style="color:{mode_color};border-color:{mode_color}33;">{mode_name}</span>
@@ -856,77 +856,77 @@ async def positions_endpoint(request):
 
 
 def _get_charity_html() -> str:
-    """Génère le bloc HTML de la section humanitaire pour le dashboard."""
+    """Génère le bloc HTML de la section Association Netero pour le dashboard."""
     try:
-        from src.modules.charity_tracker import get_charity_tracker, SUPPORTED_CHARITIES, CHARITY_RATE
+        from src.modules.charity_tracker import get_charity_tracker, ASSOCIATION_NAME, ASSOCIATION_EMOJI
         tracker = get_charity_tracker()
         stats = tracker.get_stats()
 
-        charity_total = stats["total_charity_usd"]
-        profit_total = stats["total_profit_usd"]
+        profit_real = stats["total_profit_real_usd"]
+        profit_sim = stats["total_profit_sim_usd"]
         progress_pct = stats["progress_to_next_milestone_pct"]
         next_m = stats["next_milestone"]
-        last_m = stats["last_milestone"]
         impact_msg = tracker.get_impact_message()
-        is_sim = stats["is_simulation"]
-        sim_label = "(simulation)" if is_sim else "REEL"
-
-        charities_html = ""
-        for c in SUPPORTED_CHARITIES[:4]:
-            charities_html += f"""
-            <div class="mod-item" style="font-size:.75rem">
-              <div class="dot" style="background:#e84393;flex-shrink:0"></div>
-              <span>{c['emoji']} {c['name']}</span>
-            </div>"""
+        has_real = profit_real > 0
+        mode_label = "REEL" if has_real else "simulation"
 
         recent = stats.get("recent_contributions", [])[-5:]
         contrib_html = ""
         if recent:
             for contrib in reversed(recent):
                 ts = contrib.get("ts", "")[:16].replace("T", " ")
+                is_real_trade = not contrib.get("is_simulation", True)
+                color = "#00ff88" if is_real_trade else "#e84393"
+                label = "REEL" if is_real_trade else "sim"
                 contrib_html += f"""
                 <div class="strat-row">
-                  <span style="color:var(--dim)">{contrib.get('symbol','?')} {ts}</span>
-                  <span style="color:#e84393">+${contrib.get('charity_usd', 0):.4f}</span>
+                  <span style="color:var(--dim)">{contrib.get('symbol','?')} {ts} <span style="font-size:.65rem;color:{color}">[{label}]</span></span>
+                  <span style="color:{color}">+${contrib.get('pnl_usd', 0):.4f}</span>
                 </div>"""
         else:
-            contrib_html = '<div style="color:var(--dim);font-size:.78rem;padding:6px 0">Aucune contribution encore</div>'
+            contrib_html = '<div style="color:var(--dim);font-size:.78rem;padding:6px 0">Aucun profit enregistré encore</div>'
+
+        # Bloc simulation vs réel
+        sim_block = f'<span style="color:#e84393;font-family:var(--mono)">${profit_sim:.4f}</span> simulation'
+        real_block = f'<span style="color:#00ff88;font-family:var(--mono);font-size:1.1rem;font-weight:700">${profit_real:.4f}</span> réels'
 
         return f"""
-<div class="card" style="border-color:rgba(232,67,147,.3);background:linear-gradient(135deg,#0f1117,#12081a)">
+<div class="card" style="border-color:rgba(232,67,147,.4);background:linear-gradient(135deg,#0f1117,#0d0f1a)">
   <div class="card-head">
-    <span class="card-label" style="color:#e84393">❤ Mission Humanitaire ({int(CHARITY_RATE*100)}% des profits)</span>
-    <span class="pill" style="color:#e84393;border-color:rgba(232,67,147,.3)">{sim_label}</span>
+    <span class="card-label" style="color:#e84393">{ASSOCIATION_EMOJI} {ASSOCIATION_NAME} — 100% des profits</span>
+    <span class="pill" style="color:#e84393;border-color:rgba(232,67,147,.3)">{mode_label}</span>
   </div>
-  <div class="big-num" style="color:#e84393">${charity_total:.4f}</div>
-  <div class="big-sub" style="color:#e84393;opacity:.7">alloués aux associations</div>
-  <div style="margin:12px 0;font-size:.82rem;color:var(--text)">{impact_msg}</div>
+  <div style="display:flex;gap:24px;align-items:flex-end;margin-bottom:8px">
+    <div>
+      <div style="font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Profits réels</div>
+      <div style="font-family:var(--mono);font-size:2rem;font-weight:700;color:#00ff88">${profit_real:.4f}</div>
+    </div>
+    <div style="margin-bottom:6px">
+      <div style="font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Simulation</div>
+      <div style="font-family:var(--mono);font-size:1.1rem;color:#e84393">${profit_sim:.4f}</div>
+    </div>
+  </div>
+  <div style="margin:8px 0;font-size:.82rem;color:var(--text)">{impact_msg}</div>
   <div style="margin:8px 0">
     <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--dim);margin-bottom:4px">
-      <span>Prochain jalon: ${next_m}</span>
+      <span>Prochain jalon réel: ${next_m}</span>
       <span>{progress_pct:.0f}%</span>
     </div>
     <div class="prog-outer" style="background:rgba(232,67,147,.1)">
-      <div class="prog-inner" style="width:{progress_pct:.0f}%;background:linear-gradient(90deg,#e84393,#ff6b9d)">{progress_pct:.0f}%</div>
+      <div class="prog-inner" style="width:{progress_pct:.0f}%;background:linear-gradient(90deg,#e84393,#00ff88)">{progress_pct:.0f}%</div>
     </div>
   </div>
-  <div class="grid-2" style="margin-top:12px;gap:10px">
-    <div>
-      <div style="font-size:.7rem;color:var(--dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px">Associations soutenues</div>
-      <div class="grid-2" style="gap:4px">{charities_html}</div>
-    </div>
-    <div>
-      <div style="font-size:.7rem;color:var(--dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px">Dernières contributions</div>
-      {contrib_html}
-    </div>
+  <div>
+    <div style="font-size:.7rem;color:var(--dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px">Derniers profits</div>
+    {contrib_html}
   </div>
   <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(232,67,147,.2);display:flex;justify-content:space-between;font-size:.75rem;color:var(--dim)">
-    <span>Profit total bot: <b style="color:var(--green)">${profit_total:.2f}</b></span>
     <span>Trades profitables: <b style="color:#fff">{stats['profitable_trades']}/{stats['total_trades']}</b></span>
+    <span>Win rate: <b style="color:#fff">{stats['win_rate']:.1f}%</b></span>
   </div>
 </div>"""
     except Exception as e:
-        return f'<div class="card card-sm" style="color:var(--dim)">Charity tracker: {e}</div>'
+        return f'<div class="card card-sm" style="color:var(--dim)">Association Netero tracker: {e}</div>'
 
 
 async def charity_endpoint(request):

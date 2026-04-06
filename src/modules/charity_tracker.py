@@ -1,14 +1,14 @@
 """
-Charity Tracker - Mission Humanitaire
+Charity Tracker - Association Netero
 
-Suit les profits générés par le bot et calcule la part destinée
-aux associations d'aide humanitaire.
+Suit l'intégralité des profits générés par le bot pour l'Association Netero.
+100% des gains vont directement à l'association via le wallet configuré.
 
 Architecture :
-- Chaque trade rentable est enregistré
-- 10% des profits nets sont alloués aux associations
+- Chaque trade rentable est enregistré avec son profit
+- 100% des profits sont pour l'Association Netero
 - Tableau de bord dédié dans le dashboard
-- Notifications Telegram pour chaque jalon humanitaire
+- Notifications Telegram pour chaque jalon atteint
 """
 
 import json
@@ -24,69 +24,29 @@ logger = logging.getLogger(__name__)
 _DATA_DIR = "/data" if os.path.isdir("/data") else "/tmp"
 _CHARITY_FILE = os.path.join(_DATA_DIR, "charity_stats.json")
 
-# Pourcentage des profits alloués aux associations
-CHARITY_RATE = 0.10  # 10%
+# 100% des profits vont à l'Association Netero
+CHARITY_RATE = 1.0
+ASSOCIATION_NAME = "Association Netero"
+ASSOCIATION_EMOJI = "🌍"
 
-# Jalons de notification (en USD alloués à la charité)
-CHARITY_MILESTONES = [1, 5, 10, 25, 50, 100, 250, 500, 1000]
-
-# Associations humanitaires soutenues
-SUPPORTED_CHARITIES = [
-    {
-        "name": "Médecins Sans Frontières",
-        "description": "Soins médicaux dans les zones de conflit",
-        "url": "https://www.msf.fr",
-        "focus": "Santé",
-        "emoji": "🏥",
-    },
-    {
-        "name": "UNICEF",
-        "description": "Protection de l'enfance dans le monde",
-        "url": "https://www.unicef.fr",
-        "focus": "Enfance",
-        "emoji": "🧒",
-    },
-    {
-        "name": "Action Contre la Faim",
-        "description": "Lutte contre la malnutrition",
-        "url": "https://www.actioncontrelafaim.org",
-        "focus": "Alimentation",
-        "emoji": "🍲",
-    },
-    {
-        "name": "Croix-Rouge",
-        "description": "Aide humanitaire d'urgence mondiale",
-        "url": "https://www.croix-rouge.fr",
-        "focus": "Urgences",
-        "emoji": "🔴",
-    },
-    {
-        "name": "Oxfam France",
-        "description": "Lutte contre les inégalités et la pauvreté",
-        "url": "https://www.oxfamfrance.org",
-        "focus": "Inégalités",
-        "emoji": "✊",
-    },
-]
+# Jalons de notification (en USD de profits pour l'association)
+CHARITY_MILESTONES = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000]
 
 
 @dataclass
 class CharityStats:
-    # Totaux cumulés
-    total_profit_usd: float = 0.0          # Total des profits du bot
-    total_charity_allocated_usd: float = 0.0  # 10% alloués à la charité
-    total_trades_profitable: int = 0        # Nombre de trades gagnants
-    total_trades_total: int = 0             # Nombre total de trades
+    # Totaux cumulés (100% des profits = pour Netero)
+    total_profit_sim_usd: float = 0.0       # Profits en simulation
+    total_profit_real_usd: float = 0.0      # Profits réels (= argent réel pour Netero)
+    total_trades_profitable: int = 0
+    total_trades_total: int = 0
 
-    # Progression vers le prochain jalon
-    last_milestone_reached: float = 0.0    # Dernier jalon atteint en USD
-    next_milestone: float = 1.0            # Prochain jalon à atteindre
+    # Progression
+    last_milestone_reached: float = 0.0
+    next_milestone: float = 10.0
 
-    # Historique des trades contributeurs
-    contributions: List[Dict] = None       # Dernières 50 contributions
-
-    # Mode de trading
-    is_simulation: bool = True             # True = virtuel, False = réel
+    # Historique des trades
+    contributions: List[Dict] = None
 
     # Métadonnées
     created_at: str = ""
@@ -98,15 +58,18 @@ class CharityStats:
         if not self.created_at:
             self.created_at = datetime.now(timezone.utc).isoformat()
 
+    @property
+    def total_all_usd(self) -> float:
+        return self.total_profit_sim_usd + self.total_profit_real_usd
+
 
 class CharityTracker:
     """
-    Suit les profits du bot et alloue une part aux associations humanitaires.
+    Suit tous les profits du bot pour l'Association Netero.
 
-    Usage:
-        tracker = get_charity_tracker()
-        tracker.record_profit(pnl_usd=25.50, symbol="ETHUSDT", is_simulation=True)
-        stats = tracker.get_stats()
+    100% des gains = argent pour l'association.
+    En simulation : profits virtuels (preuve que le bot fonctionne).
+    En mode réel : profits réels directement dans le wallet de l'association.
     """
 
     _instance: Optional["CharityTracker"] = None
@@ -123,7 +86,7 @@ class CharityTracker:
         return cls._instance
 
     def set_notifier(self, callback):
-        """Enregistre un callback async pour les jalons humanitaires."""
+        """Enregistre un callback async pour les jalons."""
         self._notifier = callback
 
     def record_trade(
@@ -134,10 +97,10 @@ class CharityTracker:
         is_simulation: bool = True,
     ) -> Optional[float]:
         """
-        Enregistre un trade et calcule l'allocation charité si positif.
+        Enregistre un trade. Si positif, comptabilise pour l'Association Netero.
 
         Returns:
-            charity_amount_usd si profit, None si perte.
+            profit_usd si positif, None sinon.
         """
         self.stats.total_trades_total += 1
 
@@ -145,14 +108,13 @@ class CharityTracker:
             self._save()
             return None
 
-        charity_amount = round(pnl_usd * CHARITY_RATE, 4)
+        # 100% des profits vont à Netero
+        if is_simulation:
+            self.stats.total_profit_sim_usd = round(self.stats.total_profit_sim_usd + pnl_usd, 4)
+        else:
+            self.stats.total_profit_real_usd = round(self.stats.total_profit_real_usd + pnl_usd, 4)
 
-        self.stats.total_profit_usd = round(self.stats.total_profit_usd + pnl_usd, 4)
-        self.stats.total_charity_allocated_usd = round(
-            self.stats.total_charity_allocated_usd + charity_amount, 4
-        )
         self.stats.total_trades_profitable += 1
-        self.stats.is_simulation = is_simulation
 
         # Log contribution
         contribution = {
@@ -160,63 +122,63 @@ class CharityTracker:
             "symbol": symbol,
             "strategy": strategy,
             "pnl_usd": round(pnl_usd, 4),
-            "charity_usd": charity_amount,
             "is_simulation": is_simulation,
         }
         self.stats.contributions.append(contribution)
-        # Keep only last 50
-        self.stats.contributions = self.stats.contributions[-50:]
+        self.stats.contributions = self.stats.contributions[-100:]
 
-        # Check milestone
-        self._check_milestone()
+        # Check milestone (basé sur les profits réels)
+        self._check_milestone(is_simulation)
         self._save()
 
+        mode_label = "(sim)" if is_simulation else "(REEL)"
         logger.info(
-            f"[CHARITY] +${charity_amount:.4f} alloué | "
-            f"Total: ${self.stats.total_charity_allocated_usd:.2f} | "
-            f"{'(simulation)' if is_simulation else '(REEL)'}"
+            f"[NETERO] +${pnl_usd:.4f} {mode_label} | "
+            f"Total réel: ${self.stats.total_profit_real_usd:.2f} | "
+            f"Total sim: ${self.stats.total_profit_sim_usd:.2f}"
         )
 
-        return charity_amount
+        return pnl_usd
 
-    def _check_milestone(self):
-        """Vérifie si un jalon humanitaire est franchi."""
-        total = self.stats.total_charity_allocated_usd
+    def _check_milestone(self, is_simulation: bool):
+        """Vérifie si un jalon est franchi (sur profits réels uniquement)."""
+        if is_simulation:
+            return  # Les jalons ne comptent qu'en mode réel
+        total_real = self.stats.total_profit_real_usd
         for milestone in sorted(CHARITY_MILESTONES):
-            if total >= milestone > self.stats.last_milestone_reached:
+            if total_real >= milestone > self.stats.last_milestone_reached:
                 self.stats.last_milestone_reached = milestone
-                logger.info(
-                    f"[CHARITY] 🎉 JALON ATTEINT: ${milestone} alloués aux associations !"
-                )
+                logger.info(f"[NETERO] JALON ATTEINT: ${milestone} de profits réels pour l'Association Netero!")
                 if self._notifier:
                     try:
                         import asyncio
                         asyncio.get_running_loop().create_task(
-                            self._notifier("milestone", {"amount": milestone, "total": total})
+                            self._notifier("milestone", {"amount": milestone, "total": total_real})
                         )
                     except RuntimeError:
                         pass
 
-        # Update next milestone
         remaining = [m for m in CHARITY_MILESTONES if m > self.stats.last_milestone_reached]
         self.stats.next_milestone = remaining[0] if remaining else CHARITY_MILESTONES[-1]
 
     def get_stats(self) -> Dict:
-        """Retourne les statistiques humanitaires pour le dashboard."""
-        total = self.stats.total_charity_allocated_usd
+        """Retourne les statistiques pour le dashboard."""
+        total_real = self.stats.total_profit_real_usd
         next_m = self.stats.next_milestone
         last_m = self.stats.last_milestone_reached
 
-        # Progression vers le prochain jalon (0-100%)
         if next_m > last_m:
-            progress_pct = min(100.0, ((total - last_m) / (next_m - last_m)) * 100)
+            progress_pct = min(100.0, ((total_real - last_m) / (next_m - last_m)) * 100)
         else:
-            progress_pct = 100.0
+            progress_pct = 100.0 if total_real >= last_m else 0.0
 
         return {
-            "total_profit_usd": self.stats.total_profit_usd,
-            "total_charity_usd": self.stats.total_charity_allocated_usd,
-            "charity_rate_pct": CHARITY_RATE * 100,
+            "association_name": ASSOCIATION_NAME,
+            "total_profit_sim_usd": self.stats.total_profit_sim_usd,
+            "total_profit_real_usd": self.stats.total_profit_real_usd,
+            "total_profit_usd": self.stats.total_all_usd,  # compat
+            "total_charity_usd": self.stats.total_all_usd,  # compat dashboard
+            "charity_rate_pct": 100,
             "total_trades": self.stats.total_trades_total,
             "profitable_trades": self.stats.total_trades_profitable,
             "win_rate": (
@@ -224,28 +186,26 @@ class CharityTracker:
                 if self.stats.total_trades_total > 0 else 0.0
             ),
             "last_milestone": self.stats.last_milestone_reached,
-            "next_milestone": self.stats.next_milestone,
+            "next_milestone": next_m,
             "progress_to_next_milestone_pct": progress_pct,
-            "is_simulation": self.stats.is_simulation,
+            "is_simulation": self.stats.total_profit_real_usd == 0,
             "recent_contributions": self.stats.contributions[-10:],
-            "charities": SUPPORTED_CHARITIES,
             "last_updated": self.stats.last_updated,
         }
 
     def get_impact_message(self) -> str:
-        """Retourne un message d'impact humanitaire."""
-        total = self.stats.total_charity_allocated_usd
-        if total <= 0:
-            return "Aucun profit encore — les associations attendent !"
-        if total < 5:
-            return f"${total:.2f} accumulés pour les associations humanitaires"
-        if total < 25:
-            return f"${total:.2f} — de quoi financer des repas pour des familles"
-        if total < 100:
-            return f"${total:.2f} — l'équivalent de consultations médicales"
-        if total < 500:
-            return f"${total:.2f} — de quoi aider des dizaines de personnes"
-        return f"${total:.2f} — impact humanitaire significatif !"
+        """Message de contexte pour l'Association Netero."""
+        real = self.stats.total_profit_real_usd
+        sim = self.stats.total_profit_sim_usd
+        if real <= 0 and sim <= 0:
+            return "Le bot accumule des profits pour l'Association Netero"
+        if real <= 0:
+            return f"${sim:.2f} générés en simulation — prêt pour le mode réel"
+        if real < 50:
+            return f"${real:.2f} réels générés pour l'Association Netero"
+        if real < 250:
+            return f"${real:.2f} — impact croissant pour l'Association Netero"
+        return f"${real:.2f} — contribution significative pour l'Association Netero!"
 
     def _save(self):
         self.stats.last_updated = datetime.now(timezone.utc).isoformat()
@@ -253,7 +213,7 @@ class CharityTracker:
             with open(_CHARITY_FILE, "w") as f:
                 json.dump(asdict(self.stats), f, indent=2)
         except Exception as e:
-            logger.warning(f"[CHARITY] Could not save stats: {e}")
+            logger.warning(f"[NETERO] Could not save stats: {e}")
 
     def _load(self):
         try:
@@ -265,10 +225,11 @@ class CharityTracker:
                 if self.stats.contributions is None:
                     self.stats.contributions = []
                 logger.info(
-                    f"[CHARITY] Loaded: ${self.stats.total_charity_allocated_usd:.2f} alloués"
+                    f"[NETERO] Chargé: ${self.stats.total_profit_real_usd:.2f} réels, "
+                    f"${self.stats.total_profit_sim_usd:.2f} simulation"
                 )
         except Exception as e:
-            logger.warning(f"[CHARITY] Could not load stats: {e}")
+            logger.warning(f"[NETERO] Could not load stats: {e}")
 
 
 # Singleton global

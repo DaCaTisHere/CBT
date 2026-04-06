@@ -83,7 +83,7 @@ class TelegramBot:
 
         # Rate limiting state
         self._last_send_time: float = 0.0
-        self._send_lock = asyncio.Lock()
+        self._send_lock: Optional[asyncio.Lock] = None  # Lazy-init inside async context
 
         if self.is_enabled:
             self.logger.info("[TELEGRAM] Bot initialized")
@@ -133,6 +133,8 @@ class TelegramBot:
             return False
 
         # Rate limiting — avoid Telegram flood ban (429)
+        if self._send_lock is None:
+            self._send_lock = asyncio.Lock()
         async with self._send_lock:
             now = time.monotonic()
             elapsed = now - self._last_send_time
@@ -338,8 +340,8 @@ class TelegramBot:
 
     async def notify_bot_started(self):
         msg = (
-            f"🤖 <b>Cryptobot demarre</b>\n\n"
-            f"Le bot est en ligne et operationnel.\n\n"
+            f"🤖 <b>Cryptobot demarre — Association Netero</b>\n\n"
+            f"Le bot est en ligne. 100% des profits vont à l'Association Netero.\n\n"
             f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
         )
         await self.send_message(msg)
@@ -354,46 +356,40 @@ class TelegramBot:
 
     # ==================== HUMANITAIRE ====================
 
-    async def notify_charity_milestone(self, milestone_usd: float, total_usd: float, is_simulation: bool = True):
-        """Notifie qu'un jalon humanitaire a été atteint."""
-        sim_label = " (simulation)" if is_simulation else " 🎉 REEL !"
+    async def notify_charity_milestone(self, milestone_usd: float, total_usd: float, is_simulation: bool = False):
+        """Notifie qu'un jalon de profits réels est atteint pour l'Association Netero."""
         msg = (
-            f"❤️ <b>JALON HUMANITAIRE ATTEINT{sim_label}</b>\n\n"
-            f"Le bot a généré assez de profits pour allouer\n"
-            f"<b>${milestone_usd:.0f}</b> aux associations humanitaires !\n\n"
-            f"💰 Total alloué à ce jour : <b>${total_usd:.2f}</b>\n\n"
-            f"🌍 Associations soutenues :\n"
-            f"  • 🏥 Médecins Sans Frontières\n"
-            f"  • 🧒 UNICEF\n"
-            f"  • 🍲 Action Contre la Faim\n"
-            f"  • 🔴 Croix-Rouge\n\n"
-            f"<i>10% de chaque profit va à la cause humanitaire</i>\n"
+            f"🎉 <b>JALON ATTEINT — Association Netero</b>\n\n"
+            f"Le bot a généré <b>${milestone_usd:.0f}</b> de profits réels !\n\n"
+            f"💰 Total cumulé : <b>${total_usd:.2f}</b>\n\n"
+            f"🌍 Ces profits vont directement dans le wallet de l'Association Netero.\n\n"
             f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
         )
         await self.send_message(msg, silent=False)
 
-    async def notify_charity_daily(self, daily_profit: float, daily_charity: float,
-                                    total_charity: float, is_simulation: bool = True):
-        """Rapport quotidien humanitaire."""
-        sim_label = "(simulation)" if is_simulation else "REEL"
+    async def notify_charity_daily(self, daily_profit: float, total_sim: float,
+                                    total_real: float, is_simulation: bool = True):
+        """Rapport quotidien pour l'Association Netero."""
+        mode = "simulation" if is_simulation else "REEL"
+        emoji = "📊" if is_simulation else "💰"
         msg = (
-            f"❤️ <b>Rapport humanitaire quotidien</b> <i>{sim_label}</i>\n\n"
-            f"Profit du jour : <b>${daily_profit:+.2f}</b>\n"
-            f"Alloué aujourd'hui : <b>${daily_charity:.4f}</b>\n\n"
-            f"<b>Total cumulé pour les associations : ${total_charity:.2f}</b>\n\n"
+            f"{emoji} <b>Rapport quotidien — Association Netero</b> <i>({mode})</i>\n\n"
+            f"Profit du jour : <b>${daily_profit:+.4f}</b>\n\n"
+            f"📈 Total simulation : <b>${total_sim:.4f}</b>\n"
+            f"💰 Total réel : <b>${total_real:.4f}</b>\n\n"
+            f"<i>100% des profits → Association Netero</i>\n"
             f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
         )
         await self.send_message(msg, silent=True)
 
-    async def notify_mode_switch_to_real_charity(self, sim_charity_total: float):
-        """Message spécial quand le bot passe en mode réel — impact humanitaire potentiel."""
+    async def notify_mode_switch_to_real_charity(self, sim_profit_total: float):
+        """Message spécial quand le bot passe en mode réel."""
         msg = (
-            f"🚀❤️ <b>PASSAGE EN MODE REEL - IMPACT HUMANITAIRE REEL</b>\n\n"
-            f"Le bot a prouvé son efficacité en simulation.\n"
-            f"En mode simulation, il avait déjà alloué virtuellement <b>${sim_charity_total:.2f}</b>.\n\n"
-            f"Maintenant en mode réel, chaque profit contribuera <b>réellement</b>\n"
-            f"aux associations humanitaires (10% des profits nets).\n\n"
-            f"🌍 <b>Merci de faire une différence !</b>\n\n"
+            f"🚀 <b>PASSAGE EN MODE REEL — Association Netero</b>\n\n"
+            f"Le bot a validé sa stratégie en simulation.\n"
+            f"Profits simulés accumulés : <b>${sim_profit_total:.4f}</b>\n\n"
+            f"Maintenant en mode <b>REEL</b> — chaque profit ira\n"
+            f"directement dans le wallet de l'Association Netero.\n\n"
             f"<i>{datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC</i>"
         )
         await self.send_message(msg, silent=False)
